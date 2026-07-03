@@ -3,7 +3,7 @@ AI Student Planner App
 
 Simple Flask app to help students plan tasks and schedules.
 
-Quick start (development)
+Quick start
 
 - Create and activate a virtual environment:
 
