@@ -1,0 +1,528 @@
+{% extends "base.html" %}
+{% block title %}Classrooms — AI Study Planner{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-5">
+  <!-- Page Header -->
+  <div class="row align-items-center mb-4 g-3">
+    <div class="col">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1 small text-muted">
+          <li class="breadcrumb-item"><a href="{{ url_for('dashboard') if user_type != 'faculty' else url_for('faculty_dashboard') }}" class="text-decoration-none text-muted">Dashboard</a></li>
+          <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Classrooms</li>
+        </ol>
+      </nav>
+      <h2 class="fw-bold text-dark mb-0">Virtual Classrooms</h2>
+    </div>
+    <div class="col-auto">
+      <a href="{{ url_for('dashboard') if user_type != 'faculty' else url_for('faculty_dashboard') }}" class="btn btn-outline-secondary btn-sm px-3 rounded-pill shadow-sm">
+        <i class="fas fa-arrow-left me-2"></i>Return to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Primary Architecture: Split Hub (Sidebar Directory + Main Workspace) -->
+  <div class="row g-4">
+    
+    <!-- LEFT SIDEBAR: Directory & Quick Access (Classrooms Management Hub) -->
+    <div class="col-xl-4">
+      <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold text-dark mb-0">
+              <i class="fas fa-layer-group text-primary me-2"></i>
+              {% if user_type == 'faculty' %}My Classrooms{% else %}Enrolled Classes{% endif %}
+            </h5>
+            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1">
+              {% if user_type == 'faculty' %}{{ created_classrooms|length if created_classrooms else 0 }}{% else %}{{ joined_classrooms|length if joined_classrooms else 0 }}{% endif %} Active
+            </span>
+          </div>
+
+          <!-- Action Hub (Create or Join Form unified in panel top) -->
+          <div class="p-3 bg-light rounded-4 mb-3 border-0">
+            <h6 class="small text-uppercase fw-bold text-secondary mb-2">
+              {% if user_type == 'faculty' %}Create New Classroom{% else %}Join New Classroom{% endif %}
+            </h6>
+            <form method="post">
+              {% if user_type == 'faculty' %}
+                <div class="input-group shadow-sm">
+                  <input type="text" class="form-control form-control-sm border-0 bg-white" name="class_name" placeholder="Classroom name (e.g. CS 401)" required>
+                  <button class="btn btn-primary btn-sm px-3" type="submit"><i class="fas fa-plus"></i></button>
+                </div>
+              {% else %}
+                <div class="input-group shadow-sm">
+                  <input type="text" class="form-control form-control-sm border-0 bg-white" name="class_code" placeholder="Enter Class Code" required>
+                  <button class="btn btn-primary btn-sm px-3" type="submit"><i class="fas fa-sign-in-alt"></i></button>
+                </div>
+              {% endif %}
+            </form>
+          </div>
+
+          <!-- Directory List -->
+          <div class="class-directory overflow-auto pe-1" style="max-height: 380px;">
+            {% if user_type == 'faculty' and created_classrooms %}
+              <div class="list-group list-group-flush gap-2">
+                {% for item in created_classrooms %}
+                  <a href="{{ url_for('classrooms', class_id=item.id) }}" class="list-group-item list-group-item-action border rounded-3 p-3 transition-all {% if selected_classroom and selected_classroom.id == item.id %}border-primary bg-primary-subtle bg-opacity-25 shadow-sm{% else %}bg-light bg-opacity-50{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <h6 class="fw-bold mb-0 text-dark">{{ item.class_name }}</h6>
+                      {% if item.unread_count and item.unread_count > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ item.unread_count }}</span>
+                      {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                      <span>Code: <code class="fw-bold text-primary">{{ item.class_code }}</code></span>
+                      <span class="badge bg-white text-dark border">{{ item.student_count }} student{% if item.student_count != 1 %}s{% endif %}</span>
+                    </div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% elif user_type != 'faculty' and joined_classrooms %}
+              <div class="list-group list-group-flush gap-2">
+                {% for item in joined_classrooms %}
+                  <a href="{{ url_for('classrooms', class_id=item.id) }}" class="list-group-item list-group-item-action border rounded-3 p-3 transition-all {% if selected_classroom and selected_classroom.id == item.id %}border-primary bg-primary-subtle bg-opacity-25 shadow-sm{% else %}bg-light bg-opacity-50{% endif %}">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <h6 class="fw-bold mb-0 text-dark">{{ item.class_name }}</h6>
+                      {% if item.unread_count and item.unread_count > 0 %}
+                        <span class="badge bg-danger rounded-pill">{{ item.unread_count }}</span>
+                      {% endif %}
+                    </div>
+                    <p class="small text-secondary mb-1"><i class="fas fa-chalkboard-teacher me-1"></i>{{ item.faculty_name }}</p>
+                    <div class="small text-muted">Code: <code class="fw-bold text-primary">{{ item.class_code }}</code></div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="text-center py-5 text-muted">
+                <i class="fas fa-folder-open fa-2x mb-2 text-secondary opacity-50"></i>
+                <p class="small mb-0">No classrooms joined or created yet.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT MAIN WORKSPACE: Contextual Active Classroom Panel -->
+    <div class="col-xl-8">
+      {% if selected_classroom %}
+        
+        <!-- Workspace Banner Header -->
+        <div class="card border-0 shadow-sm rounded-4 bg-gradient bg-white mb-4 border-start border-primary border-4">
+          <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+              <span class="badge bg-primary-subtle text-primary fw-semibold mb-1">Active Workspace</span>
+              <h3 class="fw-bold text-dark mb-0">{{ selected_classroom.class_name }}</h3>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <div class="bg-light px-3 py-2 rounded-3 border text-center">
+                <span class="d-block small text-muted uppercase" style="font-size: 0.7rem;">Access Code</span>
+                <code class="fw-bold text-dark fs-6">{{ selected_classroom.class_code }}</code>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if user_type == 'faculty' %}
+          <!-- ================= FACULTY WORKSPACE VIEW ================= -->
+          <div class="row g-4">
+            
+            <!-- Management Controls Column (Students Roster & Task Assignment unified) -->
+            <div class="col-lg-5">
+              
+              <!-- Roster & Enrollment Card -->
+              <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="card-body p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fas fa-users text-primary me-2"></i>Enroll Student By Id</h5>
+                    <span class="badge bg-secondary-subtle text-secondary">{{ enrolled_students|length if enrolled_students else 0 }} Enrolled</span>
+                  </div>
+
+                  <!-- Enrollment form -->
+                  <form method="post" action="{{ url_for('enroll_student_by_faculty') }}" class="mb-3">
+                    <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}">
+                    <div class="input-group input-group-sm shadow-sm">
+                      <input type="email" class="form-control bg-light border-0" name="student_email" placeholder="student@university.edu" required>
+                      <button class="btn btn-outline-primary px-3" type="submit">Enroll</button>
+                    </div>
+                  </form>
+
+                  <!-- Roster List -->
+                  {% if enrolled_students %}
+                    <div class="list-group list-group-flush overflow-auto pe-1" style="max-height: 220px;">
+                      {% for student in enrolled_students %}
+                        <a href="{{ url_for('classrooms', class_id=selected_classroom.id, student_id=student.id) }}" class="list-group-item list-group-item-action border rounded-3 mb-2 p-2 {% if selected_student_id == student.id %}active bg-primary text-white border-primary{% endif %}">
+                          <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold text-truncate" style="max-width: 140px;">{{ student.name }}</span>
+                            <div class="d-flex align-items-center gap-1">
+                              {% if student.unread_count and student.unread_count > 0 %}
+                                <span class="badge bg-danger">New</span>
+                              {% endif %}
+                              <small class="opacity-75 text-truncate" style="max-width: 100px;">{{ student.email }}</small>
+                            </div>
+                          </div>
+                        </a>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="text-center py-3 text-muted small bg-light rounded-3">No students registered yet.</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Quick Task Assignment Card -->
+              <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold text-dark mb-3"><i class="fas fa-tasks text-success me-2"></i>Assign Task</h5>
+                  <form method="post" action="{{ url_for('classroom_assign_task') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}">
+                    <div class="mb-2">
+                      <label class="form-label small text-secondary fw-semibold">Task Title</label>
+                      <input type="text" class="form-control form-control-sm bg-light border-0" name="task_name" required>
+                    </div>
+                    <div class="row g-2 mb-2">
+                      <div class="col-6">
+                        <label class="form-label small text-secondary fw-semibold">Subject</label>
+                        <input type="text" class="form-control form-control-sm bg-light border-0" name="subject" placeholder="General" required>
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small text-secondary fw-semibold">Deadline</label>
+                        <input type="date" class="form-control form-control-sm bg-light border-0" name="deadline" required>
+                      </div>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label small text-secondary fw-semibold">Target Student</label>
+                      <select class="form-select form-select-sm bg-light border-0" name="target_student_id" required>
+                        <option value="all">All Enrolled Students</option>
+                        {% for student in enrolled_students %}
+                          <option value="{{ student.id }}">{{ student.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="mb-2">
+                      <label class="form-label small text-secondary fw-semibold">Instructions & Files</label>
+                      <textarea class="form-control form-control-sm bg-light border-0 mb-2" rows="2" name="instructions" placeholder="Optional directions..."></textarea>
+                      <input type="file" class="form-control form-control-sm bg-light border-0" name="attachment" accept=".pdf,image/*">
+                    </div>
+                    <button class="btn btn-success btn-sm w-100 rounded-pill shadow-sm py-2 mt-2" type="submit">
+                      <i class="fas fa-paper-plane me-2"></i>Publish Assignment
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Deliverables & Communication Column (Assignments Tracker & Chat Hub unified) -->
+            <div class="col-lg-7">
+              
+              <!-- Assigned Tasks Overview Table -->
+              <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold text-dark mb-3"><i class="fas fa-clipboard-list text-primary me-2"></i>Task Monitor</h5>
+                  {% if classroom_assignments %}
+                    <div class="table-responsive" style="max-height: 240px; overflow-y: auto;">
+                      <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-secondary sticky-top">
+                          <tr>
+                            <th>Student</th>
+                            <th>Task Name</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th class="text-end">Manage</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for item in classroom_assignments %}
+                            <tr>
+                              <td class="fw-semibold text-dark">{{ item.student_name }}</td>
+                              <td>
+                                <div class="text-dark">{{ item.task_name }}</div>
+                                {% if item.attachment_path %}
+                                  <a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}" class="small text-decoration-none"><i class="fas fa-paperclip me-1"></i>File</a>
+                                {% endif %}
+                              </td>
+                              <td class="small text-muted">{{ item.deadline }}</td>
+                              <td>
+                                <span class="badge bg-secondary-subtle text-secondary">{{ item.status }}</span>
+                                {% if item.borrowed %}<span class="badge bg-info-subtle text-info">Borrowed</span>{% endif %}
+                              </td>
+                              <td class="text-end">
+                                <div class="d-flex gap-1 justify-content-end">
+                                  <button class="btn btn-sm btn-light border py-0 px-1" data-bs-toggle="modal" data-bs-target="#editAssignmentModal{{ item.id }}"><i class="fas fa-edit text-secondary"></i></button>
+                                  <form method="post" action="{{ url_for('delete_classroom_assignment', assignment_id=item.id) }}" onsubmit="return confirm('Delete task?')">
+                                    <button type="submit" class="btn btn-sm btn-light border py-0 px-1 text-danger"><i class="fas fa-trash-alt"></i></button>
+                                  </form>
+                                </div>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  {% else %}
+                    <div class="text-center py-3 text-muted small bg-light rounded-3">No tasks assigned yet.</div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <!-- Unified Communication Hub (Broadcast & Direct Chat) -->
+              <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-body p-4">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fas fa-comments text-primary me-2"></i>Communication Channel</h5>
+                    {% if selected_student_id %}
+                      <span class="badge bg-primary-subtle text-primary">Direct Message Mode</span>
+                    {% else %}
+                      <span class="badge bg-secondary-subtle text-secondary">Select a student or broadcast</span>
+                    {% endif %}
+                  </div>
+
+                  <!-- Broadcast Quick Action Bar -->
+                  <form method="post" action="{{ url_for('classroom_send_message') }}" enctype="multipart/form-data" class="bg-light p-2 rounded-3 mb-3 border">
+                    <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}">
+                    <input type="hidden" name="recipient_student_id" value="all">
+                    <div class="input-group input-group-sm">
+                      <input type="text" class="form-control bg-white border-0" name="message" placeholder="Broadcast notification to all students..." required>
+                      <input type="file" class="form-control border-0 form-control-sm bg-light" name="attachment" accept=".pdf,image/*" style="max-width: 120px;">
+
+                      <button class="btn btn-outline-secondary px-3" type="submit"><i class="fas fa-bullhorn me-1"></i>Broadcast</button>
+                    </div>
+                  </form>
+
+                  <!-- Message + Private Chat List -->
+                  <div class="row g-3">
+                    <!-- Private Chat Student List -->
+                    <div class="col-md-4">
+                      <div class="small text-secondary fw-semibold mb-2">Private Chats</div>
+                      {% if enrolled_students %}
+                        <div class="list-group list-group-flush overflow-auto pe-1" style="max-height: 220px;">
+                          {% for student in enrolled_students %}
+                            <a href="{{ url_for('classrooms', class_id=selected_classroom.id, student_id=student.id) }}" class="list-group-item list-group-item-action border rounded-3 mb-2 p-2 {% if selected_student_id == student.id %}active bg-primary text-white border-primary{% endif %}">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-truncate" style="max-width: 140px;">{{ student.name }}</span>
+                                <div class="d-flex align-items-center gap-1">
+                                  {% if student.unread_count and student.unread_count > 0 %}
+                                    <span class="badge bg-danger">New</span>
+                                  {% endif %}
+                                  <small class="opacity-75 text-truncate" style="max-width: 100px;">{{ student.email }}</small>
+                                </div>
+                              </div>
+                            </a>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        <div class="text-center py-3 text-muted small bg-light rounded-3">No students registered yet.</div>
+                      {% endif %}
+                    </div>
+
+                    <!-- Message Thread Column -->
+                    <div class="col-md-8">
+                      {% if selected_student_id %}
+                        <div class="border rounded-3 p-3 mb-3 bg-light-subtle overflow-auto shadow-inner" style="max-height: 220px;">
+                          {% if classroom_messages %}
+                            {% for msg in classroom_messages %}
+                              <div class="mb-2 {% if msg.sender_id == session.user_id %}text-end{% endif %}">
+                                <div class="small text-muted" style="font-size: 0.7rem;">{{ msg.sender_name }} • {{ msg.created_at }}</div>
+                                <div class="d-inline-block px-3 py-2 rounded-4 text-start shadow-sm {% if msg.sender_id == session.user_id %}bg-primary text-white{% else %}bg-white border text-dark{% endif %}" style="max-width: 80%;">
+                                  {{ msg.message }}
+                                </div>
+                                {% if msg.attachment_path %}
+                                  <div><a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}" class="small"><i class="fas fa-paperclip me-1"></i>Attachment</a></div>
+                                {% endif %}
+                              </div>
+                            {% endfor %}
+                          {% else %}
+                            <p class="text-muted small text-center mb-0 py-2">No message history with this student.</p>
+                          {% endif %}
+                        </div>
+
+                        <!-- Direct Send Form -->
+                        <form method="post" action="{{ url_for('classroom_send_message') }}" enctype="multipart/form-data">
+                          <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}">
+                          <input type="hidden" name="recipient_student_id" value="{{ selected_student_id }}">
+                          <div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden border">
+                            <input type="text" class="form-control border-0 px-3" name="message" placeholder="Type direct message..." required>
+                            <input type="file" class="form-control border-0 form-control-sm bg-light" name="attachment" accept=".pdf,image/*" style="max-width: 120px;">
+                            <button class="btn btn-primary px-4" type="submit"><i class="fas fa-paper-plane"></i></button>
+                          </div>
+                        </form>
+                      {% else %}
+                        <div class="text-center py-4 bg-light rounded-3 text-muted small border border-dashed">
+                          <i class="fas fa-comment-dots fa-lg mb-1"></i>
+                          <p class="mb-0">Select a student from the Private Chats list to start or view direct conversation.</p>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        {% else %}
+          <!-- ================= STUDENT WORKSPACE VIEW ================= -->
+          <div class="row g-4">
+            
+            <!-- Student Assignments Column -->
+            <div class="col-lg-7">
+              <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-body p-4">
+                  <h5 class="fw-bold text-dark mb-3"><i class="fas fa-tasks text-primary me-2"></i>Class Assignments</h5>
+                  {% if classroom_assignments %}
+                    <div class="table-responsive">
+                      <table class="table align-middle mb-0">
+                        <thead class="table-light text-uppercase small text-secondary">
+                          <tr>
+                            <th>Task Details</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for item in classroom_assignments %}
+                            <tr>
+                              <td>
+                                <div class="fw-semibold text-dark">{{ item.task_name }}</div>
+                                <span class="badge bg-light text-secondary border">{{ item.subject }}</span>
+                                {% if item.attachment_path %}
+                                  <div class="mt-1"><a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}" class="small text-decoration-none"><i class="fas fa-paperclip me-1"></i>Download Material</a></div>
+                                {% endif %}
+                              </td>
+                              <td class="small text-muted">{{ item.deadline }}</td>
+                              <td>
+                                <span class="badge bg-secondary-subtle text-secondary">{{ item.status }}</span>
+                                {% if item.borrowed %}<span class="badge bg-info-subtle text-info">Borrowed</span>{% endif %}
+                              </td>
+                              <td class="text-end">
+                                <div class="d-flex gap-1 justify-content-end">
+                                  <form method="post" action="{{ url_for('borrow_classroom_assignment', assignment_id=item.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill px-2" {% if item.borrowed %}disabled{% endif %}>Borrow</button>
+                                  </form>
+                                  <form method="post" action="{{ url_for('play_classroom_assignment', assignment_id=item.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-2">Play</button>
+                                  </form>
+                                  <form method="post" action="{{ url_for('complete_classroom_assignment', assignment_id=item.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2" {% if item.status == 'Completed' %}disabled{% endif %}>Done</button>
+                                  </form>
+                                </div>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  {% else %}
+                    <div class="text-center py-5 text-muted">
+                      <i class="fas fa-clipboard-check fa-2x mb-2 text-secondary opacity-50"></i>
+                      <p class="mb-0">No assignments posted by faculty yet.</p>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Student Faculty Chat Column -->
+            <div class="col-lg-5">
+              <div class="card border-0 shadow-sm rounded-4 bg-white h-100 d-flex flex-column">
+                <div class="card-body p-4 d-flex flex-column h-100">
+                  <div class="mb-3">
+                    <h5 class="fw-bold text-dark mb-1"><i class="fas fa-chalkboard-teacher text-primary me-2"></i>Faculty Chat</h5>
+                    {% if faculty_contact %}
+                      <p class="small text-muted mb-0">Instructor: <strong>{{ faculty_contact.name }}</strong></p>
+                    {% endif %}
+                  </div>
+
+                  <div class="border rounded-4 p-3 mb-3 bg-light-subtle overflow-auto flex-grow-1 shadow-inner" style="max-height: 280px; min-height: 200px;">
+                    {% if classroom_messages %}
+                      {% for msg in classroom_messages %}
+                        <div class="mb-3 {% if msg.sender_id == session.user_id %}text-end{% endif %}">
+                          <div class="small text-muted mb-1" style="font-size: 0.7rem;">{{ msg.sender_name }} • {{ msg.created_at }}</div>
+                          <div class="d-inline-block px-3 py-2 rounded-4 text-start shadow-sm {% if msg.sender_id == session.user_id %}bg-primary text-white{% else %}bg-white border text-dark{% endif %}" style="max-width: 85%;">
+                            {{ msg.message }}
+                          </div>
+                          {% if msg.attachment_path %}
+                            <div class="mt-1"><a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}" class="small"><i class="fas fa-paperclip me-1"></i>Attachment</a></div>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
+                    {% else %}
+                      <div class="text-center py-4 text-muted small">No messages with instructor. Send a query below.</div>
+                    {% endif %}
+                  </div>
+
+                  <form method="post" action="{{ url_for('classroom_send_message') }}" enctype="multipart/form-data" class="mt-auto">
+                    <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}">
+                    <div class="input-group shadow-sm rounded-pill overflow-hidden border">
+                      <input type="text" class="form-control border-0 px-3 py-2" name="message" placeholder="Ask your faculty..." required>
+                      <input type="file" class="form-control border-0 form-control-sm bg-light align-self-center" name="attachment" accept=".pdf,image/*" style="max-width: 110px;">
+                      <button class="btn btn-primary px-3" type="submit"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        {% endif %}
+
+      {% else %}
+        <!-- Empty Workspace Placeholder State -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white text-center py-5">
+          <div class="card-body py-5">
+            <div class="mb-3 text-secondary opacity-50">
+              <i class="fas fa-chalkboard fa-4icon fa-3x"></i>
+            </div>
+            <h4 class="fw-bold text-dark mb-1">No Classroom Selected</h4>
+            <p class="text-muted mb-0">Select an existing classroom from the left directory or create/join a new one to open the full management workspace.</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit Assignment Modals (Faculty) -->
+{% if user_type == 'faculty' and classroom_assignments %}
+  {% for item in classroom_assignments %}
+    <div class="modal fade" id="editAssignmentModal{{ item.id }}" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold">Edit Assignment</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form method="post" action="{{ url_for('edit_classroom_assignment', assignment_id=item.id) }}">
+            <div class="modal-body py-3">
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">Task Title</label>
+                <input type="text" class="form-control bg-light border-0" name="task_name" value="{{ item.task_name }}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">Subject</label>
+                <input type="text" class="form-control bg-light border-0" name="subject" value="{{ item.subject }}" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-semibold text-secondary">Deadline</label>
+                <input type="date" class="form-control bg-light border-0" name="deadline" value="{{ item.deadline }}" required>
+              </div>
+              <div class="mb-0">
+                <label class="form-label small fw-semibold text-secondary">Instructions</label>
+                <textarea class="form-control bg-light border-0" rows="3" name="instructions">{{ item.instructions }}</textarea>
+              </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+              <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary rounded-pill px-4">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+{% endif %}
+{# Settings/delete moved to Settings page. #}
+{% endblock %}

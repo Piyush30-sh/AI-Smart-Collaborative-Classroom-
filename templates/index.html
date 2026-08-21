@@ -1,285 +1,440 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Study Planner</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> AI SmartClass — Smarter Classrooms. Better Learning. Powered by AI.</title>
+  <meta name="description" content="SmartClass AI is an AI-powered smart classroom management platform connecting faculty and students in one centralized academic workspace.">
+
+  <!-- Fonts: Instrument Serif (display), Inter (body/UI), JetBrains Mono (labels & data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
-</head>
 
-<body class="landing-body">
-  <div class="position-fixed top-0 end-0 p-3" style="z-index:999">
-    <div class="form-check form-switch mb-0 text-white">
-      <input class="form-check-input" type="checkbox" id="darkToggle" role="switch" />
-      <label class="form-check-label text-white-50" for="darkToggle">
-        <i class="fas fa-moon"></i>
-      </label>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+</head>
+<body>
+<!--   landing body 8-8-26-->
+
+
+
+
+  <!-- ============ NAVBAR ============ -->
+  <header class="navbar" id="navbar">
+    <div class="container navbar__inner">
+      <a href="#home" class="navbar__logo">
+        <span class="navbar__logo-mark">AC</span>
+        <span class="navbar__logo-text">AI <em>SmartClass</em></span>
+      </a>
+
+      <nav class="navbar__links" id="navLinks">
+        <a href="#home">Home</a>
+        <a href="#features">Features</a>
+        <a href="#ai-assistant">AI Assistant</a>
+        <a href="#how-it-works">How It Works</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="navbar__actions">
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold">Login</a>
+        <a href="{{ url_for('signup') }}" class="btn btn--primary">Get Started</a>
+      </div>
+
+      <button class="navbar__burger" id="navBurger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+
+  
+  
+  <!-- Mobile nav panel -->
+  <div class="mobile-nav" id="mobileNav">
+    <a href="#home">Home</a>
+    <a href="#features">Features</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#ai-assistant">AI Assistant</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+    <div class="mobile-nav__actions">
+      <a href="/html/login.html" class="btn btn--ghost">Log In</a>
+      <a href="/html/signup.html" class="btn btn--primary">Get Started</a>
     </div>
   </div>
 
-  <main class="landing-page min-vh-100 text-white">
-    <div class="landing-shell">
-      <header class="landing-nav">
-        <div class="container d-flex align-items-center justify-content-between gap-3">
-          <a class="landing-brand d-inline-flex align-items-center fw-bold fs-5" href="{{ url_for('index') }}">
-            <i class="fas fa-graduation-cap me-2 text-warning"></i>AI Study Planner
-          </a>
-          <div class="d-flex gap-2">
-            <a href="#features" class="btn btn-sm btn-outline-light rounded-pill px-3">Features</a>
-            <a href="{{ url_for('login') }}" class="btn btn-sm btn-light rounded-pill px-3 fw-semibold">Login</a>
+  <main>
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="home">
+      <div class="hero__ruled" aria-hidden="true"></div>
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <p class="eyebrow">Smarter Classrooms. Better Learning. Powered by AI.</p>
+          <h1 class="hero__heading">
+            Smarter Classrooms. Better Learning. Powered by AI.
+          </h1>
+          <p class="hero__sub">
+            An all-in-one intelligent classroom management platform that connects faculty and
+            students, simplifies academic management, and provides personalized AI-powered
+            learning assistance.
+          </p>
+          <div class="hero__cta">
+            <a href="/html/signup.html" class="btn btn--primary btn--lg">Get Started</a>
+            <a href="#features" class="btn btn--outline btn--lg">Explore Features</a>
+          </div>
+          <div class="hero__trust">
+            <span class="tag tag--sample">preview</span>
+            <span class="hero__stack">HTML5 · CSS3 · JavaScript · FastAPI-ready · Groq-ready</span>
           </div>
         </div>
-      </header>
 
-      <section class="landing-hero">
-        <div class="container">
-          <div class="row align-items-center g-5">
-            <div class="col-lg-7">
-              <div class="landing-pill mb-3">
-                <i class="fas fa-sparkles"></i>
-                The ultimate student productivity tool
-              </div>
-              <p class="landing-kicker mb-2 opacity-75">Plan smarter. Stress less.</p>
-              <h1 class="display-4 fw-bold lh-sm mb-3">
-                Keep classes, tasks, and exams organized in one place.
-              </h1>
-              <p class="lead opacity-75 mb-4" style="max-width: 42rem;">
-                Designed for the real demands of student life, this planner helps you organize your schedule, stay focused, and keep every deadline visible.
-              </p>
-
-              <div class="d-flex flex-wrap gap-3 mb-4">
-                <a href="{{ url_for('login') }}" class="btn btn-light btn-lg fw-semibold px-4">
-                  <i class="fas fa-right-to-bracket me-2"></i>Get started for free
-                </a>
-                <a href="{{ url_for('signup') }}" class="btn btn-outline-light btn-lg fw-semibold px-4">
-                  Create account
-                </a>
-              </div>
-
-              <div class="row g-3">
-                <div class="col-md-4">
-                  <div class="landing-feature-card p-3 h-100">
-                    <div class="fw-semibold fs-4">Organize</div>
-                    <div class="small text-white-50">Classes, homework, and exam dates</div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="landing-feature-card p-3 h-100">
-                    <div class="fw-semibold fs-4">Focus</div>
-                    <div class="small text-white-50">Study sessions and productivity tools</div>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="landing-feature-card p-3 h-100">
-                    <div class="fw-semibold fs-4">Track</div>
-                    <div class="small text-white-50">Progress, reminders, and deadlines</div>
-                  </div>
-                </div>
-              </div>
+        <div class="hero__visual" aria-hidden="true">
+          <div class="mock-window">
+            <div class="mock-window__bar">
+              <span></span><span></span><span></span>
+              <p>smartclass.dashboard</p>
             </div>
+            <div class="mock-window__body">
+              <div class="mock-card mock-card--wide">
+                <p class="mock-card__label">Student Dashboard</p>
+                <div class="mock-progress"><div class="mock-progress__fill" style="width:72%"></div></div>
+                <p class="mock-card__meta">Progress overview <span class="tag tag--sample">sample</span></p>
+              </div>
 
-            <div class="col-lg-5">
-              <div class="card landing-panel border-0 overflow-hidden">
-                <div class="card-body p-4 p-md-5 text-body">
-                  <div class="mb-4">
-                    <span class="badge text-bg-primary-subtle text-primary-emphasis rounded-pill px-3 py-2 mb-3">Everything for school, in one place</span>
-                    <h2 class="h3 fw-bold mb-2">Your all-in-one study dashboard</h2>
-                    <p class="text-muted mb-0">Open the dashboard, manage tasks, and build a study routine that actually holds up.</p>
-                  </div>
+              <div class="mock-row">
+                <div class="mock-card mock-card--chat">
+                  <p class="mock-card__label">AI Assistant</p>
+                  <p class="mock-chat mock-chat--in">Ask a question to see academic guidance here.</p>
+                  <p class="mock-chat mock-chat--out">AI responses will appear here after Groq integration is connected.</p>
+                </div>
+                <div class="mock-card mock-card--stack">
+                  <p class="mock-card__label">Upcoming Quiz</p>
+                  <p class="mock-card__title">Quiz details will appear here</p>
+                  <p class="mock-card__meta">Timed assessment <span class="tag tag--sample">sample</span></p>
+                </div>
+              </div>
 
-                  <div class="d-grid gap-3 mb-4">
-                    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg fw-semibold py-3">
-                      <i class="fas fa-sign-in-alt me-2"></i>Login
-                    </a>
-                    <a href="{{ url_for('signup') }}" class="btn btn-outline-primary btn-lg fw-semibold py-3">
-                      <i class="fas fa-user-plus me-2"></i>Sign up
-                    </a>
-                  </div>
-
-                  <div class="row g-3 text-center">
-                    <div class="col-4">
-                      <div class="landing-metric h-100">
-                        <div class="metric-icon mb-2"><i class="fas fa-calendar-check"></i></div>
-                        <div class="fw-bold">Calendar</div>
-                        <small class="text-muted">Plan your week</small>
-                      </div>
-                    </div>
-                    <div class="col-4">
-                      <div class="landing-metric h-100">
-                        <div class="metric-icon mb-2"><i class="fas fa-bell"></i></div>
-                        <div class="fw-bold">Alerts</div>
-                        <small class="text-muted">Never miss due dates</small>
-                      </div>
-                    </div>
-                    <div class="col-4">
-                      <div class="landing-metric h-100">
-                        <div class="metric-icon mb-2"><i class="fas fa-bullseye"></i></div>
-                        <div class="fw-bold">Focus</div>
-                        <small class="text-muted">Study with intent</small>
-                      </div>
-                    </div>
-                  </div>
+              <div class="mock-card">
+                <p class="mock-card__label">Assignments &amp; Quizzes</p>
+                <div class="mock-list">
+                  <div class="mock-list__row"><span>Assignment title</span><span class="tag tag--due">Due date</span></div>
+                  <div class="mock-list__row"><span>Quiz title</span><span class="tag tag--sample">sample</span></div>
+                  <div class="mock-list__row"><span>Group report</span><span class="tag tag--ok">Submitted</span></div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="features" class="landing-section pt-0">
-        <div class="container">
-          <div class="landing-section-title mb-4">
-            <p class="landing-kicker mb-2 opacity-75">The productivity method</p>
-            <h2 class="fw-bold mb-2">A simple flow that helps students stay ahead</h2>
-            <p class="mb-0 opacity-75">The page is structured like a modern student-productivity homepage: a strong promise, clear benefits, and a final action to log in or create an account.</p>
+    <!-- ============ PROBLEM SECTION ============ -->
+    <section class="section section--paper" id="problem">
+      <div class="container">
+        <p class="eyebrow eyebrow--center">the problem</p>
+        <h2 class="section__heading section__heading--center">Traditional Classroom Management Has a Problem</h2>
+
+        <div class="grid grid--5">
+          <article class="problem-card">
+            <span class="problem-card__icon" aria-hidden="true">🗂️</span>
+            <h3>Scattered Resources</h3>
+            <p>Notes, assignments, quizzes and resources are distributed across different platforms.</p>
+          </article>
+          <article class="problem-card">
+            <span class="problem-card__icon" aria-hidden="true">💬</span>
+            <h3>Communication Gaps</h3>
+            <p>Faculty and students struggle to maintain organized academic communication.</p>
+          </article>
+          <article class="problem-card">
+            <span class="problem-card__icon" aria-hidden="true">🧾</span>
+            <h3>Manual Management</h3>
+            <p>Faculty spend significant time managing students, groups, assignments and quizzes manually.</p>
+          </article>
+          <article class="problem-card">
+            <span class="problem-card__icon" aria-hidden="true">🎯</span>
+            <h3>Limited Personalization</h3>
+            <p>Students do not always receive personalized academic guidance.</p>
+          </article>
+          <article class="problem-card">
+            <span class="problem-card__icon" aria-hidden="true">📉</span>
+            <h3>Difficult Progress Tracking</h3>
+            <p>Tracking academic performance across multiple activities can be difficult.</p>
+          </article>
+        </div>
+
+        <p class="section__closer">We bring everything together in one intelligent platform.</p>
+      </div>
+    </section>
+
+    <!-- ============ SOLUTION SECTION ============ -->
+    <section class="section section--navy" id="solution">
+      <div class="container solution__grid">
+        <div>
+          <p class="eyebrow eyebrow--light">the solution</p>
+          <h2 class="section__heading section__heading--light">One Platform. One Classroom. <span class="mark mark--light">Smarter Learning.</span></h2>
+          <p class="solution__text">
+            SmartClass AI integrates classroom management, collaboration, productivity, analytics
+            and AI assistance into a single connected workspace — so faculty spend less time on
+            logistics, and students spend more time learning.
+          </p>
+        </div>
+
+        <div class="flow-diagram" aria-label="Faculty connects through SmartClass AI to Students">
+          <div class="flow-diagram__node">Faculty</div>
+          <div class="flow-diagram__arrow" aria-hidden="true"></div>
+          <div class="flow-diagram__node flow-diagram__node--brand">SmartClass AI</div>
+          <div class="flow-diagram__arrow" aria-hidden="true"></div>
+          <div class="flow-diagram__node">Students</div>
+
+          <div class="flow-diagram__tags">
+            <span>Learning</span><span>Collaboration</span><span>Management</span><span>AI</span><span>Analytics</span>
           </div>
+        </div>
+      </div>
+    </section>
 
-          <div class="row g-4">
-            <div class="col-md-4">
-              <div class="landing-step">
-                <div class="landing-step-number mb-3">1</div>
-                <h3 class="h5 fw-bold">Get organized</h3>
-                <p class="text-muted mb-0">Put your subjects, deadlines, and study blocks in one place with a planner built around academic life.</p>
-              </div>
+    <!-- ============ FEATURES SECTION ============ -->
+    <section class="section" id="features">
+      <div class="container">
+        <p class="eyebrow eyebrow--center">the platform</p>
+        <h2 class="section__heading section__heading--center">Everything You Need for a Smarter Classroom</h2>
+
+        <div class="grid grid--4 feature-grid">
+          <!-- 16 feature cards -->
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🧠</span><h3>AI Quiz Generator</h3><p>Generate practice quizzes by subject, topic, and difficulty.</p></article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🗓️</span><h3>AI Study Planner</h3><p>Build a personalized study schedule around your exams and free time.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">📝</span><h3>Assignments</h3><p>Create, assign, and track assignments for classes, groups, or individuals.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">❓</span><h3>Quizzes</h3><p>Build timed MCQ quizzes and instantly view student scores.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">🏫</span><h3>Smart Classroom Management</h3><p>Create classrooms and manage everything from one place with a unique join code.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">👥</span><h3>Student Groups</h3><p>Organize students into project groups in a few clicks.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">📚</span><h3>Notes &amp; Resources</h3><p>Share PDFs, documents, and reference materials with your class.</p></article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🤖</span><h3>AI Chatbot</h3><p>Get instant academic help, explanations, and coding assistance.</p></article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">📄</span><h3>AI Note Summarizer</h3><p>Turn long notes into concise, revision-ready summaries.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">📊</span><h3>Progress Analytics</h3><p>Visualize quiz scores, submissions, and academic trends over time.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">⏰</span><h3>Timetable Generator</h3><p>Generate a personal weekly timetable around your college schedule.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">💬</span><h3>Group Discussions</h3><p>A private space for each group to coordinate project work.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">🗒️</span><h3>Personal Workspace</h3><p>Manage personal notes, to-dos, and study plans in one place.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">⏱️</span><h3>Focus Timer</h3><p>Stay on task with focus sessions, breaks, and session tracking.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">✉️</span><h3>Faculty Communication</h3><p>Reach faculty directly with academic questions and project queries.</p></article>
+          <article class="feature-card"><span class="feature-card__icon">🔔</span><h3>Notifications</h3><p>Never miss a deadline, quiz, or faculty announcement.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ AI ASSISTANT SECTION ============ -->
+    <section class="section section--ai" id="ai-assistant">
+      <div class="container ai__grid">
+        <div class="ai__copy">
+          <p class="eyebrow eyebrow--light">ai academic assistant</p>
+          <h2 class="section__heading section__heading--light">Meet Your AI Academic Assistant</h2>
+          <p class="ai__text">Your personal AI-powered learning companion is available whenever you need help.</p>
+
+          <ul class="ai__list">
+            <li>Ask Questions</li>
+            <li>Summarize Notes</li>
+            <li>Generate Quizzes</li>
+            <li>Explain Concepts</li>
+            <li>Get Study Suggestions</li>
+            <li>Coding Assistance</li>
+          </ul>
+
+          <a href="#ai-assistant" class="btn btn--accent btn--lg" data-demo>Try AI Assistant</a>
+          <p class="ai__note">AI features are planned to connect through the Groq API in the next phase. This landing page is a frontend preview only.</p>
+        </div>
+
+        <div class="ai__preview" aria-hidden="true">
+          <div class="mock-window mock-window--dark">
+            <div class="mock-window__bar">
+              <span></span><span></span><span></span>
+              <p>ai.assistant</p>
             </div>
-            <div class="col-md-4">
-              <div class="landing-step">
-                <div class="landing-step-number mb-3">2</div>
-                <h3 class="h5 fw-bold">Stay ahead</h3>
-                <p class="text-muted mb-0">Track what is due, what is next, and what needs your attention before it turns into a missed deadline.</p>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="landing-step">
-                <div class="landing-step-number mb-3">3</div>
-                <h3 class="h5 fw-bold">Work productively</h3>
-                <p class="text-muted mb-0">Use focus tools and visible progress to keep momentum and make study time feel less overwhelming.</p>
-              </div>
+            <div class="mock-window__body">
+              <p class="mock-chat mock-chat--in">Explain a concept in simple language.</p>
+              <p class="mock-chat mock-chat--out">AI responses will appear here once the Groq API is connected.</p>
+              <p class="tag tag--sample">preview conversation</p>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="landing-section pt-0">
-        <div class="container">
-          <div class="row g-4 align-items-center">
-            <div class="col-lg-5">
-              <div class="landing-quote p-4 p-md-5">
-                <p class="landing-kicker mb-2 text-primary">Goodbye chaos. Hello control.</p>
-                <h2 class="fw-bold mb-3 text-body">Stop bouncing between calendars, reminders, and separate study apps.</h2>
-                <p class="text-muted mb-0">
-                  This planner keeps your academic life in one dashboard so you can spend less time organizing and more time doing the work.
-                </p>
-              </div>
-            </div>
+    <!-- ============ FACULTY vs STUDENT SECTION ============ -->
+    <section class="section section--paper" id="about">
+      <div class="container">
+        <p class="eyebrow eyebrow--center">built for both sides of the classroom</p>
+        <h2 class="section__heading section__heading--center">Faculty vs Student</h2>
 
-            <div class="col-lg-7">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <div class="landing-metric h-100">
-                    <div class="metric-icon mb-2"><i class="fas fa-clock"></i></div>
-                    <div class="fw-bold mb-1">Focus timer</div>
-                    <small class="text-muted">Timed study sessions that keep you on track.</small>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="landing-metric h-100">
-                    <div class="metric-icon mb-2"><i class="fas fa-list-check"></i></div>
-                    <div class="fw-bold mb-1">Task manager</div>
-                    <small class="text-muted">Assignments, deadlines, and priorities in one view.</small>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="landing-metric h-100">
-                    <div class="metric-icon mb-2"><i class="fas fa-chart-line"></i></div>
-                    <div class="fw-bold mb-1">Progress tracking</div>
-                    <small class="text-muted">See what you have completed and what still needs attention.</small>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="landing-metric h-100">
-                    <div class="metric-icon mb-2"><i class="fas fa-bell"></i></div>
-                    <div class="fw-bold mb-1">Smart reminders</div>
-                    <small class="text-muted">Keep exams, tasks, and study goals in sight.</small>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div class="ledger">
+          <article class="ledger__side">
+            <h3 class="ledger__title">Faculty</h3>
+            <ul class="ledger__list">
+              <li>Create classrooms</li>
+              <li>Manage students</li>
+              <li>Create groups</li>
+              <li>Assign projects</li>
+              <li>Create quizzes</li>
+              <li>Upload notes</li>
+              <li>Track submissions</li>
+              <li>Monitor performance</li>
+              <li>Communicate with students</li>
+            </ul>
+          </article>
+
+          <div class="ledger__divider" aria-hidden="true"></div>
+
+          <article class="ledger__side ledger__side--student">
+            <h3 class="ledger__title">Student</h3>
+            <ul class="ledger__list">
+              <li>Join classrooms</li>
+              <li>Access notes</li>
+              <li>Submit assignments</li>
+              <li>Attempt quizzes</li>
+              <li>Join project groups</li>
+              <li>Chat with faculty</li>
+              <li>Use AI assistant</li>
+              <li>Track progress</li>
+              <li>Create study plans</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section" id="how-it-works">
+      <div class="container">
+        <p class="eyebrow eyebrow--center">how it works</p>
+        <h2 class="section__heading section__heading--center">How It Works</h2>
+
+        <div class="steps">
+          <div class="steps__line" aria-hidden="true"></div>
+          <article class="step">
+            <span class="step__num">01</span>
+            <h3>Create / Join Classroom</h3>
+            <p>Faculty creates a classroom and students join using a classroom code.</p>
+          </article>
+          <article class="step">
+            <span class="step__num">02</span>
+            <h3>Learn &amp; Collaborate</h3>
+            <p>Students access notes, assignments, quizzes, groups and resources.</p>
+          </article>
+          <article class="step">
+            <span class="step__num">03</span>
+            <h3>Use AI</h3>
+            <p>Students use AI for questions, summaries, quizzes and study planning.</p>
+          </article>
+          <article class="step">
+            <span class="step__num">04</span>
+            <h3>Track Progress</h3>
+            <p>Students and faculty monitor academic performance through analytics and dashboards.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ANALYTICS SECTION ============ -->
+    <section class="section section--navy" id="analytics">
+      <div class="container">
+        <p class="eyebrow eyebrow--light">progress analytics</p>
+        <h2 class="section__heading section__heading--light section__heading--center">See Academic Progress at a Glance</h2>
+        <p class="section__closer section__closer--light">Illustrative dashboard preview — <span class="tag tag--sample">preview</span>, not connected to a live account.</p>
+
+        <div class="analytics-grid">
+          <div class="chart-card">
+            <p class="chart-card__title">Quiz Performance</p>
+            <canvas id="chartQuiz" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <p class="chart-card__title">Assignment Completion</p>
+            <canvas id="chartAssignments" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <p class="chart-card__title">Subject-wise Performance</p>
+            <canvas id="chartSubjects" height="180"></canvas>
+          </div>
+          <div class="chart-card">
+            <p class="chart-card__title">Weekly Progress</p>
+            <canvas id="chartWeekly" height="180"></canvas>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="landing-section pt-0">
-        <div class="container">
-          <div class="landing-section-title mb-4">
-            <p class="landing-kicker mb-2 opacity-75">Frequently asked questions</p>
-            <h2 class="fw-bold mb-2">What students usually want to know</h2>
-          </div>
+    <!-- ============ BENEFITS SECTION ============ -->
+    <section class="section section--paper" id="benefits">
+      <div class="container">
+        <p class="eyebrow eyebrow--center">why smartclass ai</p>
+        <h2 class="section__heading section__heading--center">Why SmartClass AI?</h2>
 
-          <div class="accordion landing-faq" id="landingFaq">
-            <div class="accordion-item mb-3">
-              <h2 class="accordion-header" id="faqOne">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqOneBody">
-                  What can I do with this planner?
-                </button>
-              </h2>
-              <div id="faqOneBody" class="accordion-collapse collapse" data-bs-parent="#landingFaq">
-                <div class="accordion-body text-muted">You can organize subjects, manage tasks, view schedules, and keep your study routine in one app.</div>
-              </div>
-            </div>
-
-            <div class="accordion-item mb-3">
-              <h2 class="accordion-header" id="faqTwo">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqTwoBody">
-                  Do I need to set up everything at once?
-                </button>
-              </h2>
-              <div id="faqTwoBody" class="accordion-collapse collapse" data-bs-parent="#landingFaq">
-                <div class="accordion-body text-muted">No. You can start with a few subjects or tasks and build your planner as your schedule grows.</div>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <h2 class="accordion-header" id="faqThree">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faqThreeBody">
-                  What should I do next?
-                </button>
-              </h2>
-              <div id="faqThreeBody" class="accordion-collapse collapse" data-bs-parent="#landingFaq">
-                <div class="accordion-body text-muted">Log in if you already have an account, or create one now to start planning your study life.</div>
-              </div>
-            </div>
-          </div>
+        <div class="grid grid--4">
+          <div class="benefit"><span class="benefit__icon">🏛️</span><p>Centralized Classroom Management</p></div>
+          <div class="benefit"><span class="benefit__icon">🪶</span><p>Reduced Faculty Workload</p></div>
+          <div class="benefit"><span class="benefit__icon">🗃️</span><p>Better Student Organization</p></div>
+          <div class="benefit"><span class="benefit__icon">🎯</span><p>Personalized AI Assistance</p></div>
+          <div class="benefit"><span class="benefit__icon">🤝</span><p>Improved Collaboration</p></div>
+          <div class="benefit"><span class="benefit__icon">⚡</span><p>Faster Academic Communication</p></div>
+          <div class="benefit"><span class="benefit__icon">📈</span><p>Better Progress Tracking</p></div>
+          <div class="benefit"><span class="benefit__icon">🚀</span><p>Increased Student Productivity</p></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="landing-section pt-0 pb-5">
-        <div class="container">
-          <div class="card landing-panel border-0 text-center">
-            <div class="card-body p-4 p-md-5 text-body">
-              <p class="landing-kicker mb-2 text-primary">Ready to get started?</p>
-              <h2 class="fw-bold mb-3">Take control of your school life with one focused planner.</h2>
-              <p class="text-muted mb-4 mx-auto" style="max-width: 42rem;">
-                Open the login page to continue, or create a new account and build your study system from the ground up.
-              </p>
-              <div class="d-flex flex-wrap justify-content-center gap-3">
-                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg fw-semibold px-4">
-                  <i class="fas fa-right-to-bracket me-2"></i>Log in
-                </a>
-                <a href="{{ url_for('signup') }}" class="btn btn-outline-primary btn-lg fw-semibold px-4">
-                  Create account
-                </a>
-              </div>
-            </div>
-          </div>
+    <!-- ============ CTA SECTION ============ -->
+    <section class="cta" id="get-started">
+      <div class="container cta__inner">
+        <h2>Ready to Build a Smarter Classroom?</h2>
+        <p>Bring teaching, learning, collaboration and AI together in one platform.</p>
+        <div class="cta__actions">
+          <a href="/html/signup.html" class="btn btn--primary btn--lg">Get Started</a>
+          <a href="#features" class="btn btn--outline btn--lg">Explore SmartClass AI</a>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   </main>
 
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer" id="contact">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <p class="navbar__logo-text footer__logo">SmartClass <em>AI</em></p>
+        <p>Smart technology for smarter education.</p>
+      </div>
+
+      <div class="footer__col">
+        <h4>Site</h4>
+        <a href="#home">Home</a>
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+      </div>
+
+      <div class="footer__col">
+        <h4>Account</h4>
+        <a href="/html/login.html">Login</a>
+        <a href="/html/signup.html">Register</a>
+      </div>
+
+      <div class="footer__col">
+        <h4>Technology</h4>
+        <p class="footer__tech">HTML · CSS · JavaScript · Python · FastAPI · SQLite · MySQL · Groq AI</p>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <p>© 2026 SmartClass AI. All Rights Reserved.</p>
+      <!-- <p class="footer__project-tag">Final-year Computer Science project — frontend preview.</p> -->
+    </div>
+  </footer>
+
+  <!-- Toast for "demo" notice on non-functional buttons -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+  <script src="/js/main.js"></script>
 </body>
 </html>

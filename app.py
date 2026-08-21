@@ -8,13 +8,15 @@ Visit:     http://127.0.0.1:5000
 """
 
 from flask import (Flask, render_template, request, redirect,
-                   url_for, session, jsonify, flash, make_response)
+                   url_for, session, jsonify, flash, make_response,
+                   send_from_directory, abort)
 import sqlite3
 import os
 import json
 import io
 import random
 import re
+import string
 import zipfile
 import tempfile
 from datetime import datetime, date, timedelta
@@ -68,6 +70,53 @@ def get_upload_folder():
     if _is_hosted_runtime():
         return os.path.join(tempfile.gettempdir(), "uploads", "avatars")
     return os.path.join(BASE_DIR, "static", "uploads", "avatars")
+
+
+def generate_class_code(class_name: str) -> str:
+    """Create a simple classroom code from a class name."""
+    letters = re.sub(r"[^A-Za-z]", "", (class_name or "").upper())
+    digits = re.sub(r"[^0-9]", "", (class_name or ""))
+
+    if letters and digits:
+        return (letters[:3] + digits[:3]).upper()[:6]
+    if letters:
+        return (letters[:6]).upper()
+
+    return "CLASS" + "".join(secrets.choice(string.digits) for _ in range(3))
+
+
+def generate_unique_class_code(class_name: str, conn, max_attempts: int = 8) -> str:
+    """Generate a short, human-friendly class code and ensure it's unique in DB.
+
+    Tries a few deterministic variants from the class name then falls back to
+    random alphanumeric codes. Uses the provided DB connection `conn` to
+    check uniqueness.
+    """
+    base = generate_class_code(class_name) or "CLASS"
+    # normalized form of the class name to avoid producing an identical code
+    norm_name = re.sub(r"[^A-Z0-9]", "", (class_name or "").upper())
+    charset = string.ascii_uppercase + string.digits
+
+    for attempt in range(max_attempts):
+        if attempt == 0:
+            candidate = base[:8]
+        else:
+            suffix = "".join(secrets.choice(charset) for _ in range(3))
+            candidate = (base[:5] + suffix).upper()[:8]
+
+        exists = conn.execute("SELECT 1 FROM classrooms WHERE class_code=?", (candidate,)).fetchone()
+        # Ensure the candidate is not identical to a normalized class name
+        cand_norm = re.sub(r"[^A-Z0-9]", "", candidate.upper())
+        if not exists and cand_norm != norm_name:
+            return candidate
+
+    # As a last resort, use a slightly longer random token to guarantee uniqueness
+    while True:
+        candidate = "C" + secrets.token_hex(3).upper()
+        cand_norm = re.sub(r"[^A-Z0-9]", "", candidate.upper())
+        exists = conn.execute("SELECT 1 FROM classrooms WHERE class_code=?", (candidate,)).fetchone()
+        if not exists and cand_norm != norm_name:
+            return candidate
 
 
 # Password reset tokens table creation
@@ -757,6 +806,7 @@ def init_db():
             name       TEXT    NOT NULL,
             email      TEXT    UNIQUE NOT NULL,
             password   TEXT    NOT NULL,
+            user_type  TEXT    NOT NULL DEFAULT 'student',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -814,13 +864,77 @@ def init_db():
             created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS classrooms (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            faculty_id  INTEGER NOT NULL,
+            class_name  TEXT    NOT NULL,
+            class_code  TEXT    NOT NULL UNIQUE,
+            created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (faculty_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS classroom_members (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            classroom_id  INTEGER NOT NULL,
+            student_id    INTEGER NOT NULL,
+            joined_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(classroom_id, student_id),
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
+            FOREIGN KEY (student_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS classroom_assignments (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            classroom_id    INTEGER NOT NULL,
+            faculty_id      INTEGER NOT NULL,
+            student_id      INTEGER NOT NULL,
+            task_name       TEXT    NOT NULL,
+            subject         TEXT    NOT NULL,
+            deadline        DATE    NOT NULL,
+            instructions    TEXT    DEFAULT '',
+            status          TEXT    DEFAULT 'Assigned',
+            borrowed        INTEGER DEFAULT 0,
+            started         INTEGER DEFAULT 0,
+            borrowed_task_id INTEGER DEFAULT NULL,
+            attachment_path TEXT DEFAULT '',
+            attachment_name TEXT DEFAULT '',
+            attachment_mime TEXT DEFAULT '',
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
+            FOREIGN KEY (faculty_id) REFERENCES users(id),
+            FOREIGN KEY (student_id) REFERENCES users(id),
+            FOREIGN KEY (borrowed_task_id) REFERENCES tasks(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS classroom_messages (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            classroom_id  INTEGER NOT NULL,
+            faculty_id    INTEGER NOT NULL,
+            student_id    INTEGER NOT NULL,
+            sender_id     INTEGER NOT NULL,
+            message       TEXT    NOT NULL,
+            read_by_faculty INTEGER DEFAULT 0,
+            read_by_student INTEGER DEFAULT 0,
+            attachment_path TEXT DEFAULT '',
+            attachment_name TEXT DEFAULT '',
+            attachment_mime TEXT DEFAULT '',
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
+            FOREIGN KEY (faculty_id) REFERENCES users(id),
+            FOREIGN KEY (student_id) REFERENCES users(id),
+            FOREIGN KEY (sender_id) REFERENCES users(id)
+        );
     """)
     conn.commit()
     conn.close()
-    # Ensure users table has daily_hours_allowed column for per-user daily limit
+    # Ensure users table has user_type and daily_hours_allowed columns for per-user settings
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     cols = [r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+    if 'user_type' not in cols:
+        conn.execute("ALTER TABLE users ADD COLUMN user_type TEXT NOT NULL DEFAULT 'student'")
+        conn.commit()
     if 'daily_hours_allowed' not in cols:
         conn.execute("ALTER TABLE users ADD COLUMN daily_hours_allowed REAL DEFAULT 6.0")
         conn.commit()
@@ -859,6 +973,42 @@ def init_db():
     if 'scheduled_time' not in cols:
         conn.execute("ALTER TABLE schedules ADD COLUMN scheduled_time TEXT")
         conn.commit()
+        columns = [row["name"] for row in conn.execute("PRAGMA table_info(users)").fetchall()]
+        if "user_type" not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN user_type TEXT NOT NULL DEFAULT 'student'")
+            conn.commit()
+    conn.close()
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(classroom_messages)").fetchall()]
+    if 'read_by_faculty' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN read_by_faculty INTEGER DEFAULT 0")
+    if 'read_by_student' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN read_by_student INTEGER DEFAULT 0")
+    if 'attachment_path' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN attachment_path TEXT DEFAULT ''")
+    if 'attachment_name' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN attachment_name TEXT DEFAULT ''")
+    if 'attachment_mime' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN attachment_mime TEXT DEFAULT ''")
+    # Ensure classroom_assignments has attachment columns
+    assign_cols = [r[1] for r in conn.execute("PRAGMA table_info(classroom_assignments)").fetchall()]
+    if 'attachment_path' not in assign_cols:
+        conn.execute("ALTER TABLE classroom_assignments ADD COLUMN attachment_path TEXT DEFAULT ''")
+    if 'attachment_name' not in assign_cols:
+        conn.execute("ALTER TABLE classroom_assignments ADD COLUMN attachment_name TEXT DEFAULT ''")
+    if 'attachment_mime' not in assign_cols:
+        conn.execute("ALTER TABLE classroom_assignments ADD COLUMN attachment_mime TEXT DEFAULT ''")
+    # Ensure tasks table supports attachments
+    task_cols = [r[1] for r in conn.execute("PRAGMA table_info(tasks)").fetchall()]
+    if 'attachment_path' not in task_cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN attachment_path TEXT DEFAULT ''")
+    if 'attachment_name' not in task_cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN attachment_name TEXT DEFAULT ''")
+    if 'attachment_mime' not in task_cols:
+        conn.execute("ALTER TABLE tasks ADD COLUMN attachment_mime TEXT DEFAULT ''")
+    conn.commit()
     conn.close()
 
 
@@ -1030,8 +1180,11 @@ def login():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        email    = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
+        email     = request.form.get("email", "").strip()
+        password  = request.form.get("password", "")
+        user_type = request.form.get("user_type", "student").strip().lower()
+        if user_type not in ("student", "faculty"):
+            user_type = "student"
 
         conn = get_db()
         user = conn.execute(
@@ -1040,13 +1193,20 @@ def login():
         conn.close()
 
         if user and check_password_hash(user["password"], password):
-            session["user_id"]   = user["id"]
-            session["user_name"] = user["name"]
-            session["user_avatar"] = (user["avatar"] if "avatar" in user.keys() else '') or ''
-            flash(f"Welcome back, {user['name']}! 🎉", "success")
-            return redirect(url_for("dashboard"))
-
-        flash("Invalid email or password.", "danger")
+            stored_type = safe_get(user, "user_type", "student").strip().lower()
+            if stored_type != user_type:
+                flash("Please select the correct role for this account.", "danger")
+            else:
+                session["user_id"]     = user["id"]
+                session["user_name"]   = user["name"]
+                session["user_type"]   = stored_type
+                session["user_avatar"] = (user["avatar"] if "avatar" in user.keys() else "") or ""
+                flash(f"Welcome back, {user['name']}! 🎉", "success")
+                if stored_type == "faculty":
+                    return redirect(url_for("faculty_dashboard"))
+                return redirect(url_for("dashboard"))
+        else:
+            flash("Invalid email or password.", "danger")
 
     return render_template("login.html")
 
@@ -1057,9 +1217,12 @@ def signup():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        name     = request.form.get("name", "").strip()
-        email    = request.form.get("email", "").strip()
-        password = request.form.get("password", "")
+        name      = request.form.get("name", "").strip()
+        email     = request.form.get("email", "").strip()
+        password  = request.form.get("password", "")
+        user_type = request.form.get("user_type", "student").strip().lower()
+        if user_type not in ("student", "faculty"):
+            user_type = "student"
 
         if len(password) < 6:
             flash("Password must be at least 6 characters.", "danger")
@@ -1069,8 +1232,8 @@ def signup():
         try:
             conn = get_db()
             conn.execute(
-                "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-                (name, email, hashed),
+                "INSERT INTO users (name, email, password, user_type) VALUES (?, ?, ?, ?)",
+                (name, email, hashed, user_type),
             )
             # Ensure daily_hours_allowed is set to default if column exists
             try:
@@ -1105,11 +1268,7 @@ def index():
     return render_template("index.html")
 
 
-# ── Dashboard ─────────────────────────────────────────────────────────────────
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    uid   = session["user_id"]
+def _build_dashboard_context(uid, user_type=None):
     today = date.today().strftime("%Y-%m-%d")
     conn  = get_db()
 
@@ -1155,7 +1314,6 @@ def dashboard():
     except Exception:
         daily_limit = 6.0
 
-    # Planned schedule hours for today
     planned_today = conn.execute(
         "SELECT COALESCE(SUM(study_hours),0) AS t FROM schedules WHERE user_id=? AND date=?",
         (uid, today),
@@ -1174,24 +1332,921 @@ def dashboard():
         (uid, today, today),
     ).fetchall()
 
+    if user_type == "faculty":
+        classroom_summary = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code, COUNT(cm.student_id) AS student_count
+               FROM classrooms c
+               LEFT JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE c.faculty_id=?
+               GROUP BY c.id
+               ORDER BY c.created_at DESC
+               LIMIT 3""",
+            (uid,),
+        ).fetchall()
+    else:
+        classroom_summary = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code, u.name AS faculty_name
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               JOIN users u ON u.id = c.faculty_id
+               WHERE cm.student_id=?
+               ORDER BY c.created_at DESC
+               LIMIT 3""",
+            (uid,),
+        ).fetchall()
+
     conn.close()
 
+    return {
+        "today_schedule": today_schedule,
+        "pending_tasks": pending_tasks,
+        "completed_count": completed_count,
+        "total_tasks": total_tasks,
+        "productivity": productivity,
+        "today_hours": round(today_hours, 1),
+        "weekly_data": weekly_data,
+        "streak": streak,
+        "motivation": motivation,
+        "upcoming": upcoming,
+        "rescheduled_count": rescheduled_count,
+        "daily_limit": round(daily_limit, 1),
+        "planned_today": round(planned_today, 1),
+        "classroom_summary": classroom_summary,
+    }
+
+
+# ── Dashboard ─────────────────────────────────────────────────────────────────
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    if session.get("user_type") == "faculty":
+        return redirect(url_for("faculty_dashboard"))
+    context = _build_dashboard_context(session["user_id"], session.get("user_type"))
+    return render_template("dashboard.html", is_faculty=False, **context)
+
+
+@app.route("/faculty-dashboard")
+@login_required
+def faculty_dashboard():
+    if session.get("user_type") != "faculty":
+        return redirect(url_for("dashboard"))
+    context = _build_dashboard_context(session["user_id"], session.get("user_type"))
+    return render_template("dashboard.html", is_faculty=True, **context)
+
+
+@app.route("/classrooms", methods=["GET", "POST"])
+@login_required
+def classrooms():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+
+    if request.method == "POST":
+        if user_type == "faculty":
+            class_name = request.form.get("class_name", "").strip()
+            if not class_name:
+                flash("Please enter a classroom name.", "warning")
+                return redirect(url_for("classrooms"))
+
+            # Generate a unique class code using the DB to ensure no collisions.
+            class_code = generate_unique_class_code(class_name, conn)
+
+            conn.execute(
+                "INSERT INTO classrooms (faculty_id, class_name, class_code) VALUES (?, ?, ?)",
+                (uid, class_name, class_code),
+            )
+            conn.commit()
+            flash(f'Classroom "{class_name}" created. Share code: {class_code}', "success")
+            conn.close()
+            return redirect(url_for("classrooms"))
+
+        class_code = request.form.get("class_code", "").strip().upper()
+        if not class_code:
+            flash("Please enter a classroom code.", "warning")
+            conn.close()
+            return redirect(url_for("classrooms"))
+
+        classroom = conn.execute(
+            "SELECT * FROM classrooms WHERE class_code = ?",
+            (class_code,),
+        ).fetchone()
+
+        if not classroom:
+            flash("No classroom matches that code.", "danger")
+            conn.close()
+            return redirect(url_for("classrooms"))
+
+        already_member = conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+            (classroom["id"], uid),
+        ).fetchone()
+        if already_member:
+            flash(f"You are already enrolled in {classroom['class_name']}.", "info")
+            conn.close()
+            return redirect(url_for("classrooms"))
+
+        conn.execute(
+            "INSERT INTO classroom_members (classroom_id, student_id) VALUES (?, ?)",
+            (classroom["id"], uid),
+        )
+        conn.commit()
+        flash(f"You joined {classroom['class_name']} successfully.", "success")
+        conn.close()
+        return redirect(url_for("classrooms"))
+
+    selected_classroom = None
+    enrolled_students = []
+    selected_student_id = None
+    classroom_assignments = []
+    classroom_messages = []
+    faculty_contact = None
+
+    if user_type == "faculty":
+        created_classrooms = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code,
+                      COUNT(DISTINCT cm.student_id) AS student_count,
+                      COALESCE(SUM(CASE
+                          WHEN m.sender_id != c.faculty_id AND COALESCE(m.read_by_faculty, 0)=0 THEN 1
+                          ELSE 0
+                      END), 0) AS unread_count
+               FROM classrooms c
+               LEFT JOIN classroom_members cm ON cm.classroom_id = c.id
+               LEFT JOIN classroom_messages m ON m.classroom_id = c.id AND m.faculty_id = c.faculty_id
+               WHERE c.faculty_id=?
+               GROUP BY c.id
+               ORDER BY c.created_at DESC""",
+            (uid,),
+        ).fetchall()
+        joined_classrooms = []
+
+        requested_id = request.args.get("class_id", "").strip()
+        selected_id = None
+        if requested_id.isdigit():
+            selected_id = int(requested_id)
+        elif created_classrooms:
+            selected_id = created_classrooms[0]["id"]
+
+        if selected_id:
+            selected_classroom = conn.execute(
+                "SELECT id, class_name, class_code FROM classrooms WHERE id=? AND faculty_id=?",
+                (selected_id, uid),
+            ).fetchone()
+
+        if selected_classroom:
+            enrolled_students = conn.execute(
+                """SELECT u.id, u.name, u.email, cm.joined_at,
+                          (SELECT COUNT(*)
+                           FROM classroom_messages m
+                           WHERE m.classroom_id = cm.classroom_id
+                             AND m.faculty_id = ?
+                             AND m.student_id = u.id
+                             AND m.sender_id = u.id
+                             AND COALESCE(m.read_by_faculty, 0)=0) AS unread_count
+                   FROM classroom_members cm
+                   JOIN users u ON u.id = cm.student_id
+                   WHERE cm.classroom_id=?
+                   ORDER BY u.name COLLATE NOCASE""",
+                (uid, selected_classroom["id"]),
+            ).fetchall()
+
+            requested_student = request.args.get("student_id", "").strip()
+            if requested_student.isdigit() and any(s["id"] == int(requested_student) for s in enrolled_students):
+                selected_student_id = int(requested_student)
+            elif enrolled_students:
+                selected_student_id = enrolled_students[0]["id"]
+
+            classroom_assignments = conn.execute(
+                """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.instructions, ca.status,
+                          ca.borrowed, ca.started, ca.created_at, u.name AS student_name,
+                          COALESCE(ca.attachment_path,'') AS attachment_path,
+                          COALESCE(ca.attachment_name,'') AS attachment_name,
+                          COALESCE(ca.attachment_mime,'') AS attachment_mime
+                   FROM classroom_assignments ca
+                   JOIN users u ON u.id = ca.student_id
+                   WHERE ca.classroom_id=? AND ca.faculty_id=?
+                   ORDER BY ca.created_at DESC""",
+                (selected_classroom["id"], uid),
+            ).fetchall()
+
+            if selected_student_id:
+                conn.execute(
+                    """UPDATE classroom_messages
+                       SET read_by_faculty=1
+                       WHERE classroom_id=? AND faculty_id=? AND student_id=? AND sender_id!=?""",
+                    (selected_classroom["id"], uid, selected_student_id, uid),
+                )
+                conn.commit()
+                classroom_messages = conn.execute(
+                    """SELECT m.id, m.sender_id, m.message, m.created_at, u.name AS sender_name,
+                                 COALESCE(m.attachment_path,'') AS attachment_path,
+                                 COALESCE(m.attachment_name,'') AS attachment_name,
+                                 COALESCE(m.attachment_mime,'') AS attachment_mime
+                       FROM classroom_messages m
+                       JOIN users u ON u.id = m.sender_id
+                       WHERE m.classroom_id=? AND m.faculty_id=? AND m.student_id=?
+                       ORDER BY m.created_at ASC""",
+                    (selected_classroom["id"], uid, selected_student_id),
+                ).fetchall()
+    else:
+        created_classrooms = []
+        joined_classrooms = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code, c.faculty_id, u.name AS faculty_name,
+                      (SELECT COUNT(*)
+                       FROM classroom_messages m
+                       WHERE m.classroom_id = c.id
+                         AND m.student_id = ?
+                         AND m.sender_id = c.faculty_id
+                         AND COALESCE(m.read_by_student, 0)=0) AS unread_count
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               JOIN users u ON u.id = c.faculty_id
+               WHERE cm.student_id=?
+               ORDER BY c.created_at DESC""",
+            (uid, uid),
+        ).fetchall()
+
+        requested_id = request.args.get("class_id", "").strip()
+        selected_id = None
+        if requested_id.isdigit():
+            selected_id = int(requested_id)
+        elif joined_classrooms:
+            selected_id = joined_classrooms[0]["id"]
+
+        if selected_id:
+            selected_classroom = conn.execute(
+                """SELECT c.id, c.class_name, c.class_code, c.faculty_id, u.name AS faculty_name
+                   FROM classrooms c
+                   JOIN users u ON u.id = c.faculty_id
+                   JOIN classroom_members cm ON cm.classroom_id = c.id AND cm.student_id=?
+                   WHERE c.id=?""",
+                (uid, selected_id),
+            ).fetchone()
+
+        if selected_classroom:
+            faculty_contact = {
+                "id": selected_classroom["faculty_id"],
+                "name": selected_classroom["faculty_name"],
+            }
+
+            conn.execute(
+                """UPDATE classroom_messages
+                   SET read_by_student=1
+                   WHERE classroom_id=? AND faculty_id=? AND student_id=? AND sender_id!=?""",
+                (selected_classroom["id"], selected_classroom["faculty_id"], uid, uid),
+            )
+            conn.commit()
+
+            classroom_assignments = conn.execute(
+                """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.instructions, ca.status,
+                          ca.borrowed, ca.started, ca.created_at,
+                          COALESCE(ca.attachment_path,'') AS attachment_path,
+                          COALESCE(ca.attachment_name,'') AS attachment_name,
+                          COALESCE(ca.attachment_mime,'') AS attachment_mime
+                   FROM classroom_assignments ca
+                   WHERE ca.classroom_id=? AND ca.student_id=?
+                   ORDER BY ca.created_at DESC""",
+                (selected_classroom["id"], uid),
+            ).fetchall()
+
+            classroom_messages = conn.execute(
+                """SELECT m.id, m.sender_id, m.message, m.created_at, u.name AS sender_name,
+                             COALESCE(m.attachment_path,'') AS attachment_path,
+                             COALESCE(m.attachment_name,'') AS attachment_name,
+                             COALESCE(m.attachment_mime,'') AS attachment_mime
+                   FROM classroom_messages m
+                   JOIN users u ON u.id = m.sender_id
+                   WHERE m.classroom_id=? AND m.faculty_id=? AND m.student_id=?
+                   ORDER BY m.created_at ASC""",
+                (selected_classroom["id"], selected_classroom["faculty_id"], uid),
+            ).fetchall()
+
+    conn.close()
     return render_template(
-        "dashboard.html",
-        today_schedule=today_schedule,
-        pending_tasks=pending_tasks,
-        completed_count=completed_count,
-        total_tasks=total_tasks,
-        productivity=productivity,
-        today_hours=round(today_hours, 1),
-        weekly_data=weekly_data,
-        streak=streak,
-        motivation=motivation,
-        upcoming=upcoming,
-        rescheduled_count=rescheduled_count,
-        daily_limit=round(daily_limit,1),
-        planned_today=round(planned_today,1),
+        "classrooms.html",
+        user_type=user_type,
+        created_classrooms=created_classrooms,
+        joined_classrooms=joined_classrooms,
+        selected_classroom=selected_classroom,
+        enrolled_students=enrolled_students,
+        selected_student_id=selected_student_id,
+        classroom_assignments=classroom_assignments,
+        classroom_messages=classroom_messages,
+        faculty_contact=faculty_contact,
     )
+
+
+@app.route("/classrooms/enroll", methods=["POST"])
+@login_required
+def enroll_student_by_faculty():
+    if session.get("user_type") != "faculty":
+        flash("Only faculty can enroll students.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    classroom_id_raw = request.form.get("classroom_id", "").strip()
+    student_email = request.form.get("student_email", "").strip().lower()
+
+    if not classroom_id_raw.isdigit() or not student_email:
+        flash("Please choose a classroom and enter a student email.", "warning")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = int(classroom_id_raw)
+    conn = get_db()
+
+    classroom = conn.execute(
+        "SELECT id, class_name FROM classrooms WHERE id=? AND faculty_id=?",
+        (classroom_id, uid),
+    ).fetchone()
+    if not classroom:
+        conn.close()
+        flash("Classroom not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    student = conn.execute(
+        "SELECT id, name, user_type FROM users WHERE lower(email)=?",
+        (student_email,),
+    ).fetchone()
+    if not student:
+        conn.close()
+        flash("No user found with that email.", "danger")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    if student["user_type"] != "student":
+        conn.close()
+        flash("Only student accounts can be enrolled.", "warning")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    existing = conn.execute(
+        "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+        (classroom_id, student["id"]),
+    ).fetchone()
+    if existing:
+        conn.close()
+        flash(f"{student['name']} is already enrolled.", "info")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    conn.execute(
+        "INSERT INTO classroom_members (classroom_id, student_id) VALUES (?, ?)",
+        (classroom_id, student["id"]),
+    )
+    conn.commit()
+    conn.close()
+    flash(f"{student['name']} enrolled successfully.", "success")
+    return redirect(url_for("classrooms", class_id=classroom_id, student_id=student["id"]))
+
+
+@app.route("/classrooms/assign-task", methods=["POST"])
+@login_required
+def classroom_assign_task():
+    if session.get("user_type") != "faculty":
+        flash("Only faculty can assign classroom tasks.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    classroom_id_raw = request.form.get("classroom_id", "").strip()
+    target_student_raw = request.form.get("target_student_id", "all").strip()
+    task_name = request.form.get("task_name", "").strip()
+    subject = request.form.get("subject", "").strip() or "General"
+    deadline = request.form.get("deadline", "").strip()
+    instructions = request.form.get("instructions", "").strip()
+    attachment = request.files.get("attachment")
+    attachment_path = ''
+    attachment_name = ''
+    attachment_mime = ''
+    if attachment and attachment.filename:
+        save_dir = os.path.join(UPLOAD_FOLDER, 'classroom_attachments')
+        os.makedirs(save_dir, exist_ok=True)
+        fname = secure_filename(attachment.filename)
+        unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
+        dest = os.path.join(save_dir, unique)
+        attachment.save(dest)
+        attachment_path = os.path.join('classroom_attachments', unique)
+        attachment_name = attachment.filename
+        attachment_mime = attachment.mimetype or ''
+
+    if not classroom_id_raw.isdigit() or not all([task_name, deadline]):
+        flash("Please complete task name, deadline, and classroom.", "warning")
+        return redirect(url_for("classrooms"))
+
+    try:
+        deadline_dt = datetime.strptime(deadline, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Please choose a valid deadline date.", "danger")
+        return redirect(url_for("classrooms"))
+
+    if deadline_dt < date.today():
+        flash("Deadline cannot be in the past.", "warning")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = int(classroom_id_raw)
+    conn = get_db()
+    classroom = conn.execute(
+        "SELECT id, class_name FROM classrooms WHERE id=? AND faculty_id=?",
+        (classroom_id, uid),
+    ).fetchone()
+    if not classroom:
+        conn.close()
+        flash("Classroom not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    member_rows = conn.execute(
+        "SELECT student_id FROM classroom_members WHERE classroom_id=?",
+        (classroom_id,),
+    ).fetchall()
+    member_ids = [row["student_id"] for row in member_rows]
+
+    if not member_ids:
+        conn.close()
+        flash("No enrolled students found in this classroom.", "warning")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    if target_student_raw == "all":
+        targets = member_ids
+    elif target_student_raw.isdigit() and int(target_student_raw) in member_ids:
+        targets = [int(target_student_raw)]
+    else:
+        conn.close()
+        flash("Invalid student selected for assignment.", "danger")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    conn.executemany(
+        """INSERT INTO classroom_assignments
+           (classroom_id, faculty_id, student_id, task_name, subject, deadline, instructions, status,
+            attachment_path, attachment_name, attachment_mime)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'Assigned', ?, ?, ?)""",
+        [
+            (
+                classroom_id,
+                uid,
+                sid,
+                task_name,
+                subject,
+                deadline,
+                instructions,
+                attachment_path,
+                attachment_name,
+                attachment_mime,
+            )
+            for sid in targets
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+    if len(targets) == 1:
+        flash("Task assigned to selected student.", "success")
+        return redirect(url_for("classrooms", class_id=classroom_id, student_id=targets[0]))
+
+    flash(f"Task assigned to {len(targets)} students.", "success")
+    return redirect(url_for("classrooms", class_id=classroom_id))
+
+
+@app.route("/classrooms/chat/send", methods=["POST"])
+@login_required
+def classroom_send_message():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    classroom_id_raw = request.form.get("classroom_id", "").strip()
+    message = request.form.get("message", "").strip()
+    recipient_raw = request.form.get("recipient_student_id", "").strip()
+
+    if not classroom_id_raw.isdigit() or not message:
+        flash("Please choose a classroom and enter a message.", "warning")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = int(classroom_id_raw)
+    conn = get_db()
+
+    if user_type == "faculty":
+        classroom = conn.execute(
+            "SELECT id, faculty_id FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            flash("Classroom not found.", "danger")
+            return redirect(url_for("classrooms"))
+        # Allow faculty to send to a single student by id or broadcast to all students using 'all'
+        # Handle optional attachment for faculty messages
+        attachment = request.files.get("attachment")
+        attachment_path = ""
+        attachment_name = ""
+        attachment_mime = ""
+        if attachment and attachment.filename:
+            save_dir = os.path.join(UPLOAD_FOLDER, "classroom_messages")
+            os.makedirs(save_dir, exist_ok=True)
+            fname = secure_filename(attachment.filename)
+            unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
+            dest = os.path.join(save_dir, unique)
+            attachment.save(dest)
+            attachment_path = os.path.join("classroom_messages", unique)
+            attachment_name = attachment.filename
+            attachment_mime = attachment.mimetype or ""
+
+        # gather target student ids
+        if recipient_raw == "all":
+            member_rows = conn.execute(
+                "SELECT student_id FROM classroom_members WHERE classroom_id=?",
+                (classroom_id,),
+            ).fetchall()
+            targets = [r["student_id"] for r in member_rows]
+            if not targets:
+                conn.close()
+                flash("No enrolled students to send message.", "warning")
+                return redirect(url_for("classrooms", class_id=classroom_id))
+        elif recipient_raw.isdigit():
+            student_id = int(recipient_raw)
+            member = conn.execute(
+                "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+                (classroom_id, student_id),
+            ).fetchone()
+            if not member:
+                conn.close()
+                flash("Student is not part of this classroom.", "danger")
+                return redirect(url_for("classrooms", class_id=classroom_id))
+            targets = [student_id]
+        else:
+            conn.close()
+            flash("Select a student or choose 'All' to broadcast.", "warning")
+            return redirect(url_for("classrooms", class_id=classroom_id))
+
+        faculty_id = uid
+
+        # insert a message row for each target student
+        for sid in targets:
+            conn.execute(
+                """INSERT INTO classroom_messages
+                   (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
+                    attachment_path, attachment_name, attachment_mime)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    classroom_id,
+                    faculty_id,
+                    sid,
+                    uid,
+                    message,
+                    1,
+                    0,
+                    attachment_path,
+                    attachment_name,
+                    attachment_mime,
+                ),
+            )
+    else:
+        classroom = conn.execute(
+            """SELECT c.id, c.faculty_id
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE c.id=? AND cm.student_id=?""",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            flash("Classroom not found.", "danger")
+            return redirect(url_for("classrooms"))
+
+        faculty_id = classroom["faculty_id"]
+        student_id = uid
+
+        # Handle optional attachment for messages
+        attachment = request.files.get("attachment")
+        attachment_path = ''
+        attachment_name = ''
+        attachment_mime = ''
+        if attachment and attachment.filename:
+            save_dir = os.path.join(UPLOAD_FOLDER, 'classroom_messages')
+            os.makedirs(save_dir, exist_ok=True)
+            fname = secure_filename(attachment.filename)
+            unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
+            dest = os.path.join(save_dir, unique)
+            attachment.save(dest)
+            attachment_path = os.path.join('classroom_messages', unique)
+            attachment_name = attachment.filename
+            attachment_mime = attachment.mimetype or ''
+
+        conn.execute(
+            """INSERT INTO classroom_messages
+               (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
+                attachment_path, attachment_name, attachment_mime)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                classroom_id,
+                faculty_id,
+                student_id,
+                uid,
+                message,
+                1 if user_type == "faculty" else 0,
+                1 if user_type == "student" else 0,
+                attachment_path,
+                attachment_name,
+                attachment_mime,
+            ),
+        )
+    conn.commit()
+    conn.close()
+
+    # If faculty sent the message, only include `student_id` in the redirect
+    # when a single student was targeted. Broadcasting to all students should
+    # redirect to the classroom view without a specific student selected.
+    if user_type == "faculty":
+        try:
+            # If a single student was targeted, `recipient_raw` will be a digit
+            # and `student_id` will have been set earlier. Otherwise omit it.
+            if recipient_raw.isdigit():
+                return redirect(url_for("classrooms", class_id=classroom_id, student_id=int(recipient_raw)))
+        except Exception:
+            pass
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    return redirect(url_for("classrooms", class_id=classroom_id))
+
+
+@app.route("/classrooms/assignments/<int:assignment_id>/borrow", methods=["POST"])
+@login_required
+def borrow_classroom_assignment(assignment_id):
+    if session.get("user_type") != "student":
+        flash("Only students can borrow assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    assignment = conn.execute(
+         """SELECT ca.id, ca.classroom_id, ca.student_id, ca.task_name, ca.subject, ca.deadline,
+                ca.borrowed, ca.borrowed_task_id,
+                COALESCE(ca.attachment_path,'') AS attachment_path,
+                COALESCE(ca.attachment_name,'') AS attachment_name,
+                COALESCE(ca.attachment_mime,'') AS attachment_mime
+            FROM classroom_assignments ca
+           JOIN classroom_members cm ON cm.classroom_id = ca.classroom_id AND cm.student_id = ?
+           WHERE ca.id=? AND ca.student_id=?""",
+        (uid, assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    if int(assignment["borrowed"] or 0) == 1 and assignment["borrowed_task_id"]:
+        conn.close()
+        flash("Assignment already borrowed into your tasks.", "info")
+        return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
+
+    cursor = conn.execute(
+        "INSERT INTO tasks (user_id, task_name, subject, deadline, status, attachment_path, attachment_name, attachment_mime) VALUES (?,?,?,?,?,'Pending',?,?,?)",
+        (
+            uid,
+            assignment["task_name"],
+            assignment["subject"],
+            assignment["deadline"],
+            'Pending',
+            (assignment["attachment_path"] or "") if "attachment_path" in assignment.keys() else "",
+            (assignment["attachment_name"] or "") if "attachment_name" in assignment.keys() else "",
+            (assignment["attachment_mime"] or "") if "attachment_mime" in assignment.keys() else "",
+        ),
+    )
+    task_id = cursor.lastrowid
+    conn.execute(
+        "UPDATE classroom_assignments SET borrowed=1, borrowed_task_id=? WHERE id=?",
+        (task_id, assignment_id),
+    )
+    conn.commit()
+    conn.close()
+
+    flash("Assignment borrowed to your task list.", "success")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
+
+
+@app.route('/classrooms/attachment/<path:filepath>')
+@login_required
+def classroom_attachment_download(filepath):
+    # Prevent path traversal
+    if '..' in filepath or filepath.startswith('/') or filepath.startswith('\\'):
+        abort(400)
+    directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+    filename = os.path.basename(filepath)
+    # Ensure directory is inside UPLOAD_FOLDER
+    try:
+        if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
+            abort(400)
+    except Exception:
+        abort(400)
+    if not os.path.exists(os.path.join(directory, filename)):
+        abort(404)
+    return send_from_directory(directory, filename, as_attachment=True)
+
+
+@app.route('/classrooms/<int:class_id>/delete', methods=['POST'])
+@login_required
+def delete_classroom(class_id):
+    if session.get('user_type') != 'faculty':
+        flash('Only faculty can delete classrooms.', 'danger')
+        return redirect(url_for('classrooms'))
+    uid = session['user_id']
+    conn = get_db()
+    classroom = conn.execute('SELECT id, class_name FROM classrooms WHERE id=? AND faculty_id=?', (class_id, uid)).fetchone()
+    if not classroom:
+        conn.close()
+        flash('Classroom not found or not owned by you.', 'danger')
+        return redirect(url_for('classrooms'))
+
+    # Server-side confirmation: require exact classroom name match
+    confirm_name = (request.form.get('confirm_name') or '').strip()
+    expected_name = (classroom['class_name'] or '').strip()
+    if not confirm_name or confirm_name != expected_name:
+        conn.close()
+        flash('Classroom name confirmation did not match. Deletion cancelled.', 'warning')
+        return redirect(url_for('classrooms', class_id=class_id))
+
+    # Remove files referenced by assignments and messages
+    for row in conn.execute('SELECT attachment_path FROM classroom_assignments WHERE classroom_id=?', (class_id,)).fetchall():
+        ap = row['attachment_path'] if row and row['attachment_path'] else ''
+        if ap:
+            fpath = os.path.join(UPLOAD_FOLDER, ap)
+            try:
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+    for row in conn.execute('SELECT attachment_path FROM classroom_messages WHERE classroom_id=?', (class_id,)).fetchall():
+        ap = row['attachment_path'] if row and row['attachment_path'] else ''
+        if ap:
+            fpath = os.path.join(UPLOAD_FOLDER, ap)
+            try:
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+    # Delete DB rows
+    conn.execute('DELETE FROM classroom_messages WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM classroom_assignments WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM classroom_members WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM classrooms WHERE id=? AND faculty_id=?', (class_id, uid))
+    conn.commit()
+    conn.close()
+    flash('Classroom and its data deleted.', 'info')
+    return redirect(url_for('classrooms'))
+
+
+@app.route("/classrooms/assignments/<int:assignment_id>/play", methods=["POST"])
+@login_required
+def play_classroom_assignment(assignment_id):
+    if session.get("user_type") != "student":
+        flash("Only students can start classroom assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    assignment = conn.execute(
+        """SELECT ca.id, ca.classroom_id, ca.student_id, ca.borrowed_task_id
+           FROM classroom_assignments ca
+           JOIN classroom_members cm ON cm.classroom_id = ca.classroom_id AND cm.student_id = ?
+           WHERE ca.id=? AND ca.student_id=?""",
+        (uid, assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    conn.execute(
+        "UPDATE classroom_assignments SET started=1, status='In Progress' WHERE id=?",
+        (assignment_id,),
+    )
+
+    if assignment["borrowed_task_id"]:
+        conn.execute(
+            "UPDATE tasks SET status='Pending' WHERE id=? AND user_id=?",
+            (assignment["borrowed_task_id"], uid),
+        )
+
+    conn.commit()
+    conn.close()
+    flash("Assignment opened. Keep going!", "success")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
+
+
+@app.route("/classrooms/assignments/<int:assignment_id>/complete", methods=["POST"])
+@login_required
+def complete_classroom_assignment(assignment_id):
+    if session.get("user_type") != "student":
+        flash("Only students can complete classroom assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    assignment = conn.execute(
+        """SELECT ca.id, ca.classroom_id, ca.student_id, ca.borrowed_task_id
+           FROM classroom_assignments ca
+           JOIN classroom_members cm ON cm.classroom_id = ca.classroom_id AND cm.student_id = ?
+           WHERE ca.id=? AND ca.student_id=?""",
+        (uid, assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    conn.execute(
+        "UPDATE classroom_assignments SET status='Completed', started=1 WHERE id=?",
+        (assignment_id,),
+    )
+
+    if assignment["borrowed_task_id"]:
+        conn.execute(
+            "UPDATE tasks SET status='Completed' WHERE id=? AND user_id=?",
+            (assignment["borrowed_task_id"], uid),
+        )
+
+    conn.commit()
+    conn.close()
+    flash("Classroom assignment marked as completed.", "success")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
+
+
+@app.route("/classrooms/assignments/<int:assignment_id>/edit", methods=["POST"])
+@login_required
+def edit_classroom_assignment(assignment_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty can edit assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    task_name = request.form.get("task_name", "").strip()
+    subject = request.form.get("subject", "").strip() or "General"
+    deadline = request.form.get("deadline", "").strip()
+    instructions = request.form.get("instructions", "").strip()
+
+    if not all([task_name, deadline]):
+        flash("Task name and deadline are required.", "warning")
+        return redirect(url_for("classrooms"))
+
+    try:
+        deadline_dt = datetime.strptime(deadline, "%Y-%m-%d").date()
+    except ValueError:
+        flash("Please choose a valid deadline date.", "danger")
+        return redirect(url_for("classrooms"))
+
+    if deadline_dt < date.today():
+        flash("Deadline cannot be in the past.", "warning")
+        return redirect(url_for("classrooms"))
+
+    conn = get_db()
+    assignment = conn.execute(
+        """SELECT id, classroom_id, student_id
+           FROM classroom_assignments
+           WHERE id=? AND faculty_id=?""",
+        (assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    conn.execute(
+        """UPDATE classroom_assignments
+           SET task_name=?, subject=?, deadline=?, instructions=?
+           WHERE id=? AND faculty_id=?""",
+        (task_name, subject, deadline, instructions, assignment_id, uid),
+    )
+    conn.commit()
+    conn.close()
+    flash("Classroom assignment updated.", "success")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"], student_id=assignment["student_id"]))
+
+
+@app.route("/classrooms/assignments/<int:assignment_id>/delete", methods=["POST"])
+@login_required
+def delete_classroom_assignment(assignment_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty can delete assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    assignment = conn.execute(
+        "SELECT id, classroom_id, student_id FROM classroom_assignments WHERE id=? AND faculty_id=?",
+        (assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    conn.execute(
+        "DELETE FROM classroom_assignments WHERE id=? AND faculty_id=?",
+        (assignment_id, uid),
+    )
+    conn.commit()
+    conn.close()
+    flash("Classroom assignment deleted.", "info")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"], student_id=assignment["student_id"]))
 
 
 # ── Subjects ──────────────────────────────────────────────────────────────────
@@ -2084,8 +3139,27 @@ def settings():
             daily_limit, tf, ts, tl, tss = 6.0, 25, 5, 15, 4
     except Exception:
         daily_limit, tf, ts, tl, tss = 6.0, 25, 5, 15, 4
-    conn.close()
-    return render_template('settings.html', daily_limit=daily_limit, timer_focus=tf, timer_short=ts, timer_long=tl, timer_sessions_before_long=tss)
+    created_classrooms = []
+    try:
+        if session.get('user_type') == 'faculty':
+            created_classrooms = conn.execute(
+                "SELECT id, class_name, class_code FROM classrooms WHERE faculty_id=? ORDER BY created_at DESC",
+                (uid,),
+            ).fetchall()
+    except Exception:
+        created_classrooms = []
+    finally:
+        conn.close()
+
+    return render_template(
+        'settings.html',
+        daily_limit=daily_limit,
+        timer_focus=tf,
+        timer_short=ts,
+        timer_long=tl,
+        timer_sessions_before_long=tss,
+        created_classrooms=created_classrooms,
+    )
 
 
 @app.route('/forgot', methods=['GET', 'POST'])
@@ -2396,6 +3470,18 @@ def quiz():
         flash("Unsupported quiz action.", "danger")
 
     return render_template("quiz.html", quiz_history=quiz_history)
+
+
+@app.route("/codequest")
+@login_required
+def codequest():
+    return render_template("codequest.html")
+
+
+@app.route("/codequest/raw")
+@login_required
+def codequest_raw():
+    return send_from_directory(BASE_DIR, "codequest.html")
 
 
 @app.route("/quiz/export/<int:attempt_id>")

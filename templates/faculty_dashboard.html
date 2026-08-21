@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% block title %}Find your PG, your people, your city{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+  <div class="hero-orbit" aria-hidden="true"></div>
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow">Live in {{ stats.cities }}+ cities</span>
+      <h1>Your <span class="underline">new city</span>, sorted —<br>PG, essentials &amp; support in one map.</h1>
+      <p class="hero-sub">PG Buddy helps students find verified paying-guest housing, discover nearby shops, clinics and services, and get help fast — all in one place.</p>
+      <div class="hero-ctas">
+        <a href="#pg" class="btn btn-primary">Browse PGs</a>
+        <a href="{{ url_for('register') }}?role=pg_owner" class="btn btn-outline">List your property</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="num">{{ stats.pgs }}+</div><div class="label">Verified PGs</div></div>
+        <div class="hero-stat"><div class="num">{{ stats.businesses }}+</div><div class="label">Local services</div></div>
+        <div class="hero-stat"><div class="num">{{ stats.students }}+</div><div class="label">Students onboard</div></div>
+      </div>
+    </div>
+
+    <!-- Signature element: one console, three category-aware search modes -->
+    <form class="search-console" action="{{ url_for('pg_search') }}" method="get">
+      <div class="console-tabs" role="tablist" aria-label="Search category">
+        <button type="button" class="console-tab active" data-target="pg" role="tab" aria-selected="true">🏠 PG</button>
+        <button type="button" class="console-tab" data-target="other" role="tab" aria-selected="false">🛍️ Other</button>
+        <button type="button" class="console-tab" data-target="medical" role="tab" aria-selected="false">🏥 Medical</button>
+      </div>
+
+      <div class="console-panel active" id="panel-pg">
+        <div class="console-row">
+          <div class="console-field">
+            <label for="pg-city">City</label>
+            <input id="pg-city" name="city" type="text" placeholder="e.g. Pune" value="Pune">
+          </div>
+          <div class="console-field">
+            <label for="pg-gender">Preference</label>
+            <select id="pg-gender" name="gender">
+              <option value="">Any</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="co-ed">Co-ed</option>
+            </select>
+          </div>
+        </div>
+        <div class="console-field">
+          <label for="pg-budget">Max budget / month</label>
+          <input id="pg-budget" name="budget" type="number" placeholder="e.g. 10000">
+        </div>
+        <button type="submit" class="btn btn-accent btn-block console-submit">Search PGs</button>
+      </div>
+
+      <div class="console-panel" id="panel-other">
+        <div class="console-field">
+          <label for="other-type">Looking for</label>
+          <select id="other-type" name="category">
+            <option value="shop">Shops</option>
+            <option value="business">Businesses &amp; services</option>
+          </select>
+        </div>
+        <div class="console-field">
+          <label for="other-city">Near</label>
+          <input id="other-city" name="city" type="text" placeholder="e.g. Baner, Pune" value="Pune">
+        </div>
+        <button type="submit" class="btn btn-accent btn-block console-submit">Discover nearby</button>
+      </div>
+
+      <div class="console-panel" id="panel-medical">
+        <div class="console-field">
+          <label for="med-city">Area</label>
+          <input id="med-city" name="city" type="text" placeholder="e.g. Kothrud, Pune" value="Pune">
+        </div>
+        <div class="console-field">
+          <label for="med-type">Type</label>
+          <select id="med-type" name="type">
+            <option value="">All</option>
+            <option value="clinic">Clinic</option>
+            <option value="pharmacy">Pharmacy</option>
+            <option value="hospital">Hospital</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block console-submit">Find medical help</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ============================ PG section ============================ -->
+<section class="section" id="pg">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">01 · Housing</span>
+        <h2>PGs students are booking now</h2>
+        <p>Verified listings with real seat counts — no more calling five numbers to find one that's actually available.</p>
+      </div>
+      <a href="{{ url_for('pg_search') }}" class="section-link">View all PGs →</a>
+    </div>
+
+    <div class="card-grid">
+      {% for pg in featured_pgs %}
+      <article class="pg-card">
+        <div class="card-media">
+          <span class="media-icon">🏠</span>
+          {% if pg.available_seats > 0 %}
+            <span class="seat-pill">{{ pg.available_seats }} seats left</span>
+          {% else %}
+            <span class="seat-pill full">Full</span>
+          {% endif %}
+          <span class="category-pill">{{ pg.gender_preference }}</span>
+        </div>
+        <div class="card-body">
+          <h3>{{ pg.name }}</h3>
+          <div class="card-meta">📍 {{ pg.address }}, {{ pg.city }}</div>
+          <p class="card-desc">{{ pg.description }}</p>
+          <div class="card-foot">
+            <div class="price-tag mono">₹{{ "{:,}".format(pg.price) }}<span>/mo</span></div>
+            <div class="rating">★ {{ pg.rating }}</div>
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <div class="empty-state">No PGs listed yet — be the first owner to add one.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================ Other section ============================ -->
+<section class="section section-alt" id="other">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">02 · Nearby</span>
+        <h2>Everything within walking distance</h2>
+        <p>Shops, businesses and services near your PG — added and kept up to date by the owners themselves.</p>
+      </div>
+    </div>
+
+    <div class="cat-strip">
+      <div class="cat-tile"><span class="cat-icon">🛍️</span><h4>Shops</h4><p>Stationery, groceries, printouts and daily essentials.</p></div>
+      <div class="cat-tile"><span class="cat-icon">💼</span><h4>Businesses</h4><p>Laundry, tailoring, tuition centres, salons and more.</p></div>
+      <div class="cat-tile"><span class="cat-icon">🏥</span><h4>Medical</h4><p>Clinics, pharmacies and diagnostic centres nearby.</p></div>
+    </div>
+
+    <div class="card-grid">
+      {% for biz in (shops + services + medical) %}
+      <article class="biz-card">
+        <div class="card-media">
+          <span class="media-icon">
+            {% if biz.category == 'shop' %}🛍️{% elif biz.category == 'business' %}💼{% else %}🏥{% endif %}
+          </span>
+          <span class="category-pill">{{ biz.category }}</span>
+        </div>
+        <div class="card-body">
+          <h3>{{ biz.name }}</h3>
+          <div class="card-meta">📍 {{ biz.address }}, {{ biz.city }}</div>
+          <p class="card-desc">{{ biz.description }}</p>
+          <div class="card-foot">
+            <div class="card-meta mono">🕑 {{ biz.timings }}</div>
+            <div class="rating">★ {{ biz.rating }}</div>
+          </div>
+        </div>
+      </article>
+      {% else %}
+      <div class="empty-state">No local listings yet — owners can add their business in minutes.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ============================ Features ============================ -->
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">Why PG Buddy</span>
+        <h2>Built for the first weeks in a new city</h2>
+      </div>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="feature-icon">🔍</div>
+        <h4>Real-time seats</h4>
+        <p>Availability updates as owners enroll students — no dead listings.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🗺️</div>
+        <h4>Map-first discovery</h4>
+        <p>See PGs and essentials plotted relative to your campus or office.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">💬</div>
+        <h4>Direct messaging</h4>
+        <p>Talk to PG and business owners without leaving the app.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🆘</div>
+        <h4>Support, always on</h4>
+        <p>Emergency numbers, complaints and student resources in one tab.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ How it works ============================ -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">How it works</span>
+        <h2>From search to move-in, in four steps</h2>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step"><h4>Search &amp; filter</h4><p>Set your city, budget and preferences to shortlist PGs.</p></div>
+      <div class="step"><h4>Compare &amp; message</h4><p>Check photos, amenities and reviews, then message the owner.</p></div>
+      <div class="step"><h4>Enroll online</h4><p>Reserve your seat and track your enrollment from your dashboard.</p></div>
+      <div class="step"><h4>Settle in</h4><p>Find nearby shops, clinics and support the moment you move in.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ Owner CTA ============================ -->
+<section class="section">
+  <div class="container">
+    <div class="owner-cta">
+      <div>
+        <span class="eyebrow" style="background:rgba(46,196,182,0.18);color:#8FEAE1">For owners</span>
+        <h2>List your PG or business in minutes</h2>
+        <p>Manage seats, students, images and messages from one dashboard — free to list.</p>
+        <div class="owner-cta-actions">
+          <a href="{{ url_for('register') }}?role=pg_owner" class="btn btn-accent">Register as PG owner</a>
+          <a href="{{ url_for('register') }}?role=business_owner" class="btn btn-outline" style="color:var(--paper);border-color:rgba(247,247,242,0.3)">Register a business</a>
+        </div>
+      </div>
+      <div class="owner-cta-panel">
+        <ul>
+          <li>Upload up to 4 photos per listing</li>
+          <li>Track seats and enrolled students live</li>
+          <li>Message students directly</li>
+          <li>Update timings, pricing and details anytime</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ Support ============================ -->
+<section class="section section-alt" id="support">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="section-tag">03 · Support</span>
+        <h2>Help is always one tab away</h2>
+        <p>Emergency contacts, hospitals, resources and a direct line to file complaints or feedback.</p>
+      </div>
+    </div>
+    <div class="support-grid">
+      <div class="support-card emergency">
+        <h4>🚨 Emergency</h4>
+        <p>Police 100 · Ambulance 108 · Women's helpline 1091</p>
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Open support</a>
+      </div>
+      <div class="support-card">
+        <h4>🏥 Nearby hospitals</h4>
+        <p>Verified hospitals and clinics close to your PG.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">View list</a>
+      </div>
+      <div class="support-card">
+        <h4>📚 Student resources</h4>
+        <p>City guides, safety tips and settling-in checklists.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Browse resources</a>
+      </div>
+      <div class="support-card">
+        <h4>📝 Complaints &amp; feedback</h4>
+        <p>Raise an issue with your PG or the platform — tracked to resolution.</p>
+        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">File a report</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Simple interactive tab switching logic for the search console widget
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabs = document.querySelectorAll('.console-tab');
+    const panels = document.querySelectorAll('.console-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        panels.forEach(p => p.classList.remove('active'));
+
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
+        
+        const targetId = 'panel-' + tab.getAttribute('data-target');
+        const targetPanel = document.getElementById(targetId);
+        if (targetPanel) {
+          targetPanel.classList.add('active');
+        }
+      });
+    });
+  });
+</script>
+
+{% endblock %}

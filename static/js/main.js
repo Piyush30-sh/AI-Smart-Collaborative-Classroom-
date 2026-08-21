@@ -22,6 +22,22 @@
 })();
 
 
+/* ──second change 8-8-26 Dark-mode toggle ─────────────────────────────────────────────────────── */
+const darkToggle = document.getElementById("darkToggle");
+const htmlEl = document.documentElement;
+
+// On toggle change
+darkToggle.addEventListener("change", function () {
+  if (this.checked) {
+    htmlEl.setAttribute("data-bs-theme", "dark");
+    localStorage.setItem("siteTheme", "dark");
+  } else {
+    htmlEl.setAttribute("data-bs-theme", "light");
+    localStorage.setItem("siteTheme", "light");
+  }
+});
+
+
 /* ── Auto-dismiss flash alerts ────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
