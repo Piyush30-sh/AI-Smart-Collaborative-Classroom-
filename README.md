@@ -1,76 +1,74 @@
-# AI Smart Collaborative Classroom 🎓
+# AI Smart Collaborative Classroom
 
-An intelligent Study Planner and Productivity Coach designed to help students plan their tasks, generate schedules, track productivity, and collaborate in classrooms. The platform leverages AI to create optimized study plans and provides tools for educators to manage classrooms effectively.
+Flask-based classroom platform with study planning, task tracking, quiz tools, and collaboration features for students and faculty.
 
-## 🚀 Features
+## Features
 
-*   **AI-Powered Schedule Generation**: Generate personalized study schedules based on tasks, priorities, and deadlines.
-*   **Productivity Tracking**: Monitor study streaks, calculate productivity scores, and view weekly statistics to stay on track.
-*   **Classroom Management**: Create and join classrooms for collaborative learning.
-*   **Faculty Dashboard**: Empower educators with tools to manage student progress, assignments, and class analytics.
-*   **Automated Quizzes**: Generate flashcards and quizzes from uploaded study materials (e.g., PDFs).
-*   **Motivational Coaching**: Receive tailored motivational messages and feedback based on study patterns.
+- AI-assisted study schedule generation
+- Task and deadline tracking
+- Classroom creation and participation
+- Faculty dashboard and student progress utilities
+- Quiz and study support workflows
 
-## 🛠️ Technology Stack
+## Tech Stack
 
-*   **Backend**: Python, Flask
-*   **Database**: SQLite
-*   **AI & Machine Learning**: OpenAI API, Scikit-Learn, NumPy, Pandas
-*   **Document Processing**: PyPDF
-*   **Frontend**: HTML, CSS, JavaScript 
+- Backend: Flask (Python)
+- Database: SQLite
+- Frontend: HTML, CSS, JavaScript, Bootstrap 5
 
-## 📦 Installation & Setup
+## Quick Start
 
-Follow these steps to set up the project locally:
+1. Clone and enter the project
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/adityabshiwarkar9960/AI-Smart-Collaborative-Classroom-.git
-    cd AI-Smart-Collaborative-Classroom-
-    ```
+```bash
+git clone https://github.com/adityabshiwarkar9960/AI-Smart-Collaborative-Classroom-.git
+cd AI-Smart-Collaborative-Classroom-
+```
 
-2.  **Create and activate a virtual environment**:
-    ```bash
-    python -m venv .venv
-    
-    # On Windows:
-    .venv\Scripts\activate
-    
-    # On macOS/Linux:
-    source .venv/bin/activate
-    ```
+2. Create and activate a virtual environment
 
-3.  **Install dependencies**:
-    ```bash
-    pip install --upgrade pip setuptools wheel
-    pip install -r requirements.txt
-    ```
+```bash
+python -m venv .venv
 
-4.  **Set up Environment Variables**:
-    Create a `.env` file in the root directory and add required API keys or secrets (if applicable):
-    ```env
-    SECRET_KEY=your_secret_key_here
-    OPENAI_API_KEY=your_openai_api_key_here
-    ```
+# Windows
+.venv\Scripts\activate
 
-5.  **Run the application locally**:
-    ```bash
-    python app.py
-    ```
-    The app will be available at `http://127.0.0.1:5000`.
+# macOS/Linux
+source .venv/bin/activate
+```
 
-## 🌐 Deployment
+3. Install dependencies
 
-For a production-like server environment, use Gunicorn:
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+4. Optional environment file
+
+Create a `.env` file if you use external APIs:
+
+```env
+SECRET_KEY=your_secret_key
+OPENAI_API_KEY=your_openai_api_key
+```
+
+5. Run locally
+
+```bash
+python app.py
+```
+
+Open http://127.0.0.1:5000
+
+## Production (optional)
+
 ```bash
 gunicorn --bind 0.0.0.0:5000 app:app
 ```
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions! Please follow these steps:
-1.  Fork the repository.
-2.  Create a new branch (`git checkout -b feature/YourFeatureName`).
-3.  Commit your changes (`git commit -m 'Add some feature'`).
-4.  Push to the branch (`git push origin feature/YourFeatureName`).
-5.  Open a Pull Request.
+1. Create a branch
+2. Commit your changes
+3. Open a pull request

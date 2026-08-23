@@ -2257,7 +2257,7 @@ body.dash-body {
 .classroom-card__title { font-weight: 700; font-size: 0.92rem; margin-bottom: 4px; }
 .classroom-card__meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; }
 .classroom-card__foot { display: flex; align-items: center; justify-content: space-between; }
-.classroom-card__code { font-family: var(--font-mono); font-size: 0.72rem; color: var(--teal-deep); background: rgba(46,139,139,0.1); padding: 2px 8px; border-radius: 6px; }
+.classroom-card__code { font-family: var(--font-mono); font-size: 0.72rem; color: var(--teal-deep); background: rgba(238, 239, 239, 0.1); padding: 2px 8px; border-radius: 6px; }
 
 .join-class-form,
 .create-class-form {
@@ -2506,6 +2506,39 @@ body {
   background: rgba(67, 97, 238, 0.12);
 }
 
+@keyframes authPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes authPageLeave {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+.auth-body {
+  animation: authPageEnter 0.35s ease both;
+}
+
+.auth-body.auth-is-leaving {
+  animation: authPageLeave 0.22s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-body,
+  .auth-body.auth-is-leaving {
+    animation: none;
+  }
+}
+
 /* ── Landing page ───────────────────────────────────────────────────────── */
 .landing-body {
   background:
@@ -2683,9 +2716,6 @@ body {
 
 .landing-faq .accordion-button {
   font-weight: 600;
-}
-
-.landing-panel {
 }
 
 .landing-quote,

@@ -5,37 +5,68 @@
 
 /* ── Dark-mode toggle ─────────────────────────────────────────────────────── */
 (function initDarkMode() {
-  const root   = document.documentElement;
+  const root = document.documentElement;
   const toggle = document.getElementById('darkToggle');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  function safeGet(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function normalizeTheme(value) {
+    return value === 'dark' || value === 'light' ? value : null;
+  }
+
+  function persistTheme(theme) {
+    const previousTheme = root.getAttribute('data-bs-theme');
+    if (previousTheme && previousTheme !== theme) {
+      root.classList.add('theme-changing');
+      window.setTimeout(() => root.classList.remove('theme-changing'), 420);
+    }
+    root.setAttribute('data-bs-theme', theme);
+    try {
+      localStorage.setItem('theme', theme);
+      // Keep legacy key in sync so older pages/scripts do not flip the theme.
+      localStorage.setItem('siteTheme', theme);
+    } catch (e) {
+      // Ignore storage write errors and still apply theme to the page.
+    }
+  }
+
+  const stored = normalizeTheme(safeGet('theme'))
+    || normalizeTheme(safeGet('siteTheme'));
+  const initialTheme = stored || (prefersDark ? 'dark' : 'light');
+
+  persistTheme(initialTheme);
+
   if (!toggle) return;
 
-  // Load saved preference
-  const saved = localStorage.getItem('theme') || 'light';
-  root.setAttribute('data-bs-theme', saved);
-  toggle.checked = (saved === 'dark');
+  function syncToggle() {
+    toggle.checked = root.getAttribute('data-bs-theme') === 'dark';
+  }
 
+  syncToggle();
   toggle.addEventListener('change', () => {
-    const theme = toggle.checked ? 'dark' : 'light';
-    root.setAttribute('data-bs-theme', theme);
-    localStorage.setItem('theme', theme);
+    persistTheme(toggle.checked ? 'dark' : 'light');
+    syncToggle();
+  });
+
+  document.addEventListener('DOMContentLoaded', syncToggle);
+  window.addEventListener('pageshow', syncToggle);
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'theme' || event.key === 'siteTheme') {
+      const nextTheme = normalizeTheme(event.newValue);
+      if (nextTheme) {
+        root.setAttribute('data-bs-theme', nextTheme);
+        syncToggle();
+      }
+    }
   });
 })();
-
-
-/* ──second change 8-8-26 Dark-mode toggle ─────────────────────────────────────────────────────── */
-const darkToggle = document.getElementById("darkToggle");
-const htmlEl = document.documentElement;
-
-// On toggle change
-darkToggle.addEventListener("change", function () {
-  if (this.checked) {
-    htmlEl.setAttribute("data-bs-theme", "dark");
-    localStorage.setItem("siteTheme", "dark");
-  } else {
-    htmlEl.setAttribute("data-bs-theme", "light");
-    localStorage.setItem("siteTheme", "light");
-  }
-});
 
 
 /* ── Auto-dismiss flash alerts ────────────────────────────────────────────── */
@@ -111,6 +142,25 @@ function requestNotifPermission() {
 }
 
 document.addEventListener('DOMContentLoaded', requestNotifPermission);
+
+
+/* ── Login/signup page transition ───────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const authBody = document.querySelector('.auth-body');
+  if (!authBody || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  document.querySelectorAll('[data-auth-transition]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      event.preventDefault();
+      authBody.classList.add('auth-is-leaving');
+      window.setTimeout(() => {
+        window.location.href = link.href;
+      }, 220);
+    });
+  });
+});
 
 
 /* ── Browser notification helper ────────────────────────────────────────── */

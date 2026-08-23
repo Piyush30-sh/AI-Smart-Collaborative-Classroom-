@@ -13,6 +13,18 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <!-- Chart.js (loaded globally so all pages can use it) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    (function syncThemeEarly() {
+      try {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const raw = localStorage.getItem('theme') || localStorage.getItem('siteTheme');
+        const theme = (raw === 'dark' || raw === 'light') ? raw : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-bs-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+    })();
+  </script>
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   {% block extra_css %}{% endblock %}
@@ -77,42 +89,31 @@
             </a>
           </li>
 
-
-          
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle {% if request.endpoint in ['settings','manage_data'] %}active{% endif %}"
-               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="fas fa-cog me-1"></i>Settings
-            </a>
-            <ul class="dropdown-menu">
-              <li>
-                <a class="dropdown-item {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
-                  <i class="fas fa-cog me-2"></i>Settings
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item {% if request.endpoint == 'manage_data' %}active{% endif %}" href="{{ url_for('manage_data') }}">
-                  <i class="fas fa-database me-2"></i>Manage Data
-                </a>
-              </li>
-            </ul>
-          </li>
         </ul>
 
         <!-- Right-side controls -->
         <div class="d-flex align-items-center gap-3">
 
           <!-- Dark-mode toggle -->
-          <div class="form-check form-switch mb-0" title="Toggle dark mode">
-            <input class="form-check-input" type="checkbox" id="darkToggle" role="switch" />
-            <label class="form-check-label text-muted" for="darkToggle">
-              <i class="fas fa-moon"></i>
+          <div class="theme-toggle" title="Toggle dark mode">
+            <input class="form-check-input" type="checkbox" id="darkToggle" role="switch" autocomplete="off" />
+            <label class="theme-toggle__track" for="darkToggle">
+              <span class="theme-toggle__icon theme-toggle__icon--sun"><i class="fas fa-sun"></i></span>
+              <span class="theme-toggle__icon theme-toggle__icon--moon"><i class="fas fa-moon"></i></span>
+              <span class="theme-toggle__thumb"></span>
+              <span class="visually-hidden">Toggle dark mode</span>
             </label>
+            <script>
+              (function syncToggleBeforePaint() {
+                const toggle = document.getElementById('darkToggle');
+                if (toggle) toggle.checked = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+              })();
+            </script>
           </div>
 
           <!-- User dropdown -->
-          <div class="dropdown">
-            <button class="btn btn-outline-primary btn-sm dropdown-toggle"
+          <div class="dropdown user-menu">
+            <button class="user-menu__toggle btn btn-outline-primary btn-sm dropdown-toggle"
                     data-bs-toggle="dropdown" aria-expanded="false">
               {% if session.user_avatar %}
                 <img src="{{ url_for('static', filename='uploads/avatars/' ~ session.user_avatar) }}" alt="avatar" style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:6px;">
@@ -121,10 +122,23 @@
               {% endif %}
               {{ session.user_name }}
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow">
+            <ul class="user-menu__list dropdown-menu dropdown-menu-end shadow">
               <li>
-                <a class="dropdown-item" href="{{ url_for('profile') }}">
+                <a class="dropdown-item {% if request.endpoint == 'profile' %}active{% endif %}" href="{{ url_for('profile') }}" {% if request.endpoint == 'profile' %}aria-current="page"{% endif %}>
                   <i class="fas fa-user me-2"></i>Profile
+                </a>
+              </li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li>
+                <a class="dropdown-item {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
+                  <i class="fas fa-cog me-2"></i>Settings
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item {% if request.endpoint == 'manage_data' %}active{% endif %}" href="{{ url_for('manage_data') }}">
+                  <i class="fas fa-database me-2"></i>Manage Data
                 </a>
               </li>
               <li>

@@ -2,7 +2,15 @@
 {% block title %}Quiz Generator — AI Study Planner{% endblock %}
 
 {% block content %}
+{% set initial_questions = quiz_questions|default([]) %}
+{% set initial_source_name = source_name|default('') %}
 <div class="container-fluid px-4 py-4 quiz-page">
+
+  <div class="quiz-page-heading">
+    <h4 class="fw-bold mb-0">
+      <i class="fas fa-circle-question me-2 text-warning"></i>Quiz Quest
+    </h4>
+  </div>
 
   <div class="quiz-hero card border-0 shadow-sm mb-4">
     <div class="card-body p-4 p-lg-5">
@@ -31,53 +39,77 @@
     </div>
   </div>
 
-  <div class="card border-0 shadow-sm mb-4">
+  <div class="quiz-upload-card card border-0 shadow-sm mb-4">
     <div class="card-body p-4">
-      <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
+      <div class="quiz-section-heading">
+        <div>
+          <span class="quiz-section-kicker"><i class="fas fa-sparkles me-2"></i>Start here</span>
+          <h4 class="fw-bold mb-1">Build your quiz</h4>
+          <p class="text-muted mb-0">Upload your study material and let the classroom assistant create the questions.</p>
+        </div>
+        <span class="quiz-pdf-badge"><i class="fas fa-file-pdf me-2"></i>PDF only</span>
+      </div>
+      <div id="quizLiveAlert" class="mb-3"></div>
+      <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-center" id="quizGenerateForm">
         <input type="hidden" name="action" value="generate" />
         <div class="col-lg-8">
-          <label class="form-label fw-semibold">Subject PDF</label>
-          <input type="file" class="form-control form-control-lg" name="quiz_pdf" accept="application/pdf,.pdf" required />
+          <label class="form-label fw-semibold" for="quizPdfInput">Subject PDF</label>
+          <label class="quiz-file-upload" for="quizPdfInput">
+            <span class="quiz-file-upload__icon" aria-hidden="true"><i class="fas fa-cloud-arrow-up"></i></span>
+            <span class="quiz-file-upload__copy">
+              <strong>Choose a PDF to begin</strong>
+              <span id="quizFileName">PDF files up to your upload limit</span>
+            </span>
+            <span class="btn btn-outline-primary btn-sm">Browse files</span>
+            <input type="file" class="visually-hidden" id="quizPdfInput" name="quiz_pdf" accept="application/pdf,.pdf" required />
+          </label>
           <div class="form-text">Use a PDF with selectable text for the best quiz generation results.</div>
         </div>
-        <div class="col-lg-4 d-grid">
-          <button type="submit" class="btn btn-primary btn-lg">
+        <div class="col-lg-4 d-grid quiz-generate-action">
+          <button type="submit" class="btn btn-primary btn-lg" id="quizGenerateBtn">
             <i class="fas fa-file-circle-question me-2"></i>Generate Quiz
           </button>
         </div>
       </form>
-    </div>
-  </div>
 
-  {% if quiz_questions %}
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-body p-4 d-flex flex-wrap gap-2 align-items-center justify-content-between">
-        <div>
-          <h5 class="fw-bold mb-1">Quiz tools</h5>
-          <p class="text-muted mb-0">Print the page or export the generated quiz as a PDF file.</p>
-        </div>
-        <div class="d-flex flex-wrap gap-2">
-          <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
-            <i class="fas fa-print me-2"></i>Print Quiz
-          </button>
-          <form method="POST" class="d-inline">
-            <input type="hidden" name="action" value="export" />
-            <input type="hidden" name="source_name" value="{{ source_name or '' }}" />
-            <input type="hidden" name="quiz_data" value='{{ quiz_questions|tojson }}' />
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-file-pdf me-2"></i>Export PDF
-            </button>
-          </form>
+      <div class="quiz-generate-skeleton d-none mt-4" id="quizGeneratingSkeleton" aria-hidden="true">
+        <div class="skeleton" style="height: 18px; width: 36%;"></div>
+        <div class="skeleton mt-3" style="height: 60px;"></div>
+        <div class="row g-2 mt-2">
+          <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+          <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+          <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+          <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
         </div>
       </div>
     </div>
-  {% endif %}
+  </div>
 
-  {% if source_name %}
-    <div class="alert alert-info shadow-sm">
-      <i class="fas fa-file-pdf me-2"></i>Using {{ source_name }}
+  <div class="card border-0 shadow-sm mb-4 {% if not initial_questions %}d-none{% endif %}" id="quizToolsCard">
+    <div class="card-body p-4 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div>
+        <h5 class="fw-bold mb-1">Quiz tools</h5>
+        <p class="text-muted mb-0">Print the page or export the generated quiz as a text file.</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+          <i class="fas fa-print me-2"></i>Print Quiz
+        </button>
+        <form method="POST" class="d-inline quiz-export-form" id="quizExportForm">
+          <input type="hidden" name="action" value="export" />
+          <input type="hidden" name="source_name" id="quizExportSource" value="{{ source_name or '' }}" />
+          <input type="hidden" name="quiz_data" class="quiz-data-json" id="quizExportData" value='{{ initial_questions|tojson }}' />
+          <button type="submit" class="btn btn-primary quiz-export-btn">
+            <i class="fas fa-file-text me-2"></i>Export TXT
+          </button>
+        </form>
+      </div>
     </div>
-  {% endif %}
+  </div>
+
+  <div class="alert alert-info shadow-sm {% if not initial_source_name %}d-none{% endif %}" id="quizSourceAlert">
+    <i class="fas fa-file-text me-2"></i>Using <span id="quizSourceName">{{ initial_source_name }}</span>
+  </div>
 
   {% if quiz_results and score is not none %}
     <div class="card border-0 shadow-sm mb-4">
@@ -93,14 +125,14 @@
             </div>
             {% if attempt_id %}
               <a class="btn btn-outline-primary" href="{{ url_for('quiz_export_attempt', attempt_id=attempt_id) }}">
-                <i class="fas fa-file-pdf me-2"></i>Download Attempt PDF
+                <i class="fas fa-file-text me-2"></i>Download Attempt TXT
               </a>
             {% endif %}
           </div>
         </div>
 
         <div class="progress mb-4" style="height: 10px;">
-          <div class="progress-bar" role="progressbar" style="width: {{ score }}%;" aria-valuenow="{{ score }}" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar" role="progressbar" data-score="{% if score %}{{ score }}{% else %}0{% endif %}" aria-valuenow="{{ score }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
         <div class="row g-3">
@@ -161,7 +193,7 @@
                   <td class="text-center">{{ item.correct_answers }}/{{ item.total_questions }}</td>
                   <td class="text-end">
                     <a class="btn btn-sm btn-outline-primary" href="{{ url_for('quiz_export_attempt', attempt_id=item.id) }}">
-                      <i class="fas fa-file-pdf me-1"></i>PDF
+                      <i class="fas fa-file-text me-1"></i>TXT
                     </a>
                   </td>
                 </tr>
@@ -175,55 +207,374 @@
     </div>
   </div>
 
-  {% if quiz_questions %}
-    <div class="card border-0 shadow-sm quiz-question-shell mb-4">
-      <div class="card-body p-4 p-lg-5">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-          <div>
-            <h4 class="fw-bold mb-1">Answer the generated quiz</h4>
-            <p class="text-muted mb-0">Choose one answer per question and submit to see your score.</p>
-          </div>
-          <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">{{ quiz_questions|length }} questions</span>
+  <div class="card border-0 shadow-sm quiz-question-shell mb-4 {% if not initial_questions %}d-none{% endif %}" id="quizQuestionShell">
+    <div class="card-body p-4 p-lg-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+          <h4 class="fw-bold mb-1">Answer the generated quiz</h4>
+          <p class="text-muted mb-0">One question at a time for a smoother attempt.</p>
+        </div>
+        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2" id="quizCountBadge">{{ initial_questions|length }} questions</span>
+      </div>
+
+      <form method="POST" class="quiz-form" id="quizForm">
+        <input type="hidden" name="action" value="grade" />
+        <input type="hidden" name="source_name" id="quizFormSource" value="{{ initial_source_name }}" />
+        <input type="hidden" name="quiz_data" class="quiz-data-json" id="quizFormData" value='{{ initial_questions|tojson }}' />
+        <div id="quizAnswerInputs"></div>
+
+        <div class="progress mb-3" style="height: 8px;">
+          <div class="progress-bar" id="quizStepProgress" role="progressbar" style="width: 0%;" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
 
-        <form method="POST" class="quiz-form">
-          <input type="hidden" name="action" value="grade" />
-          <input type="hidden" name="source_name" value="{{ source_name or '' }}" />
-          <input type="hidden" name="quiz_data" value='{{ quiz_questions|tojson }}' />
-
-          <div class="row g-3">
-            {% for question in quiz_questions %}
-              {% set question_index = loop.index0 %}
-              <div class="col-12">
-                <div class="card border-0 bg-body-tertiary quiz-question-card h-100">
-                  <div class="card-body p-4">
-                    <div class="fw-semibold mb-3">Question {{ loop.index }}</div>
-                    <p class="mb-3">{{ question.question }}</p>
-                    <div class="row g-2">
-                      {% for option in question.options %}
-                        <div class="col-12 col-md-6">
-                          <label class="quiz-option w-100">
-                            <input class="form-check-input me-2" type="radio" name="answer_{{ question_index }}" value="{{ option }}" required>
-                            <span>{{ option }}</span>
-                          </label>
-                        </div>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            {% endfor %}
+        <div id="quizQuestionSkeleton" class="quiz-question-skeleton d-none" aria-hidden="true">
+          <div class="skeleton" style="height: 16px; width: 42%;"></div>
+          <div class="skeleton mt-3" style="height: 58px;"></div>
+          <div class="row g-2 mt-2">
+            <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+            <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+            <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
+            <div class="col-md-6"><div class="skeleton" style="height: 44px;"></div></div>
           </div>
+        </div>
 
-          <div class="d-grid d-md-flex justify-content-md-end mt-4">
-            <button type="submit" class="btn btn-success btn-lg px-5">
+        <div class="card border-0 bg-body-tertiary quiz-question-card h-100" id="quizQuestionCard">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="fw-semibold" id="quizQuestionTitle">Question 1</div>
+              <div class="small text-muted" id="quizQuestionCounter">1 / 1</div>
+            </div>
+            <p class="mb-3" id="quizQuestionText"></p>
+            <div class="row g-2" id="quizOptionsContainer"></div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" id="quizPrevBtn">
+            <i class="fas fa-arrow-left me-2"></i>Previous
+          </button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary" id="quizNextBtn">
+              Next Question<i class="fas fa-arrow-right ms-2"></i>
+            </button>
+            <button type="submit" class="btn btn-success d-none" id="quizSubmitBtn">
               <i class="fas fa-check-circle me-2"></i>Submit Answers
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
-  {% endif %}
+  </div>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    /* jshint ignore:start */
+    /* eslint-disable */
+    document.addEventListener('DOMContentLoaded', () => {
+      const quizFileInput = document.getElementById('quizPdfInput');
+      const quizFileName = document.getElementById('quizFileName');
+      if (quizFileInput && quizFileName) {
+        quizFileInput.addEventListener('change', () => {
+          quizFileName.textContent = quizFileInput.files[0]?.name || 'PDF files up to your upload limit';
+        });
+      }
+
+      // Set progress bar width from data attribute
+      const progressBars = document.querySelectorAll('.progress-bar[data-score]');
+      progressBars.forEach((bar) => {
+        const score = bar.getAttribute('data-score');
+        if (score) {
+          bar.style.width = score + '%';
+        }
+      });
+
+      try {
+      const initialQuestions = {{ initial_questions|default([])|tojson }};
+      const initialSourceName = {{ initial_source_name|default('')|tojson }};
+
+      const generateForm = document.getElementById('quizGenerateForm');
+      const generateBtn = document.getElementById('quizGenerateBtn');
+      const generatingSkeleton = document.getElementById('quizGeneratingSkeleton');
+      const liveAlert = document.getElementById('quizLiveAlert');
+
+      const toolsCard = document.getElementById('quizToolsCard');
+      const sourceAlert = document.getElementById('quizSourceAlert');
+      const sourceNameEl = document.getElementById('quizSourceName');
+      const questionShell = document.getElementById('quizQuestionShell');
+      const countBadge = document.getElementById('quizCountBadge');
+
+      const quizForm = document.getElementById('quizForm');
+      const quizFormData = document.getElementById('quizFormData');
+      const quizFormSource = document.getElementById('quizFormSource');
+      const quizAnswerInputs = document.getElementById('quizAnswerInputs');
+
+      const quizExportForm = document.getElementById('quizExportForm');
+      const quizExportData = document.getElementById('quizExportData');
+      const quizExportSource = document.getElementById('quizExportSource');
+
+      const questionCard = document.getElementById('quizQuestionCard');
+      const questionSkeleton = document.getElementById('quizQuestionSkeleton');
+      const questionTitle = document.getElementById('quizQuestionTitle');
+      const questionCounter = document.getElementById('quizQuestionCounter');
+      const questionText = document.getElementById('quizQuestionText');
+      const optionsContainer = document.getElementById('quizOptionsContainer');
+      const progressBar = document.getElementById('quizStepProgress');
+      const prevBtn = document.getElementById('quizPrevBtn');
+      const nextBtn = document.getElementById('quizNextBtn');
+      const submitBtn = document.getElementById('quizSubmitBtn');
+
+      let quizQuestions = Array.isArray(initialQuestions) ? initialQuestions : [];
+      let sourceName = initialSourceName || '';
+      let currentIndex = 0;
+      let answers = {};
+
+      function showMessage(kind, message) {
+        if (!liveAlert) return;
+        liveAlert.innerHTML = '<div class="alert alert-' + kind + ' shadow-sm mb-0">' + message + '</div>';
+      }
+
+      function clearMessage() {
+        if (liveAlert) liveAlert.innerHTML = '';
+      }
+
+      function setQuizFormData() {
+        const data = JSON.stringify(quizQuestions || []);
+        if (quizFormData) quizFormData.value = data;
+        if (quizExportData) quizExportData.value = data;
+        if (quizFormSource) quizFormSource.value = sourceName;
+        if (quizExportSource) quizExportSource.value = sourceName;
+      }
+
+      function toggleQuizSections(show) {
+        if (toolsCard) toolsCard.classList.toggle('d-none', !show);
+        if (questionShell) questionShell.classList.toggle('d-none', !show);
+        if (sourceAlert) sourceAlert.classList.toggle('d-none', !show);
+      }
+
+      function updateStepControls() {
+        const total = quizQuestions.length;
+        const answeredCount = Object.keys(answers).length;
+        const progress = total ? Math.round((answeredCount / total) * 100) : 0;
+
+        if (progressBar) {
+          progressBar.style.width = progress + '%';
+          progressBar.setAttribute('aria-valuenow', String(progress));
+        }
+
+        if (countBadge) {
+          countBadge.textContent = total + ' questions';
+        }
+
+        if (questionCounter) {
+          questionCounter.textContent = (currentIndex + 1) + ' / ' + total;
+        }
+
+        if (prevBtn) prevBtn.disabled = currentIndex <= 0;
+        const isLast = currentIndex >= total - 1;
+        if (nextBtn) nextBtn.classList.toggle('d-none', isLast);
+        if (submitBtn) submitBtn.classList.toggle('d-none', !isLast);
+      }
+
+      function renderQuestion(index) {
+        const total = quizQuestions.length;
+        if (!total || !quizQuestions[index] || !optionsContainer) return;
+
+        const q = quizQuestions[index];
+        if (questionTitle) questionTitle.textContent = 'Question ' + (index + 1);
+        if (questionText) questionText.textContent = q.question || '';
+
+        const selected = answers[index] || '';
+        const options = Array.isArray(q.options) ? q.options : [];
+        optionsContainer.innerHTML = '';
+
+        options.forEach((option) => {
+          const col = document.createElement('div');
+          col.className = 'col-12 col-md-6';
+
+          const label = document.createElement('label');
+          label.className = 'quiz-option w-100';
+
+          const input = document.createElement('input');
+          input.className = 'form-check-input me-2 quiz-option-input';
+          input.type = 'radio';
+          input.name = 'quiz_step_option';
+          input.value = String(option);
+          input.checked = selected === option;
+
+          const span = document.createElement('span');
+          span.textContent = String(option);
+
+          if (input.checked) {
+            label.classList.add('quiz-option-active');
+          }
+
+          input.addEventListener('change', (event) => {
+            answers[currentIndex] = event.target.value;
+            renderQuestion(currentIndex);
+            updateStepControls();
+          });
+
+          label.appendChild(input);
+          label.appendChild(span);
+          col.appendChild(label);
+          optionsContainer.appendChild(col);
+        });
+
+        updateStepControls();
+      }
+
+      function renderQuestionWithSkeleton(nextIndex) {
+        if (!questionCard || !questionSkeleton) {
+          currentIndex = nextIndex;
+          renderQuestion(currentIndex);
+          return;
+        }
+        questionCard.classList.add('d-none');
+        questionSkeleton.classList.remove('d-none');
+        window.setTimeout(() => {
+          currentIndex = nextIndex;
+          renderQuestion(currentIndex);
+          questionSkeleton.classList.add('d-none');
+          questionCard.classList.remove('d-none');
+        }, 220);
+      }
+
+      function bootstrapQuiz(newQuestions, newSource) {
+        quizQuestions = Array.isArray(newQuestions) ? newQuestions : [];
+        sourceName = newSource || '';
+        answers = {};
+        currentIndex = 0;
+
+        if (sourceNameEl) sourceNameEl.textContent = sourceName;
+        setQuizFormData();
+        toggleQuizSections(quizQuestions.length > 0);
+
+        if (quizQuestions.length > 0) {
+          renderQuestionWithSkeleton(0);
+          if (questionShell && typeof questionShell.scrollIntoView === 'function') {
+            questionShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      }
+
+      if (generateForm && generateBtn) {
+        generateForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          clearMessage();
+
+          generateBtn.disabled = true;
+          generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Generating...';
+          if (generatingSkeleton) generatingSkeleton.classList.remove('d-none');
+
+          try {
+            const formData = new FormData(generateForm);
+            const response = await fetch('{{ url_for("quiz_generate_api") }}', {
+              method: 'POST',
+              headers: { 'Accept': 'application/json' },
+              body: formData,
+            });
+            const raw = await response.text();
+            let payload = null;
+            try {
+              payload = JSON.parse(raw);
+            } catch (e) {
+              payload = null;
+            }
+
+            if (!payload || typeof payload !== 'object') {
+              showMessage('danger', 'Unable to read quiz response. Please retry.');
+              return;
+            }
+
+            if (!response.ok || payload.status !== 'ok') {
+              showMessage('danger', payload.message || 'Could not generate quiz from this PDF.');
+              return;
+            }
+
+            showMessage('success', 'Quiz generated successfully. Start answering below.');
+            bootstrapQuiz(payload.quiz_questions || [], payload.source_name || 'Uploaded PDF');
+          } catch (err) {
+            showMessage('danger', 'Generation failed due to a network issue. Please try again.');
+          } finally {
+            if (generatingSkeleton) generatingSkeleton.classList.add('d-none');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '<i class="fas fa-file-circle-question me-2"></i>Generate Quiz';
+          }
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          if (!answers[currentIndex]) {
+            showMessage('warning', 'Please select an answer before moving to the next question.');
+            return;
+          }
+          clearMessage();
+          if (currentIndex < quizQuestions.length - 1) {
+            renderQuestionWithSkeleton(currentIndex + 1);
+          }
+        });
+      }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+          clearMessage();
+          if (currentIndex > 0) {
+            renderQuestionWithSkeleton(currentIndex - 1);
+          }
+        });
+      }
+
+      if (quizForm && submitBtn) {
+        quizForm.addEventListener('submit', (event) => {
+          const firstMissing = quizQuestions.findIndex((_, idx) => !answers[idx]);
+          if (firstMissing !== -1) {
+            event.preventDefault();
+            showMessage('warning', 'Please answer all questions before submitting.');
+            renderQuestionWithSkeleton(firstMissing);
+            return;
+          }
+
+          quizAnswerInputs.innerHTML = '';
+          quizQuestions.forEach((_, idx) => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'answer_' + idx;
+            hidden.value = answers[idx] || '';
+            quizAnswerInputs.appendChild(hidden);
+          });
+
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Submitting...';
+        });
+      }
+
+      document.querySelectorAll('.quiz-export-form').forEach((form) => {
+        const btn = form.querySelector('.quiz-export-btn');
+        if (!btn) return;
+        form.addEventListener('submit', () => {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Exporting...';
+          window.setTimeout(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-file-text me-2"></i>Export TXT';
+          }, 2200);
+        });
+      });
+
+      if (quizQuestions.length > 0) {
+        bootstrapQuiz(quizQuestions, sourceName || 'Uploaded PDF');
+      } else {
+        toggleQuizSections(false);
+      }
+      } catch (err) {
+        console.error('Quiz UI initialization failed:', err);
+      }
+    });
+    /* eslint-enable */
+    /* jshint ignore:end */
+  </script>
 {% endblock %}

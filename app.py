@@ -686,113 +686,57 @@ def _fetch_quiz_attempts(user_id: int, limit: int = 10):
     return attempts
 
 
-def _build_quiz_pdf_bytes(title: str, quiz_questions, source_name: str = "", attempt=None, quiz_results=None):
-    from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-
-    buffer = io.BytesIO()
-    document = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        leftMargin=36,
-        rightMargin=36,
-        topMargin=42,
-        bottomMargin=42,
-        title=title,
-    )
-
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(
-        name="QuizTitle",
-        parent=styles["Title"],
-        fontName="Helvetica-Bold",
-        fontSize=20,
-        leading=24,
-        alignment=TA_CENTER,
-        spaceAfter=8,
-    ))
-    styles.add(ParagraphStyle(
-        name="QuizMeta",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=9,
-        leading=12,
-        textColor=colors.HexColor("#4b5563"),
-    ))
-    styles.add(ParagraphStyle(
-        name="QuizQuestion",
-        parent=styles["BodyText"],
-        fontName="Helvetica-Bold",
-        fontSize=11,
-        leading=14,
-        spaceAfter=6,
-    ))
-    styles.add(ParagraphStyle(
-        name="QuizOption",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=10,
-        leading=13,
-        leftIndent=10,
-        spaceAfter=2,
-    ))
-
-    story = [
-        Paragraph(title, styles["QuizTitle"]),
-        Paragraph(f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}", styles["QuizMeta"]),
-    ]
+def _build_quiz_txt_content(title: str, quiz_questions, source_name: str = "", attempt=None, quiz_results=None):
+    """Build quiz content as plain text format."""
+    lines = []
+    lines.append("=" * 80)
+    lines.append(title.center(80))
+    lines.append("=" * 80)
+    lines.append("")
+    lines.append(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
     if source_name:
-        story.append(Paragraph(f"Source: {source_name}", styles["QuizMeta"]))
+        lines.append(f"Source: {source_name}")
+    
     if attempt:
-        story.append(Paragraph(
-            f"Score: {attempt['score']}% | Correct: {attempt['correct_answers']}/{attempt['total_questions']}",
-            styles["QuizMeta"],
-        ))
-    story.append(Spacer(1, 14)) # type: ignore
-
+        lines.append(f"Score: {attempt['score']}%")
+        lines.append(f"Correct Answers: {attempt['correct_answers']}/{attempt['total_questions']}")
+    
+    lines.append("")
+    lines.append("-" * 80)
+    lines.append("")
+    
     for index, question in enumerate(quiz_questions, start=1):
-        story.append(Paragraph(f"Question {index}", styles["QuizQuestion"]))
-        story.append(Paragraph(question.get("question", ""), styles["BodyText"]))
-        story.append(Spacer(1, 6)) # type: ignore
-
+        lines.append(f"Question {index}")
+        lines.append("-" * 40)
+        lines.append(question.get("question", ""))
+        lines.append("")
+        lines.append("Options:")
+        
         options = question.get("options", [])
-        option_rows = [[Paragraph(f"• {option}", styles["QuizOption"])] for option in options]
-        if option_rows:
-            table = Table(option_rows, colWidths=[460])
-            table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, -1), colors.whitesmoke),
-                ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1")),
-                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#e2e8f0")),
-                ("LEFTPADDING", (0, 0), (-1, -1), 8),
-                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ]))
-            story.append(table) # type: ignore
-
+        for opt_index, option in enumerate(options, start=1):
+            lines.append(f"  {chr(64 + opt_index)}. {option}")
+        
         if quiz_results:
             result = quiz_results[index - 1] if index - 1 < len(quiz_results) else {}
-            selected = result.get("selected", "")
+            selected = result.get("selected", "No answer selected")
             correct = result.get("correct", question.get("answer", ""))
-            status = "Correct" if result.get("is_correct") else "Incorrect"
-            story.append(Spacer(1, 6)) # type: ignore
-            story.append(Paragraph(f"Answer: {selected or 'No answer selected'}", styles["QuizMeta"]))
-            story.append(Paragraph(f"Correct: {correct}", styles["QuizMeta"]))
-            story.append(Paragraph(f"Status: {status}", styles["QuizMeta"]))
+            status = "✓ CORRECT" if result.get("is_correct") else "✗ INCORRECT"
+            lines.append("")
+            lines.append(f"Your Answer: {selected}")
+            lines.append(f"Correct Answer: {correct}")
+            lines.append(f"Status: {status}")
+        
+        lines.append("")
+        lines.append("")
+    
+    return "\n".join(lines)
 
-        story.append(Spacer(1, 14)) # type: ignore
 
-    document.build(story) # type: ignore
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-def _quiz_pdf_response(filename: str, pdf_bytes: bytes):
-    response = make_response(pdf_bytes)
-    response.headers["Content-Type"] = "application/pdf"
+def _quiz_txt_response(filename: str, content: str):
+    """Return TXT file as response."""
+    response = make_response(content.encode('utf-8'))
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
     response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
 
@@ -3343,22 +3287,50 @@ def quiz():
 
     if request.method == "POST":
         action = request.form.get("action", "generate")
+        quiz_draft = session.get("quiz_draft") or {}
 
         if action == "generate":
             pdf_file = request.files.get("quiz_pdf")
             if not pdf_file or not pdf_file.filename:
                 flash("Please choose a PDF file to generate a quiz.", "warning")
-                return render_template("quiz.html")
+                return render_template(
+                    "quiz.html",
+                    quiz_history=quiz_history,
+                    quiz_questions=[],
+                    source_name="",
+                    quiz_results=None,
+                    score=None,
+                    total=0,
+                    attempt_id=None,
+                )
 
             if not pdf_file.filename.lower().endswith(".pdf"):
                 flash("Only PDF files are supported.", "danger")
-                return render_template("quiz.html")
+                return render_template(
+                    "quiz.html",
+                    quiz_history=quiz_history,
+                    quiz_questions=[],
+                    source_name="",
+                    quiz_results=None,
+                    score=None,
+                    total=0,
+                    attempt_id=None,
+                )
 
             try:
                 extracted_text = _extract_pdf_text(pdf_file)
             except Exception as exc:
                 flash(f"Could not read the PDF: {exc}", "danger")
-                return render_template("quiz.html")
+                return render_template(
+                    "quiz.html",
+                    quiz_history=quiz_history,
+                    quiz_questions=[],
+                    source_name="",
+                    quiz_results=None,
+                    score=None,
+                    total=0,
+                    attempt_id=None,
+                )
 
             quiz_questions = _build_quiz_questions(extracted_text)
             source_name = secure_filename(pdf_file.filename)
@@ -3366,6 +3338,11 @@ def quiz():
             if not quiz_questions:
                 flash("No quiz questions could be generated from that PDF. Try a more text-heavy file.", "warning")
                 return render_template("quiz.html", source_name=source_name, quiz_history=quiz_history)
+
+            session["quiz_draft"] = {
+                "source_name": source_name,
+                "quiz_questions": quiz_questions,
+            }
 
             flash(f"Generated {len(quiz_questions)} quiz question(s) from {source_name}.", "success")
             return render_template(
@@ -3377,16 +3354,27 @@ def quiz():
 
         if action == "grade":
             quiz_data_raw = request.form.get("quiz_data", "[]")
-            source_name = request.form.get("source_name", "").strip()
+            source_name = request.form.get("source_name", "").strip() or quiz_draft.get("source_name")
             try:
                 quiz_questions = json.loads(quiz_data_raw)
             except json.JSONDecodeError:
-                flash("Quiz data could not be loaded. Please generate the quiz again.", "danger")
-                return redirect(url_for("quiz"))
+                quiz_questions = quiz_draft.get("quiz_questions")
+
+            if not isinstance(quiz_questions, list) or not quiz_questions:
+                quiz_questions = quiz_draft.get("quiz_questions")
 
             if not isinstance(quiz_questions, list) or not quiz_questions:
                 flash("Quiz data is missing. Please generate the quiz again.", "danger")
-                return redirect(url_for("quiz"))
+                return render_template(
+                    "quiz.html",
+                    quiz_history=quiz_history,
+                    quiz_questions=[],
+                    source_name="",
+                    quiz_results=None,
+                    score=None,
+                    total=0,
+                    attempt_id=None,
+                )
 
             quiz_results = []
             correct_count = 0
@@ -3433,6 +3421,7 @@ def quiz():
             conn.close()
 
             quiz_history = _fetch_quiz_attempts(session["user_id"])
+            session.pop("quiz_draft", None)
             flash(f"You scored {correct_count}/{total} ({score}%).", "info")
 
             return render_template(
@@ -3447,29 +3436,86 @@ def quiz():
             )
 
         if action == "export":
-            source_name = request.form.get("source_name", "").strip()
+            source_name = request.form.get("source_name", "").strip() or quiz_draft.get("source_name") or "Generated Quiz"
             quiz_data_raw = request.form.get("quiz_data", "[]")
             try:
                 quiz_questions = json.loads(quiz_data_raw)
             except json.JSONDecodeError:
-                flash("Quiz data could not be exported. Generate the quiz again.", "danger")
-                return redirect(url_for("quiz"))
+                quiz_questions = quiz_draft.get("quiz_questions")
+
+            if not isinstance(quiz_questions, list) or not quiz_questions:
+                quiz_questions = quiz_draft.get("quiz_questions")
 
             if not isinstance(quiz_questions, list) or not quiz_questions:
                 flash("Quiz data is missing. Generate the quiz again.", "danger")
-                return redirect(url_for("quiz"))
+                return render_template(
+                    "quiz.html",
+                    quiz_history=quiz_history,
+                    quiz_questions=[],
+                    source_name="",
+                    quiz_results=None,
+                    score=None,
+                    total=0,
+                    attempt_id=None,
+                )
 
-            pdf_bytes = _build_quiz_pdf_bytes(
+            pdf_bytes = _build_quiz_txt_content(
                 title="AI Study Planner Quiz Export",
                 quiz_questions=quiz_questions,
                 source_name=source_name,
             )
-            filename = f"quiz_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            return _quiz_pdf_response(filename, pdf_bytes)
+            filename = f"quiz_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            return _quiz_txt_response(filename, pdf_bytes)
 
         flash("Unsupported quiz action.", "danger")
 
-    return render_template("quiz.html", quiz_history=quiz_history)
+    return render_template(
+        "quiz.html",
+        quiz_history=quiz_history,
+        quiz_questions=[],
+        source_name="",
+        quiz_results=None,
+        score=None,
+        total=0,
+        attempt_id=None,
+    )
+
+
+@app.route("/quiz/generate", methods=["POST"])
+@login_required
+def quiz_generate_api():
+    pdf_file = request.files.get("quiz_pdf")
+    if not pdf_file or not pdf_file.filename:
+        return jsonify({"status": "error", "message": "Please choose a PDF file to generate a quiz."}), 400
+
+    if not pdf_file.filename.lower().endswith(".pdf"):
+        return jsonify({"status": "error", "message": "Only PDF files are supported."}), 400
+
+    try:
+        extracted_text = _extract_pdf_text(pdf_file)
+    except Exception as exc:
+        return jsonify({"status": "error", "message": f"Could not read the PDF: {exc}"}), 400
+
+    quiz_questions = _build_quiz_questions(extracted_text)
+    source_name = secure_filename(pdf_file.filename)
+
+    if not quiz_questions:
+        return jsonify({
+            "status": "error",
+            "message": "No quiz questions could be generated from that PDF. Try a more text-heavy file.",
+        }), 400
+
+    session["quiz_draft"] = {
+        "source_name": source_name,
+        "quiz_questions": quiz_questions,
+    }
+
+    return jsonify({
+        "status": "ok",
+        "source_name": source_name,
+        "quiz_questions": quiz_questions,
+        "count": len(quiz_questions),
+    })
 
 
 @app.route("/codequest")
@@ -3505,15 +3551,15 @@ def quiz_export_attempt(attempt_id):
 
     quiz_questions = json.loads(attempt["quiz_data"])
     quiz_results = json.loads(attempt["quiz_results"])
-    pdf_bytes = _build_quiz_pdf_bytes(
+    txt_content = _build_quiz_txt_content(
         title="AI Study Planner Quiz Attempt",
         quiz_questions=quiz_questions,
         source_name=attempt["source_name"],
         attempt=attempt,
         quiz_results=quiz_results,
     )
-    filename = f"quiz_attempt_{attempt_id}.pdf"
-    return _quiz_pdf_response(filename, pdf_bytes)
+    filename = f"quiz_attempt_{attempt_id}.txt"
+    return _quiz_txt_response(filename, txt_content)
 
 
 @app.route("/api/reminders")

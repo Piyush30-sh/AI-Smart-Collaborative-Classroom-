@@ -2,23 +2,11 @@
 {% block title %}Classrooms — AI Study Planner{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4 px-lg-5">
-  <!-- Page Header -->
-  <div class="row align-items-center mb-4 g-3">
-    <div class="col">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-1 small text-muted">
-          <li class="breadcrumb-item"><a href="{{ url_for('dashboard') if user_type != 'faculty' else url_for('faculty_dashboard') }}" class="text-decoration-none text-muted">Dashboard</a></li>
-          <li class="breadcrumb-item active text-primary fw-semibold" aria-current="page">Classrooms</li>
-        </ol>
-      </nav>
-      <h2 class="fw-bold text-dark mb-0">Virtual Classrooms</h2>
-    </div>
-    <div class="col-auto">
-      <a href="{{ url_for('dashboard') if user_type != 'faculty' else url_for('faculty_dashboard') }}" class="btn btn-outline-secondary btn-sm px-3 rounded-pill shadow-sm">
-        <i class="fas fa-arrow-left me-2"></i>Return to Dashboard
-      </a>
-    </div>
+<div class="container-fluid classrooms-page py-4 px-lg-5">
+  <div class="classrooms-page-heading">
+    <h4 class="fw-bold mb-0">
+      <i class="fas fa-chalkboard-user me-2 text-warning"></i>Classroom Hub
+    </h4>
   </div>
 
   <!-- Primary Architecture: Split Hub (Sidebar Directory + Main Workspace) -->
