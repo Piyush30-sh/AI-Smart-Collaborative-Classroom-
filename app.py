@@ -1200,7 +1200,7 @@ def signup():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("You have been logged out.", "info")
+    flash("You have been logged out.", "logout")
     return redirect(url_for("login"))
 
 

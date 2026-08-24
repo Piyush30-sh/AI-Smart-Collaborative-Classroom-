@@ -131,8 +131,11 @@
             <div class="form-text text-muted small" id="strengthText"></div>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn btn-primary w-100 fw-semibold py-2.5 mb-3" >
-            <i class="fas fa-user-plus me-2"></i>Create Student Account
+          <button class="animated-button" id="submitBtn" type="submit">
+            <i class="fas fa-user-plus account-icon arr-2" aria-hidden="true"></i>
+            <span class="text" id="submitLabel">Create Student Account</span>
+            <span class="circle"></span>
+            <i class="fas fa-user-plus account-icon arr-1" aria-hidden="true"></i>
           </button>
         </form>
 
@@ -163,12 +166,12 @@
       if (role === 'student') {
         btnStudent.classList.add('active');
         btnFaculty.classList.remove('active');
-        submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Student Account';
+        document.getElementById('submitLabel').textContent = 'Create Student Account';
         emailInput.placeholder = 'student@university.edu';
       } else {
         btnFaculty.classList.add('active');
         btnStudent.classList.remove('active');
-        submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Faculty Account';
+        document.getElementById('submitLabel').textContent = 'Create Faculty Account';
         emailInput.placeholder = 'faculty@university.edu';
       }
     }
