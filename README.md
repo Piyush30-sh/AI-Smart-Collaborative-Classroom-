@@ -69,7 +69,6 @@ This platform addresses key challenges in modern education:
 ## Requirements
 
 - Python 3.8+
-- 500MB disk space
 - Internet connectivity (for AI features)
 
 ## Installation & Setup
