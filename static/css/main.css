@@ -5525,12 +5525,12 @@ html {
 
 /* 2. Navbar Theme Adaptation */
 [data-bs-theme="light"] .navbar {
-  background: rgba(255, 255, 255, 0.92) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
   border-bottom: 1px solid #dadfd6 !important;
 }
 
 [data-bs-theme="dark"] .navbar {
-  background: rgba(11, 15, 25, 0.94) !important;
+  background: rgba(5, 16, 46, 0.5) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
