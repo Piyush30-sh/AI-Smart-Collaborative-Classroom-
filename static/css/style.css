@@ -165,7 +165,7 @@ body::after,
 }
 
 .user-menu__toggle:hover img {
-  transform: scale(1.42);
+  transform: scale(1.2);
   box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.2);
 }
 
@@ -179,7 +179,7 @@ body::after,
 .user-menu__toggle::after {  
   margin-left: 0.45rem;
   transition: transform 0.2s ease;
-  transform: scale(1.42);
+  transform: scale(1.2);
 }
 
 .user-menu.show .user-menu__toggle::after {
