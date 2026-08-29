@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — AI Classroom</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <!-- Bootstrap 5 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <!-- FontAwesome Icons -->
@@ -16,10 +23,11 @@
         const theme = (raw === 'dark' || raw === 'light') ? raw : (prefersDark ? 'dark' : 'light');
         document.documentElement.setAttribute('data-bs-theme', theme);
       } catch (e) {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
       }
     })();
   </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 
 </head>
@@ -28,7 +36,7 @@
 
   <!-- Home Button (Top-Left) -->
   <div class="position-fixed top-0 start-0 p-3" style="z-index:999">
-    <a href="{{ url_for('index') }}" class="btn btn-sm btn-secondary shadow-sm" style="background: #1e293b; border: none;">
+    <a href="{{ url_for('index') }}" class="btn btn-sm auth-home-btn shadow-sm">
       <i class="fas fa-arrow-left me-2"></i>Home
     </a>
   </div>
@@ -49,59 +57,44 @@
 
         <!-- Brand / Header with Student/Graduate Logo -->
         <div class="text-center mb-4">
-          <div class="auth-brand-icon mb-2 text-indigo-400">
-            <i class="fas fa-user-graduate fa-3x"></i>
+          <div class="auth-brand-icon mb-3 text-primary">
+            <i class="fas fa-graduation-cap fa-2x"></i>
           </div>
-          <h3 class="fw-bold text-white">AI Classroom</h3>
+          <h3 class="fw-bold">AI Classroom</h3>
           <p class="text-muted small">Smart classroom management for Faculty & Students</p>
-        </div>
-
-        <!-- Role Selector Toggle (Student vs Faculty) -->
-        <div class="mb-4 p-1 rounded-3 d-flex" style="background: #0f172a; border: 1px solid #334155;">
-          <button type="button" class="role-btn active" id="btnStudent" onclick="switchRole('student')">
-            🎓 Student
-          </button>
-          <button type="button" class="role-btn" id="btnFaculty" onclick="switchRole('faculty')">
-            🏫 Faculty
-          </button>
         </div>
 
         <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for cat, msg in messages %}
-              <div class="alert alert-{{ cat }} {% if cat == 'logout' %}logout-alert{% endif %} alert-dismissible fade show py-2" role="alert">
-                {{ msg }}
-                <button type="button" class="{% if cat == 'logout' %}logout-alert__close{% else %}btn-close{% endif %}" data-bs-dismiss="alert" aria-label="Close">
-                  {% if cat == 'logout' %}<i class="fas fa-xmark" aria-hidden="true"></i>{% endif %}
-                </button>
-              </div>
-            {% endfor %}
-          {% endif %}
+        {% if messages %}
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show py-2" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
-        
-
         <form method="POST">
-          <input type="hidden" id="userType" name="user_type" value="student" />
           <div class="mb-3">
             <label for="email" class="form-label fw-semibold">Email address</label>
             <div class="input-group">
               <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
-              <input type="email" class="form-control" id="email" name="email"
-                     placeholder="you@example.com" required autocomplete="email" />
+              <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required
+                autocomplete="email" />
             </div>
           </div>
 
-    
+
           <div class="mb-4">
             <label for="password" class="form-label fw-semibold">Password</label>
             <div class="input-group">
               <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
-              <input type="password" class="form-control" id="password" name="password"
-                     placeholder="Enter password" required autocomplete="current-password" />
-              <button class="btn btn-outline-secondary" type="button" id="togglePwd"
-                      tabindex="-1" title="Show/hide password">
+              <input type="password" class="form-control" id="password" name="password" placeholder="Enter password"
+                required autocomplete="current-password" />
+              <button class="btn btn-outline-secondary" type="button" id="togglePwd" tabindex="-1"
+                title="Show/hide password">
                 <i class="fas fa-eye" id="eyeIcon"></i>
               </button>
             </div>
@@ -109,32 +102,19 @@
 
 
           <div class="mb-3 text-end small">
-            <a href="{{ url_for('forgot') }}" class="fw-bold" style = "color: #427ddd;" >Forgot password?</a>
+            <a href="{{ url_for('forgot') }}" class="fw-bold" style="color: #427ddd;">Forgot password?</a>
           </div>
 
-         <!-- From Uiverse.io by ryota1231 --> 
-<button class="animated-button" id="submitBtn" type="submit">
-  <svg xmlns="http://www.w3.org/2000/svg" class="arr-2" viewBox="0 0 24 24">
-    <path
-      d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-    ></path>
-  </svg>
-  <span class="text" id="submitLabel">Login as a Student</span>
-  <span class="circle"></span>
-  <svg xmlns="http://www.w3.org/2000/svg" class="arr-1" viewBox="0 0 24 24">
-    <path
-      d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
-    ></path>
-  </svg>
-</button>
-
+          <button type="submit" id="submitBtn" class="btn btn-primary w-100 fw-semibold py-2.5 mb-3">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+          </button>
         </form>
 
 
-        
+
         <p class="text-center mb-0 small text-muted">
           Don't have an account?
-          <a href="{{ url_for('signup') }}" class="fw-bold" data-auth-transition style = "color: #6366f1;">Create one</a>
+          <a href="{{ url_for('signup') }}" class="fw-bold" data-auth-transition style="color: #6366f1;">Create one</a>
         </p>
 
       </div>
@@ -144,18 +124,16 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  
-  <script>
-    let currentRole = 'student';
 
+  <script>
     // Initialize password visibility toggle with proper event handling
     function initPasswordToggle() {
       const togglePwd = document.getElementById('togglePwd');
       const password = document.getElementById('password');
       const eyeIcon = document.getElementById('eyeIcon');
-      
+
       if (!togglePwd) return;
-      
+
       togglePwd.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -164,28 +142,6 @@
         eyeIcon.classList.toggle('fa-eye');
         eyeIcon.classList.toggle('fa-eye-slash');
       });
-    }
-
-    function switchRole(role) {
-      currentRole = role;
-      const btnStudent = document.getElementById('btnStudent');
-      const btnFaculty = document.getElementById('btnFaculty');
-      const submitBtn = document.getElementById('submitBtn');
-      const emailInput = document.getElementById('email');
-      const userTypeInput = document.getElementById('userType');
-
-      userTypeInput.value = role;
-      if (role === 'student') {
-        btnStudent.classList.add('active');
-        btnFaculty.classList.remove('active');
-        document.getElementById('submitLabel').textContent = 'Login as a Student';
-        emailInput.placeholder = 'student@university.edu';
-      } else {
-        btnFaculty.classList.add('active');
-        btnStudent.classList.remove('active');
-        document.getElementById('submitLabel').textContent = 'Login as a Faculty';
-        emailInput.placeholder = 'faculty@university.edu';
-      }
     }
 
     // Initialize when DOM is ready to avoid autofill lag
@@ -203,4 +159,5 @@
     }, true);
   </script>
 </body>
+
 </html>

@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}AI SmartClass{% endblock %}</title>
+  <title>AI Smart Collaborative Learning Platform </title>
 
   <!-- Bootstrap 5.3 -->
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <!-- Font Awesome 6 -->
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <!-- Chart.js (loaded globally so all pages can use it) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script>
@@ -25,8 +24,16 @@
       }
     })();
   </script>
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -37,14 +44,14 @@
     <div class="container-fluid px-4">
 
       <!-- Brand -->
-      <a class="navbar-brand fw-bold text-primary" href="{{ url_for('faculty_dashboard') if session.get('user_type') == 'faculty' else url_for('dashboard') }}">
+      <a class="navbar-brand fw-bold text-primary"
+        href="{{ url_for('faculty_dashboard') if session.get('user_type') == 'faculty' else url_for('dashboard') }}">
         <i class="fas fa-graduation-cap me-2"></i>AI SmartClass
       </a>
 
       <!-- Hamburger -->
-      <button class="navbar-toggler border-0" type="button"
-              data-bs-toggle="collapse" data-bs-target="#navMenu"
-              aria-controls="navMenu" aria-expanded="false">
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+        aria-controls="navMenu" aria-expanded="false">
         <span class="navbar-toggler-icon"></span>
       </button>
 
@@ -52,43 +59,86 @@
 
         <!-- Links -->
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if session.get('user_type') == 'faculty' %}
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'dashboard' or request.endpoint == 'faculty_dashboard' %}active{% endif %}"
-               href="{{ url_for('faculty_dashboard') if session.get('user_type') == 'faculty' else url_for('dashboard') }}">
+            <a class="nav-link {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"
+              href="{{ url_for('faculty_dashboard') }}">
               <i class="fas fa-home me-1"></i>Dashboard
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'subjects' %}active{% endif %}"
-               href="{{ url_for('subjects') }}">
-              <i class="fas fa-book-open me-1"></i>Subjects
-            </a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
-               href="{{ url_for('classrooms') }}">
+              href="{{ url_for('classrooms') }}">
               <i class="fas fa-chalkboard me-1"></i>Classrooms
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'planner' %}active{% endif %}"
-               href="{{ url_for('planner') }}">
-              <i class="fas fa-calendar-alt me-1"></i>Planner
+            <a class="nav-link {% if request.endpoint == 'students' %}active{% endif %}"
+              href="{{ url_for('students') }}">
+              <i class="fas fa-user-graduate me-1"></i>Students
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}"
-               href="{{ url_for('tasks') }}">
+            <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks') }}">
               <i class="fas fa-tasks me-1"></i>Tasks
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}"
-               href="{{ url_for('quiz') }}">
-              <i class="fas fa-circle-question me-1"></i>Quiz
+            <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
+              href="{{ url_for('resources') }}">
+              <i class="fas fa-folder-open me-1"></i>Resources
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
+              <i class="fas fa-circle-question me-1"></i>Quiz Management
+            </a>
+          </li>
+          {% else %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+              href="{{ url_for('dashboard') }}">
+              <i class="fas fa-home me-1"></i>Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
+              href="{{ url_for('classrooms') }}">
+              <i class="fas fa-chalkboard me-1"></i>Classrooms
+            </a>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
+              href="{{ url_for('resources') }}">
+              <i class="fas fa-folder-open me-1"></i>Resources
+            </a>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'subjects' %}active{% endif %}"
+              href="{{ url_for('subjects') }}">
+              <i class="fas fa-book-open me-1"></i>Subjects
             </a>
           </li>
 
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'planner' %}active{% endif %}" href="{{ url_for('planner') }}">
+              <i class="fas fa-calendar-alt me-1"></i>Planner
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks') }}">
+              <i class="fas fa-tasks me-1"></i>Tasks
+            </a>
+          </li>
+
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
+              <i class="fas fa-circle-question me-1"></i>Quiz
+            </a>
+          </li>
+          {% endif %}
         </ul>
 
         <!-- Right-side controls -->
@@ -111,20 +161,62 @@
             </script>
           </div>
 
+          <!-- Notification Bell Dropdown -->
+          <div class="dropdown notification-dropdown" id="notificationDropdownContainer">
+            <button class="btn btn-outline-secondary btn-sm position-relative rounded-pill px-3 py-1"
+              id="notificationBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+              title="Notifications">
+              <i class="fas fa-bell text-warning"></i>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
+                id="notifBadgeCount">
+                0
+                <span class="visually-hidden">unread notifications</span>
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-0 mt-2"
+              style="width: 330px; max-width: 90vw; overflow: hidden;" aria-labelledby="notificationBellBtn">
+              <div class="p-3 bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="fw-bold fs-6">
+                  <i class="fas fa-bell me-2"></i>Notifications
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge bg-white text-primary rounded-pill" id="notifHeaderCount">0 New</span>
+                  <button type="button" class="btn btn-sm btn-link text-white text-decoration-none p-0"
+                    title="Mark all as read" onclick="markAllNotificationsRead(event)" style="font-size: 0.75rem;">
+                    <i class="fas fa-check-double"></i> Clear
+                  </button>
+                </div>
+              </div>
+              <div class="notification-list p-2" id="notifList" style="max-height: 320px; overflow-y: auto;">
+                <div class="text-center py-4 text-muted small" id="notifEmptyState">
+                  <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                  <p class="mb-0">No new notifications</p>
+                </div>
+              </div>
+              <div class="p-2 border-top bg-light text-center">
+                <a href="{{ url_for('classrooms') }}" class="small text-decoration-none fw-semibold text-primary">
+                  View All in Classrooms &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+
           <!-- User dropdown -->
           <div class="dropdown user-menu">
-            <button class="user-menu__toggle btn btn-outline-primary btn-sm dropdown-toggle"
-                    data-bs-toggle="dropdown" aria-expanded="false">
+            <button class="user-menu__toggle btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+              aria-expanded="false">
               {% if session.user_avatar %}
-                <img src="{{ url_for('static', filename='uploads/avatars/' ~ session.user_avatar) }}" alt="avatar" style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:6px;">
+              <img src="{{ url_for('static', filename='uploads/avatars/' ~ session.user_avatar) }}" alt="avatar"
+                style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:6px;">
               {% else %}
-                <i class="fas fa-user-circle me-1"></i>
+              <i class="fas fa-user-circle me-1"></i>
               {% endif %}
               {{ session.user_name }}
             </button>
             <ul class="user-menu__list dropdown-menu dropdown-menu-end shadow">
               <li>
-                <a class="dropdown-item {% if request.endpoint == 'profile' %}active{% endif %}" href="{{ url_for('profile') }}" {% if request.endpoint == 'profile' %}aria-current="page"{% endif %}>
+                <a class="dropdown-item {% if request.endpoint == 'profile' %}active{% endif %}"
+                  href="{{ url_for('profile') }}" {% if request.endpoint=='profile' %}aria-current="page" {% endif %}>
                   <i class="fas fa-user me-2"></i>Profile
                 </a>
               </li>
@@ -132,12 +224,14 @@
                 <hr class="dropdown-divider">
               </li>
               <li>
-                <a class="dropdown-item {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
+                <a class="dropdown-item {% if request.endpoint == 'settings' %}active{% endif %}"
+                  href="{{ url_for('settings') }}">
                   <i class="fas fa-cog me-2"></i>Settings
                 </a>
               </li>
               <li>
-                <a class="dropdown-item {% if request.endpoint == 'manage_data' %}active{% endif %}" href="{{ url_for('manage_data') }}">
+                <a class="dropdown-item {% if request.endpoint == 'manage_data' %}active{% endif %}"
+                  href="{{ url_for('manage_data') }}">
                   <i class="fas fa-database me-2"></i>Manage Data
                 </a>
               </li>
@@ -160,14 +254,14 @@
   <!-- ══ Flash messages ═════════════════════════════════════════════════════ -->
   <div class="flash-container" id="flashContainer">
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for cat, msg in messages %}
-          <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm" role="alert">
-            {{ msg }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
+    {% if messages %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show shadow-sm" role="alert">
+      {{ msg }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
     {% endwith %}
   </div>
 
@@ -182,7 +276,249 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    // ── Global Real-time Notification & Pop-Up Alert System ─────────────────
+    let currentNotifications = [];
+    const knownNotifIds = new Set();
+    let isInitialFetch = true;
+
+    function triggerRealtimeNotificationToast(n) {
+      const toastArea = document.getElementById('toastArea');
+      if (!toastArea) return;
+
+      const toastId = `toast-popup-${n.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+      if (document.getElementById(toastId)) return;
+
+      const toastEl = document.createElement('div');
+      toastEl.id = toastId;
+      toastEl.className = `realtime-notif-toast toast-${n.type || 'info'} mb-2 p-3`;
+      toastEl.setAttribute('role', 'alert');
+      toastEl.setAttribute('aria-live', 'assertive');
+
+      toastEl.innerHTML = `
+        <div class="d-flex align-items-start gap-2">
+          <div class="p-2 rounded-circle bg-light-subtle border d-flex align-items-center justify-content-center mt-0.5" style="width:34px;height:34px;flex-shrink:0;">
+            <i class="${n.icon || 'fas fa-bell text-primary'}"></i>
+          </div>
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong style="font-size:0.84rem;line-height:1.2;">${n.title}</strong>
+              <small class="text-muted ms-1" style="font-size:0.68rem;white-space:nowrap;">${n.time || 'Just now'}</small>
+            </div>
+            <p class="mb-2 text-secondary" style="font-size:0.78rem;line-height:1.35;word-break:break-word;">${n.text}</p>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 py-0.5 fw-semibold" style="font-size:0.72rem;"
+                      onclick="handleNotificationClick(event, '${n.id}', '${n.url || ''}')">
+                <i class="fas fa-arrow-up-right-from-square me-1"></i>View
+              </button>
+              <button type="button" class="btn btn-light border btn-sm rounded-pill px-2 py-0.5 text-muted" style="font-size:0.72rem;"
+                      onclick="dismissToastPopup(event, '${toastId}', '${n.id}')">
+                Dismiss
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn-close" style="font-size:0.65rem;" 
+                  onclick="dismissToastPopup(event, '${toastId}', '${n.id}')" aria-label="Close"></button>
+        </div>
+      `;
+
+      toastArea.appendChild(toastEl);
+
+      // Trigger browser notification if allowed
+      if (typeof showBrowserNotification === 'function') {
+        showBrowserNotification(n.title, n.text);
+      }
+
+      // Auto-dismiss popup after 8 seconds (still remains in dropdown until opened)
+      setTimeout(() => {
+        const el = document.getElementById(toastId);
+        if (el) {
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(10px)';
+          setTimeout(() => el.remove(), 300);
+        }
+      }, 8000);
+    }
+
+    function dismissToastPopup(event, toastDomId, notifId) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const el = document.getElementById(toastDomId);
+      if (el) {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(10px)';
+        setTimeout(() => el.remove(), 300);
+      }
+      dismissSingleNotification(event, notifId);
+    }
+
+    async function fetchNotifications() {
+      try {
+        const res = await fetch('/api/notifications');
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.count || 0;
+        currentNotifications = data.notifications || [];
+
+        const badge = document.getElementById('notifBadgeCount');
+        const headerCount = document.getElementById('notifHeaderCount');
+        const listContainer = document.getElementById('notifList');
+
+        // Check for new arrivals to show toast popups
+        if (!isInitialFetch) {
+          currentNotifications.forEach(n => {
+            if (!knownNotifIds.has(n.id)) {
+              triggerRealtimeNotificationToast(n);
+            }
+          });
+        }
+
+        // Update known IDs
+        currentNotifications.forEach(n => knownNotifIds.add(n.id));
+        isInitialFetch = false;
+
+        if (badge && headerCount) {
+          if (count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.classList.remove('d-none');
+            headerCount.textContent = `${count} New`;
+          } else {
+            badge.classList.add('d-none');
+            headerCount.textContent = '0 New';
+          }
+        }
+
+        if (listContainer) {
+          if (currentNotifications.length === 0) {
+            listContainer.innerHTML = `
+              <div class="text-center py-4 text-muted small" id="notifEmptyState">
+                <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
+                <p class="mb-0">No new notifications</p>
+              </div>`;
+          } else {
+            listContainer.innerHTML = currentNotifications.map(n => `
+              <div class="dropdown-item p-2 rounded-3 mb-1 text-wrap d-flex align-items-start gap-2 border-bottom position-relative notif-item" 
+                   id="notif-elem-${n.id}"
+                   style="cursor: pointer; transition: background 0.2s;"
+                   onclick="handleNotificationClick(event, '${n.id}', '${n.url || ''}')">
+                <div class="p-2 rounded-circle bg-light-subtle border d-flex align-items-center justify-content-center mt-1" style="width: 32px; height: 32px; flex-shrink:0;">
+                  <i class="${n.icon || 'fas fa-info-circle text-primary'}"></i>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <strong style="font-size: 0.85rem;">${n.title}</strong>
+                    <small class="text-muted" style="font-size: 0.68rem;">${n.time || ''}</small>
+                  </div>
+                  <p class="mb-0 text-secondary text-truncate" style="font-size: 0.78rem;">${n.text}</p>
+                </div>
+                <button type="button" class="btn btn-sm text-muted p-0 ms-1" 
+                        title="Dismiss" 
+                        style="font-size: 0.75rem; line-height: 1;"
+                        onclick="dismissSingleNotification(event, '${n.id}')">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            `).join('');
+          }
+        }
+      } catch (err) {
+        console.warn('Error polling notifications:', err);
+      }
+    }
+
+    async function markAllSeenOnOpen() {
+      const badge = document.getElementById('notifBadgeCount');
+      if (badge) {
+        badge.classList.add('d-none');
+        badge.textContent = '0';
+      }
+      if (currentNotifications && currentNotifications.length > 0) {
+        const unreadIds = currentNotifications.map(n => n.id);
+        try {
+          await fetch('/api/notifications/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ all: true, ids: unreadIds })
+          });
+          const headerCount = document.getElementById('notifHeaderCount');
+          if (headerCount) headerCount.textContent = '0 New';
+        } catch (e) { }
+      }
+    }
+
+    async function handleNotificationClick(event, notifId, targetUrl) {
+      if (event) event.stopPropagation();
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: notifId })
+        });
+      } catch (e) { }
+
+      const elem = document.getElementById(`notif-elem-${notifId}`);
+      if (elem) {
+        elem.remove();
+      }
+      fetchNotifications();
+
+      if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
+        window.location.href = targetUrl;
+      }
+    }
+
+    async function dismissSingleNotification(event, notifId) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: notifId })
+        });
+      } catch (e) { }
+
+      const elem = document.getElementById(`notif-elem-${notifId}`);
+      if (elem) {
+        elem.remove();
+      }
+      fetchNotifications();
+    }
+
+    async function markAllNotificationsRead(event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const allIds = currentNotifications.map(n => n.id);
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ all: true, ids: allIds })
+        });
+      } catch (e) { }
+
+      fetchNotifications();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchNotifications();
+      // Poll every 6 seconds for real-time responsiveness
+      setInterval(fetchNotifications, 6000);
+
+      const bellBtn = document.getElementById('notificationBellBtn');
+      if (bellBtn) {
+        bellBtn.addEventListener('show.bs.dropdown', markAllSeenOnOpen);
+      }
+    });
+  </script>
   {% block extra_js %}{% endblock %}
 
 </body>
+
 </html>

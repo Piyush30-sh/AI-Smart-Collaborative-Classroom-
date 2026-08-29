@@ -1,0 +1,646 @@
+{% extends "base.html" %}
+{% block title %}AI SmartClass — Student Management{% endblock %}
+
+{% block extra_css %}
+<style>
+  .student-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+    border-radius: 16px;
+    color: #ffffff;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+  }
+
+  .stat-card-custom {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+  }
+  .stat-card-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  }
+
+  [data-bs-theme="dark"] .stat-card-custom {
+    background: #161f30 !important;
+    border-color: #2a374d !important;
+    color: #e2e8f0 !important;
+  }
+
+  [data-bs-theme="dark"] .stat-card-custom .h3 {
+    color: #f8fafc !important;
+  }
+
+  [data-bs-theme="dark"] .stat-card-custom .text-muted {
+    color: #94a3b8 !important;
+  }
+
+  .student-avatar-lg {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(37, 99, 235, 0.12);
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  [data-bs-theme="dark"] .student-avatar-lg {
+    background: rgba(37, 99, 235, 0.25) !important;
+    color: #93c5fd !important;
+  }
+
+  /* Chat Modal Custom Styles */
+  .chat-box-container {
+    height: 380px;
+    overflow-y: auto;
+    background: var(--bs-tertiary-bg, #f8fafc);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .chat-bubble {
+    max-width: 75%;
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    position: relative;
+    word-break: break-word;
+    font-size: 0.92rem;
+  }
+
+  .chat-bubble-mine {
+    background: #2563eb;
+    color: #ffffff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-bubble-theirs {
+    background: var(--bs-card-bg, #ffffff);
+    color: var(--bs-body-color, #0f172a);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+  }
+
+  .chat-time {
+    font-size: 0.72rem;
+    opacity: 0.75;
+    margin-top: 4px;
+    display: block;
+    text-align: right;
+  }
+
+  .chat-bubble-theirs .chat-time {
+    text-align: left;
+  }
+
+  .chat-attachment-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    margin-top: 0.4rem;
+    text-decoration: none;
+  }
+
+  .chat-bubble-mine .chat-attachment-pill {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+  }
+
+  .chat-bubble-theirs .chat-attachment-pill {
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563eb;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+  <!-- Header -->
+  <div class="student-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+    <div>
+      <span class="badge bg-light text-primary fw-bold mb-2 px-3 py-1 rounded-pill">
+        <i class="fas fa-users-gear me-1"></i> {% if user_type == 'faculty' %}Student Directory{% else %}Classmates &amp; Faculty{% endif %}
+      </span>
+      <h1 class="h2 mb-1">{% if user_type == 'faculty' %}Student Management{% else %}Classroom Members{% endif %}</h1>
+      <p class="mb-0 text-white-50">
+        {% if user_type == 'faculty' %}
+          Track unique student rosters across all courses, filter classroom-wise, and send 1-on-1 direct messages.
+        {% else %}
+          View enrolled peers and connect privately with your course professors.
+        {% endif %}
+      </p>
+    </div>
+    <div>
+      {% if user_type == 'faculty' %}
+      <a href="{{ url_for('classrooms') }}" class="btn btn-light text-primary fw-semibold shadow-sm">
+        <i class="fas fa-chalkboard-user me-1"></i> Classrooms Hub
+      </a>
+      {% else %}
+      <a href="{{ url_for('classrooms') }}" class="btn btn-light text-primary fw-semibold shadow-sm">
+        <i class="fas fa-chalkboard me-1"></i> My Classrooms
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card-custom d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Total Unique {% if user_type == 'faculty' %}Students{% else %}Peers{% endif %}</div>
+          <div class="h3 fw-bold mb-0 mt-1">{{ students|length }}</div>
+          <small class="text-muted">Distinct members enrolled</small>
+        </div>
+        <div class="p-3 bg-primary-subtle text-primary rounded-3 fs-4">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card-custom d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Active Classrooms</div>
+          <div class="h3 fw-bold mb-0 mt-1">{{ classrooms|length }}</div>
+          <small class="text-muted">Connected courses</small>
+        </div>
+        <div class="p-3 bg-success-subtle text-success rounded-3 fs-4">
+          <i class="fas fa-chalkboard"></i>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card-custom d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small fw-semibold text-uppercase">Private Messaging</div>
+          <div class="h3 fw-bold mb-0 mt-1"><i class="fas fa-shield-halved text-primary me-1"></i>Active</div>
+          <small class="text-success"><i class="fas fa-comment-dots me-1"></i>Direct 1-on-1 channels</small>
+        </div>
+        <div class="p-3 bg-warning-subtle text-warning rounded-3 fs-4">
+          <i class="fas fa-comments"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if user_type != 'faculty' and faculty_list %}
+  <!-- Course Faculty & Professors Section -->
+  <div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+          <h5 class="fw-bold mb-1"><i class="fas fa-chalkboard-teacher text-primary me-2"></i>Course Professors &amp; Faculty</h5>
+          <small class="text-muted">Direct 1-on-1 private messaging channels with your classroom instructors</small>
+        </div>
+        <span class="badge rounded-pill bg-primary-subtle text-primary px-3 py-1.5 fw-bold">
+          {{ faculty_list|length }} Instructor{% if faculty_list|length != 1 %}s{% endif %}
+        </span>
+      </div>
+
+      <div class="row g-3">
+        {% for f in faculty_list %}
+        <div class="col-md-6 col-lg-4">
+          <div class="p-3 border rounded-3 bg-light-subtle d-flex flex-column justify-content-between h-100 shadow-sm">
+            <div>
+              <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="student-avatar-lg bg-primary text-white">{{ f.name[:1].upper() if f.name else 'P' }}</div>
+                <div class="overflow-hidden">
+                  <div class="fw-bold text-truncate" style="font-size:1rem;">Prof. {{ f.name }}</div>
+                  <small class="text-muted"><i class="fas fa-shield-halved text-primary me-1"></i>Faculty Member</small>
+                </div>
+              </div>
+              <div class="mb-3">
+                <small class="text-muted d-block mb-1" style="font-size:0.75rem;font-weight:600;">TEACHING IN:</small>
+                <div class="d-flex flex-wrap gap-1">
+                  {% for cl in f.classrooms %}
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1" style="font-size:0.75rem;">
+                      <i class="fas fa-chalkboard me-1"></i>{{ cl.name }}
+                    </span>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              {% if f.classrooms|length == 1 %}
+                <button type="button" class="btn btn-primary btn-sm w-100 rounded-pill fw-semibold shadow-sm"
+                        onclick="openDirectChat('{{ f.id }}', 'Prof. {{ f.name|escape }}', '{{ f.classrooms[0].id }}', '{{ f.classrooms[0].name|escape }}')">
+                  <i class="fas fa-comment-dots me-1"></i> Message Professor
+                </button>
+              {% else %}
+                <div class="btn-group w-100">
+                  <button type="button" class="btn btn-primary btn-sm rounded-start-pill fw-semibold shadow-sm"
+                          onclick="openDirectChat('{{ f.id }}', 'Prof. {{ f.name|escape }}', '{{ f.classrooms[0].id }}', '{{ f.classrooms[0].name|escape }}')">
+                    <i class="fas fa-comment-dots me-1"></i> Message ({{ f.classrooms[0].name }})
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split rounded-end-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle</span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                    <li><h6 class="dropdown-header">Select Classroom Channel</h6></li>
+                    {% for cl in f.classrooms %}
+                      <li>
+                        <a class="dropdown-item small" href="javascript:void(0)"
+                           onclick="openDirectChat('{{ f.id }}', 'Prof. {{ f.name|escape }}', '{{ cl.id }}', '{{ cl.name|escape }}')">
+                          <i class="fas fa-chalkboard text-primary me-2"></i>{{ cl.name }}
+                        </a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Search & Student List -->
+  <div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+          <h5 class="fw-bold mb-0">{% if user_type == 'faculty' %}Enrolled Students Roster{% else %}Classroom Members &amp; Instructors{% endif %}</h5>
+          <small class="text-muted">Unique list of all enrolled students with classroom-wise filtering</small>
+        </div>
+        
+        <!-- Classroom Filter & Search Box -->
+        <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-lg-auto">
+          <!-- Classroom Filter Dropdown -->
+          <div style="min-width: 220px;">
+            <select class="form-select" id="classroomFilterSelect" onchange="filterStudents()">
+              <option value="all" selected>All Classrooms ({{ students|length }} Students)</option>
+              {% for c in classrooms %}
+                <option value="{{ c.id }}">{{ c.class_name }} ({{ classroom_counts[c.id] or 0 }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Search Input -->
+          <div class="input-group" style="min-width: 240px;">
+            <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" id="studentSearchInput" class="form-control border-start-0" placeholder="Search by name, email, class..." oninput="filterStudents()" />
+          </div>
+        </div>
+      </div>
+
+      {% if students %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="studentsTable">
+          <thead class="table-light">
+            <tr>
+              <th>Member</th>
+              <th>Enrolled Classroom(s)</th>
+              <th>Email</th>
+              <th>Joined Date</th>
+              <th class="text-end">Direct Message</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students %}
+            <tr class="student-row"
+                data-classroom-ids="{{ s.classroom_ids|join(',') }}"
+                data-name="{{ s.name }}"
+                data-email="{{ s.email }}"
+                data-classes="{% for cl in s.classrooms %}{{ cl.name }} {% endfor %}">
+              <td>
+                <div class="d-flex align-items-center gap-3">
+                  <div class="student-avatar-lg">{{ s.name[:1].upper() if s.name else 'S' }}</div>
+                  <div>
+                    <div class="fw-bold">{{ s.name }}</div>
+                    <small class="text-muted">{{ s.class_name_profile or 'Student' }}</small>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1" style="max-width: 320px;">
+                  {% for cl in s.classrooms %}
+                    <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill" title="Enrolled in {{ cl.name }}">
+                      <i class="fas fa-chalkboard me-1"></i>{{ cl.name }}
+                    </span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td><span class="text-muted">{{ s.email }}</span></td>
+              <td><small class="text-muted"><i class="far fa-calendar me-1"></i>{{ s.joined_at[:10] if s.joined_at else 'Active' }}</small></td>
+              <td class="text-end">
+                {% if s.classrooms|length == 1 %}
+                  <button type="button"
+                          class="btn btn-sm btn-primary shadow-sm"
+                          onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
+                    <i class="fas fa-comment-dots me-1"></i> Private Message
+                  </button>
+                {% else %}
+                  <div class="btn-group">
+                    <button type="button"
+                            class="btn btn-sm btn-primary shadow-sm"
+                            onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
+                      <i class="fas fa-comment-dots me-1"></i> Message
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                      <span class="visually-hidden">Toggle</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                      <li><h6 class="dropdown-header">Select Class Channel</h6></li>
+                      {% for cl in s.classrooms %}
+                        <li>
+                          <a class="dropdown-item small" href="javascript:void(0)"
+                             onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ cl.id }}', '{{ cl.name|escape }}')">
+                            <i class="fas fa-chalkboard text-primary me-2"></i>{{ cl.name }}
+                          </a>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            <tr id="noStudentMatchRow" class="d-none">
+              <td colspan="5" class="text-center py-4 text-muted">
+                <i class="fas fa-search fa-2x mb-2 opacity-50"></i>
+                <div>No students found matching your search or classroom filter.</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <div class="mb-3 text-muted" style="font-size: 3rem;">
+          <i class="fas fa-user-graduate"></i>
+        </div>
+        <h6>No Students Enrolled Yet</h6>
+        <p class="text-muted small">Share your classroom codes with students so they can join and appear here.</p>
+        <a href="{{ url_for('classrooms') }}" class="btn btn-primary btn-sm">
+          <i class="fas fa-chalkboard me-1"></i> Go to Classrooms
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ Direct Private Messaging Modal ═════════════════════════════════════ -->
+<div class="modal fade" id="privateChatModal" tabindex="-1" aria-labelledby="privateChatModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content rounded-4 shadow-lg border-0">
+      
+      <!-- Modal Header -->
+      <div class="modal-header border-bottom px-4 py-3 bg-light-subtle">
+        <div class="d-flex align-items-center gap-3">
+          <div class="student-avatar-lg" id="modalTargetAvatar">S</div>
+          <div>
+            <h5 class="modal-title fw-bold mb-0" id="privateChatModalLabel">Direct Message</h5>
+            <small class="text-muted" id="modalClassBadge"><i class="fas fa-chalkboard me-1"></i>Classroom</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <!-- Modal Body (Chat History) -->
+      <div class="modal-body px-4 py-3">
+        <div class="chat-box-container" id="chatBox">
+          <div class="text-center py-4 text-muted" id="chatLoadingSpinner">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div>Loading chat history...</div>
+          </div>
+        </div>
+
+        <!-- Attachment Preview Pill -->
+        <div id="attachmentPreview" class="d-none mt-2 p-2 bg-primary-subtle rounded-3 d-flex justify-content-between align-items-center small">
+          <span class="text-primary text-truncate" id="attachmentName"><i class="fas fa-paperclip me-1"></i>file.pdf</span>
+          <button type="button" class="btn-close btn-close-sm" onclick="clearAttachment()"></button>
+        </div>
+      </div>
+
+      <!-- Modal Footer (Input Bar) -->
+      <div class="modal-footer border-top px-4 py-3 bg-light-subtle">
+        <form id="chatSendForm" class="w-100 d-flex gap-2 align-items-center" onsubmit="sendMessage(event)">
+          <input type="hidden" id="chatStudentId" name="student_id" value="" />
+          <input type="hidden" id="chatClassroomId" name="classroom_id" value="" />
+          
+          <!-- Attachment Input -->
+          <label class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center"
+                 style="width:38px;height:38px;cursor:pointer;" title="Attach file">
+            <i class="fas fa-paperclip"></i>
+            <input type="file" id="chatAttachmentInput" name="attachment" class="d-none" onchange="handleAttachmentSelect(this)" />
+          </label>
+
+          <!-- Text Message Field -->
+          <input type="text"
+                 id="chatMessageInput"
+                 name="message"
+                 class="form-control rounded-pill px-3"
+                 placeholder="Type your private message..."
+                 autocomplete="off"
+                 required />
+
+          <!-- Send Button -->
+          <button type="submit" id="sendBtn" class="btn btn-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2">
+            <span>Send</span> <i class="fas fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let activeStudentId = null;
+let activeClassroomId = null;
+let chatInterval = null;
+
+function filterStudents() {
+  const searchVal = (document.getElementById('studentSearchInput')?.value || '').trim().toLowerCase();
+  const classVal = document.getElementById('classroomFilterSelect')?.value || 'all';
+  const rows = document.querySelectorAll('.student-row');
+  let count = 0;
+
+  rows.forEach(row => {
+    const name = (row.dataset.name || '').toLowerCase();
+    const email = (row.dataset.email || '').toLowerCase();
+    const classes = (row.dataset.classes || '').toLowerCase();
+    const classIds = (row.dataset.classroomIds || '').split(',');
+
+    let matchesClass = (classVal === 'all') || classIds.includes(classVal);
+    let matchesSearch = !searchVal || name.includes(searchVal) || email.includes(searchVal) || classes.includes(searchVal);
+
+    if (matchesClass && matchesSearch) {
+      row.classList.remove('d-none');
+      count++;
+    } else {
+      row.classList.add('d-none');
+    }
+  });
+
+  const noMatchRow = document.getElementById('noStudentMatchRow');
+  if (noMatchRow) {
+    if (count === 0 && rows.length > 0) {
+      noMatchRow.classList.remove('d-none');
+    } else {
+      noMatchRow.classList.add('d-none');
+    }
+  }
+}
+
+function openDirectChat(studentId, studentName, classroomId, className) {
+  activeStudentId = studentId;
+  activeClassroomId = classroomId;
+
+  document.getElementById('chatStudentId').value = studentId;
+  document.getElementById('chatClassroomId').value = classroomId;
+  document.getElementById('privateChatModalLabel').textContent = `Private Chat: ${studentName}`;
+  document.getElementById('modalTargetAvatar').textContent = studentName.charAt(0).toUpperCase();
+  document.getElementById('modalClassBadge').innerHTML = `<i class="fas fa-chalkboard me-1"></i>${className}`;
+  
+  clearAttachment();
+  document.getElementById('chatMessageInput').value = '';
+
+  const modal = new bootstrap.Modal(document.getElementById('privateChatModal'));
+  modal.show();
+
+  loadChatHistory();
+
+  // Poll for new messages every 3 seconds while modal is open
+  if (chatInterval) clearInterval(chatInterval);
+  chatInterval = setInterval(loadChatHistory, 3000);
+}
+
+document.getElementById('privateChatModal').addEventListener('hidden.bs.modal', function () {
+  if (chatInterval) {
+    clearInterval(chatInterval);
+    chatInterval = null;
+  }
+});
+
+async function loadChatHistory() {
+  if (!activeClassroomId || !activeStudentId) return;
+
+  const chatBox = document.getElementById('chatBox');
+  try {
+    const res = await fetch(`/api/chat/history?classroom_id=${activeClassroomId}&student_id=${activeStudentId}`);
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      const messages = data.messages || [];
+      if (messages.length === 0) {
+        chatBox.innerHTML = `
+          <div class="text-center py-5 text-muted">
+            <i class="fas fa-comments fs-2 mb-2 text-primary opacity-50"></i>
+            <div>No previous messages.</div>
+            <small>Send a direct message below to start the conversation.</small>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      messages.forEach(m => {
+        const bubbleClass = m.is_mine ? 'chat-bubble-mine' : 'chat-bubble-theirs';
+        const senderLabel = m.is_mine ? 'You' : m.sender_name;
+        
+        let attachmentHtml = '';
+        if (m.attachment_path && m.attachment_name) {
+          attachmentHtml = `
+            <div>
+              <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" target="_blank" class="chat-attachment-pill">
+                <i class="fas fa-file-arrow-down"></i> ${m.attachment_name}
+              </a>
+            </div>`;
+        }
+
+        html += `
+          <div class="chat-bubble ${bubbleClass}">
+            <div class="small fw-bold opacity-75 mb-1" style="font-size:0.75rem;">${senderLabel}</div>
+            <div>${escapeHtml(m.message)}</div>
+            ${attachmentHtml}
+            <span class="chat-time">${m.created_at ? m.created_at.substring(11, 16) : ''}</span>
+          </div>`;
+      });
+
+      chatBox.innerHTML = html;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+  } catch (err) {
+    console.error('Error loading chat:', err);
+  }
+}
+
+async function sendMessage(event) {
+  event.preventDefault();
+  const input = document.getElementById('chatMessageInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  const sendBtn = document.getElementById('sendBtn');
+  sendBtn.disabled = true;
+
+  const formData = new FormData(document.getElementById('chatSendForm'));
+
+  try {
+    const res = await fetch('/api/chat/send', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+
+    if (data.status === 'ok') {
+      input.value = '';
+      clearAttachment();
+      await loadChatHistory();
+    } else {
+      alert(data.message || 'Failed to send message.');
+    }
+  } catch (err) {
+    console.error('Error sending message:', err);
+    alert('An error occurred while sending the message.');
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+function handleAttachmentSelect(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    document.getElementById('attachmentName').innerHTML = `<i class="fas fa-paperclip me-1"></i>${file.name}`;
+    document.getElementById('attachmentPreview').classList.remove('d-none');
+  }
+}
+
+function clearAttachment() {
+  document.getElementById('chatAttachmentInput').value = '';
+  document.getElementById('attachmentPreview').classList.add('d-none');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+</script>
+{% endblock %}

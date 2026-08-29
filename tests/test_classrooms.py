@@ -73,3 +73,45 @@ def test_faculty_can_create_classroom_and_student_can_join(tmp_path):
     )
     assert join_response.status_code == 200
     assert b"Biology 101" in join_response.data
+
+
+def test_faculty_can_remove_student_from_classroom():
+    module, _ = setup_app_module()
+    client = module.app.test_client()
+
+    f_email = "prof_rob@example.com"
+    s_email = "alex_stu@example.com"
+
+    client.post("/signup", data={"name": "Prof Rob", "email": f_email, "password": "password123", "user_type": "faculty"}, follow_redirects=True)
+    client.post("/signup", data={"name": "Alex Stu", "email": s_email, "password": "password123", "user_type": "student"}, follow_redirects=True)
+
+    # Faculty creates class
+    client.post("/login", data={"email": f_email, "password": "password123"}, follow_redirects=True)
+    client.post("/classrooms", data={"class_name": "Chemistry 201"}, follow_redirects=True)
+    
+    conn = module.get_db()
+    c_row = conn.execute("SELECT id FROM classrooms WHERE class_name='Chemistry 201'").fetchone()
+    s_row = conn.execute("SELECT id FROM users WHERE email=?", (s_email,)).fetchone()
+    class_id = c_row["id"]
+    student_id = s_row["id"]
+    conn.close()
+
+    # Enroll student
+    client.post("/classrooms/enroll", data={"classroom_id": str(class_id), "student_email": s_email}, follow_redirects=True)
+    
+    # Check enrolled in DB
+    conn = module.get_db()
+    member = conn.execute("SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?", (class_id, student_id)).fetchone()
+    assert member is not None
+    conn.close()
+
+    # Faculty removes student via POST
+    remove_res = client.post(f"/classrooms/{class_id}/students/{student_id}/remove", follow_redirects=True)
+    assert remove_res.status_code == 200
+    assert b"successfully removed" in remove_res.data
+
+    # Verify student is removed from database
+    conn = module.get_db()
+    member_after = conn.execute("SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?", (class_id, student_id)).fetchone()
+    assert member_after is None
+    conn.close()

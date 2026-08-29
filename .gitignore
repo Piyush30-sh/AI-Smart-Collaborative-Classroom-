@@ -1,43 +1,42 @@
-# Python bytecode and caches
+# Python
 __pycache__/
 *.py[cod]
-*.pyd
-*.pyo
-*.py,cover
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-coverage.xml
-htmlcov/
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environments
+# Virtual Environment
 .venv/
 venv/
-env/
 ENV/
+env/
 
-# Flask / app runtime files
-database.db
+# Databases & local user files
 *.db
 *.sqlite3
-backups/*.bak
-instance/
-.env
-.env.*
-!.env.example
-.render/
+classroom_submissions/
+static/uploads/
+tempCodeRunnerFile.py
 
-# Uploaded/generated files
-static/uploads/*
-!static/uploads/.gitkeep
-!static/uploads/avatars/.gitkeep
-
-# OS and editor files
-.DS_Store
-Thumbs.db
+# Testing & IDEs
+.pytest_cache/
 .vscode/
 .idea/
-
-# Logs
-*.log
+*.swp
+*.swo
+.DS_Store

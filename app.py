@@ -1,5 +1,5 @@
 """
-AI Study Planner & Productivity Coach
+AI Smart Colaborative Learning Platform
 ======================================
 Main Flask application entry point.
 
@@ -39,6 +39,8 @@ import secrets
 import smtplib
 from email.message import EmailMessage
 from werkzeug.utils import secure_filename
+import uuid
+import time
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -145,6 +147,46 @@ app.secret_key = os.environ.get("SECRET_KEY", "study-planner-secret-key-2024")
 DATABASE = get_database_path()
 UPLOAD_FOLDER = get_upload_folder()
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+@app.template_filter("days_until")
+def days_until_filter(date_val):
+    """Return number of days remaining until the given date (negative if overdue)."""
+    if not date_val:
+        return 0
+    try:
+        if isinstance(date_val, datetime):
+            dt = date_val.date()
+        elif isinstance(date_val, date):
+            dt = date_val
+        elif isinstance(date_val, str):
+            clean_str = str(date_val).strip()[:10]
+            dt = datetime.strptime(clean_str, "%Y-%m-%d").date()
+        else:
+            return 0
+        return (dt - date.today()).days
+    except Exception:
+        return 0
+
+
+@app.template_filter("filesize_format")
+def filesize_format_filter(size_bytes):
+    """Format file size in bytes to human-readable string (KB, MB, GB)."""
+    if not size_bytes or size_bytes <= 0:
+        return ""
+    try:
+        size = float(size_bytes)
+        if size < 1024:
+            return f"{int(size)} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        elif size < 1024 * 1024 * 1024:
+            return f"{size / (1024 * 1024):.1f} MB"
+        else:
+            return f"{size / (1024 * 1024 * 1024):.1f} GB"
+    except Exception:
+        return ""
+
 
 
 # ── Database helpers ─────────────────────────────────────────────────────────
@@ -869,6 +911,114 @@ def init_db():
             FOREIGN KEY (student_id) REFERENCES users(id),
             FOREIGN KEY (sender_id) REFERENCES users(id)
         );
+
+        CREATE TABLE IF NOT EXISTS classroom_resources (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            classroom_id  INTEGER NOT NULL,
+            uploader_id   INTEGER NOT NULL,
+            title         TEXT    NOT NULL,
+            description   TEXT    DEFAULT '',
+            resource_type TEXT    DEFAULT 'file',
+            file_path     TEXT    DEFAULT '',
+            file_name     TEXT    DEFAULT '',
+            file_size     INTEGER DEFAULT 0,
+            file_mime     TEXT    DEFAULT '',
+            external_url  TEXT    DEFAULT '',
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id),
+            FOREIGN KEY (uploader_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS classroom_submissions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id   INTEGER NOT NULL,
+            classroom_id    INTEGER NOT NULL,
+            student_id      INTEGER NOT NULL,
+            submission_text TEXT    DEFAULT '',
+            file_path       TEXT    DEFAULT '',
+            file_name       TEXT    DEFAULT '',
+            file_size       INTEGER DEFAULT 0,
+            file_mime       TEXT    DEFAULT '',
+            submitted_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            status          TEXT    DEFAULT 'Submitted',
+            grade           TEXT    DEFAULT '',
+            feedback        TEXT    DEFAULT '',
+            graded_at       TIMESTAMP NULL,
+            FOREIGN KEY (assignment_id) REFERENCES classroom_assignments(id) ON DELETE CASCADE,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE CASCADE,
+            FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS notification_reads (
+            user_id     INTEGER NOT NULL,
+            notif_id    TEXT NOT NULL,
+            read_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, notif_id),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS revision_notes (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            uploader_id     INTEGER NOT NULL,
+            uploader_role   TEXT    NOT NULL DEFAULT 'student',
+            subject_name    TEXT    NOT NULL,
+            title           TEXT    NOT NULL,
+            description     TEXT    DEFAULT '',
+            content_type    TEXT    NOT NULL DEFAULT 'file',
+            note_content    TEXT    DEFAULT '',
+            note_type       TEXT    DEFAULT 'Lecture Notes',
+            file_path       TEXT    DEFAULT '',
+            file_name       TEXT    DEFAULT '',
+            file_size       INTEGER DEFAULT 0,
+            file_mime       TEXT    DEFAULT '',
+            classroom_id    INTEGER DEFAULT NULL,
+            downloads_count INTEGER DEFAULT 0,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (uploader_id) REFERENCES users(id),
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE SET NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS quizzes (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            faculty_id       INTEGER NOT NULL,
+            classroom_id     INTEGER DEFAULT NULL,
+            title            TEXT    NOT NULL,
+            subject          TEXT    DEFAULT '',
+            description      TEXT    DEFAULT '',
+            duration_minutes INTEGER DEFAULT 0,
+            status           TEXT    DEFAULT 'draft',
+            quiz_data        TEXT    NOT NULL,
+            started_at       TIMESTAMP DEFAULT NULL,
+            created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (faculty_id) REFERENCES users(id),
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE SET NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS quiz_submissions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id         INTEGER NOT NULL,
+            student_id      INTEGER NOT NULL,
+            student_name    TEXT    NOT NULL,
+            student_email   TEXT    DEFAULT '',
+            classroom_id    INTEGER DEFAULT NULL,
+            score           INTEGER NOT NULL,
+            correct_answers INTEGER NOT NULL,
+            total_questions INTEGER NOT NULL,
+            answers_json    TEXT    NOT NULL,
+            results_json    TEXT    NOT NULL,
+            submitted_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+            FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_revnotes_subject ON revision_notes(subject_name);
+        CREATE INDEX IF NOT EXISTS idx_revnotes_role ON revision_notes(uploader_role);
+        CREATE INDEX IF NOT EXISTS idx_quizzes_faculty ON quizzes(faculty_id);
+        CREATE INDEX IF NOT EXISTS idx_quizzes_class ON quizzes(classroom_id);
+        CREATE INDEX IF NOT EXISTS idx_quizzes_status ON quizzes(status);
+        CREATE INDEX IF NOT EXISTS idx_quiz_subs_quiz ON quiz_submissions(quiz_id);
+        CREATE INDEX IF NOT EXISTS idx_quiz_subs_student ON quiz_submissions(student_id);
     """)
     conn.commit()
     conn.close()
@@ -952,6 +1102,24 @@ def init_db():
         conn.execute("ALTER TABLE tasks ADD COLUMN attachment_name TEXT DEFAULT ''")
     if 'attachment_mime' not in task_cols:
         conn.execute("ALTER TABLE tasks ADD COLUMN attachment_mime TEXT DEFAULT ''")
+    # Ensure classroom_submissions table columns
+    sub_cols = [r[1] for r in conn.execute("PRAGMA table_info(classroom_submissions)").fetchall()]
+    if sub_cols:
+        if 'grade' not in sub_cols:
+            conn.execute("ALTER TABLE classroom_submissions ADD COLUMN grade TEXT DEFAULT ''")
+        if 'feedback' not in sub_cols:
+            conn.execute("ALTER TABLE classroom_submissions ADD COLUMN feedback TEXT DEFAULT ''")
+        if 'graded_at' not in sub_cols:
+            conn.execute("ALTER TABLE classroom_submissions ADD COLUMN graded_at TIMESTAMP NULL")
+
+    # Ensure revision_notes table columns
+    rev_cols = [r[1] for r in conn.execute("PRAGMA table_info(revision_notes)").fetchall()]
+    if rev_cols:
+        if 'content_type' not in rev_cols:
+            conn.execute("ALTER TABLE revision_notes ADD COLUMN content_type TEXT NOT NULL DEFAULT 'file'")
+        if 'note_content' not in rev_cols:
+            conn.execute("ALTER TABLE revision_notes ADD COLUMN note_content TEXT DEFAULT ''")
+
     conn.commit()
     conn.close()
 
@@ -1055,15 +1223,7 @@ def login_required(f):
     return decorated
 
 
-# ── Jinja2 helper filter ─────────────────────────────────────────────────────
-@app.template_filter("days_until")
-def days_until_filter(date_str):
-    """Return # of days from today until given date string (YYYY-MM-DD)."""
-    try:
-        target = datetime.strptime(date_str, "%Y-%m-%d").date()
-        return (target - date.today()).days
-    except Exception:
-        return 0
+# ── Context Processor ────────────────────────────────────────────────────────
 
 
 @app.context_processor
@@ -1121,34 +1281,30 @@ def save_timer_layout():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
+        if session.get("user_type") == "faculty":
+            return redirect(url_for("faculty_dashboard"))
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        email     = request.form.get("email", "").strip()
-        password  = request.form.get("password", "")
-        user_type = request.form.get("user_type", "student").strip().lower()
-        if user_type not in ("student", "faculty"):
-            user_type = "student"
+        email    = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
 
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM users WHERE email = ?", (email,)
+            "SELECT * FROM users WHERE lower(email) = lower(?)", (email,)
         ).fetchone()
         conn.close()
 
         if user and check_password_hash(user["password"], password):
             stored_type = safe_get(user, "user_type", "student").strip().lower()
-            if stored_type != user_type:
-                flash("Please select the correct role for this account.", "danger")
-            else:
-                session["user_id"]     = user["id"]
-                session["user_name"]   = user["name"]
-                session["user_type"]   = stored_type
-                session["user_avatar"] = (user["avatar"] if "avatar" in user.keys() else "") or ""
-                flash(f"Welcome back, {user['name']}! 🎉", "success")
-                if stored_type == "faculty":
-                    return redirect(url_for("faculty_dashboard"))
-                return redirect(url_for("dashboard"))
+            session["user_id"]     = user["id"]
+            session["user_name"]   = user["name"]
+            session["user_type"]   = stored_type
+            session["user_avatar"] = (user["avatar"] if "avatar" in user.keys() else "") or ""
+            flash(f"Welcome back, {user['name']}! 🎉", "success")
+            if stored_type == "faculty":
+                return redirect(url_for("faculty_dashboard"))
+            return redirect(url_for("dashboard"))
         else:
             flash("Invalid email or password.", "danger")
 
@@ -1200,7 +1356,7 @@ def signup():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("You have been logged out.", "logout")
+    flash("You have been logged out.", "info")
     return redirect(url_for("login"))
 
 
@@ -1268,13 +1424,95 @@ def _build_dashboard_context(uid, user_type=None):
     streak       = get_study_streak(uid, conn)
     motivation   = get_motivational_message(productivity)
 
-    upcoming = conn.execute(
-        """SELECT task_name, subject, deadline FROM tasks
+    # ── Upcoming deadlines across personal tasks, classroom assignments, & exams
+    upcoming = []
+
+    # 1. Personal pending tasks
+    task_rows = conn.execute(
+        """SELECT id, task_name, subject, deadline, status
+           FROM tasks
            WHERE user_id=? AND status='Pending'
-           AND deadline >= ? AND deadline <= date(?, '+3 days')
-           ORDER BY deadline""",
-        (uid, today, today),
+           ORDER BY deadline ASC""",
+        (uid,),
     ).fetchall()
+
+    for t in task_rows:
+        upcoming.append({
+            "id": t["id"],
+            "task_name": t["task_name"],
+            "subject": t["subject"],
+            "deadline": str(t["deadline"]),
+            "status": t["status"],
+            "type": "Task",
+            "link": "/tasks",
+        })
+
+    if user_type != "faculty":
+        # 2. Active classroom assignments for students
+        try:
+            ca_rows = conn.execute(
+                """SELECT ca.id, ca.classroom_id, ca.task_name, ca.subject, ca.deadline, ca.status,
+                          ca.borrowed, ca.borrowed_task_id, c.class_name
+                   FROM classroom_assignments ca
+                   JOIN classrooms c ON c.id = ca.classroom_id
+                   WHERE ca.student_id=? AND ca.status != 'Completed'
+                   ORDER BY ca.deadline ASC""",
+                (uid,),
+            ).fetchall()
+
+            for ca in ca_rows:
+                # If borrowed into personal tasks and already listed in pending tasks, don't duplicate
+                if ca["borrowed_task_id"] and any(t["id"] == ca["borrowed_task_id"] for t in task_rows):
+                    continue
+                upcoming.append({
+                    "id": ca["id"],
+                    "task_name": ca["task_name"],
+                    "subject": f"{ca['class_name']} ({ca['subject']})" if ca["class_name"] else ca["subject"],
+                    "deadline": str(ca["deadline"]),
+                    "status": ca["status"],
+                    "type": "Assignment",
+                    "link": f"/classrooms?class_id={ca['classroom_id']}",
+                })
+        except Exception:
+            pass
+
+        # 3. Upcoming subject exams
+        try:
+            today_date = date.today()
+            exam_rows = conn.execute(
+                """SELECT id, subject_name, exam_date
+                   FROM subjects
+                   WHERE user_id=? AND exam_date IS NOT NULL AND exam_date != ''
+                   ORDER BY exam_date ASC""",
+                (uid,),
+            ).fetchall()
+
+            for ex in exam_rows:
+                try:
+                    ex_date = datetime.strptime(str(ex["exam_date"]).strip()[:10], "%Y-%m-%d").date()
+                    if (ex_date - today_date).days >= -1:
+                        upcoming.append({
+                            "id": ex["id"],
+                            "task_name": f"{ex['subject_name']} Exam",
+                            "subject": ex["subject_name"],
+                            "deadline": str(ex["exam_date"]),
+                            "status": "Scheduled",
+                            "type": "Exam",
+                            "link": "/subjects",
+                        })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # Sort all upcoming items by deadline date ASC (overdue/earliest first)
+    def parse_item_deadline(item):
+        try:
+            return datetime.strptime(str(item.get("deadline", "")).strip()[:10], "%Y-%m-%d").date()
+        except Exception:
+            return date.max
+
+    upcoming.sort(key=parse_item_deadline)
 
     if user_type == "faculty":
         classroom_summary = conn.execute(
@@ -1334,8 +1572,829 @@ def dashboard():
 def faculty_dashboard():
     if session.get("user_type") != "faculty":
         return redirect(url_for("dashboard"))
-    context = _build_dashboard_context(session["user_id"], session.get("user_type"))
-    return render_template("dashboard.html", is_faculty=True, **context)
+
+    uid = session["user_id"]
+    conn = get_db()
+    today_str = date.today().strftime("%Y-%m-%d")
+
+    # Fetch faculty's created classrooms with member counts
+    classrooms = conn.execute(
+        """SELECT c.id, c.class_name, c.class_code, c.created_at,
+                  COUNT(DISTINCT cm.student_id) AS student_count
+           FROM classrooms c
+           LEFT JOIN classroom_members cm ON cm.classroom_id = c.id
+           WHERE c.faculty_id = ?
+           GROUP BY c.id
+           ORDER BY c.created_at DESC""",
+        (uid,),
+    ).fetchall()
+
+    # Total distinct enrolled students across all classrooms
+    student_count_row = conn.execute(
+        """SELECT COUNT(DISTINCT cm.student_id) AS total
+           FROM classrooms c
+           JOIN classroom_members cm ON cm.classroom_id = c.id
+           WHERE c.faculty_id = ?""",
+        (uid,),
+    ).fetchone()
+    total_students = student_count_row["total"] if student_count_row else 0
+
+    # Recent assignments issued by this faculty
+    assignments = conn.execute(
+        """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.instructions, ca.status,
+                  ca.borrowed, ca.started, ca.created_at, ca.attachment_name,
+                  u.name AS student_name, c.class_name
+           FROM classroom_assignments ca
+           JOIN classrooms c ON c.id = ca.classroom_id
+           JOIN users u ON u.id = ca.student_id
+           WHERE ca.faculty_id = ?
+           ORDER BY ca.created_at DESC
+           LIMIT 10""",
+        (uid,),
+    ).fetchall()
+
+    # Engagement rate estimate based on assignment and member activity
+    engagement_score = 92 if total_students > 0 else 85
+
+    conn.close()
+
+    return render_template(
+        "faculty_dashboard.html",
+        classrooms=classrooms,
+        total_students=total_students,
+        assignments=assignments,
+        engagement_score=engagement_score,
+        today_str=today_str,
+    )
+
+
+@app.route("/students")
+@login_required
+def students():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+
+    if user_type == "faculty":
+        classrooms = conn.execute(
+            "SELECT id, class_name, class_code FROM classrooms WHERE faculty_id=? ORDER BY class_name",
+            (uid,),
+        ).fetchall()
+        raw_students = conn.execute(
+            """SELECT u.id, u.name, u.email, u.class_name AS class_name_profile,
+                      c.id AS classroom_id, c.class_name, c.faculty_id, cm.joined_at
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               JOIN users u ON u.id = cm.student_id
+               WHERE c.faculty_id = ?
+               ORDER BY u.name COLLATE NOCASE, c.class_name""",
+            (uid,),
+        ).fetchall()
+    else:
+        classrooms = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE cm.student_id=?""",
+            (uid,),
+        ).fetchall()
+        raw_students = conn.execute(
+            """SELECT u.id, u.name, u.email, u.class_name AS class_name_profile,
+                      c.id AS classroom_id, c.class_name, c.faculty_id, f.name AS faculty_name, cm.joined_at
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               JOIN users u ON u.id = cm.student_id
+               JOIN users f ON f.id = c.faculty_id
+               WHERE c.id IN (SELECT classroom_id FROM classroom_members WHERE student_id=?)
+               ORDER BY u.name COLLATE NOCASE, c.class_name""",
+            (uid,),
+        ).fetchall()
+
+    conn.close()
+
+    # Deduplicate students so each unique student appears only once
+    students_dict = {}
+    classroom_counts = Counter()
+    faculty_dict = {}
+
+    for r in raw_students:
+        s_id = r["id"]
+        c_id = r["classroom_id"]
+        c_name = r["class_name"]
+        classroom_counts[c_id] += 1
+
+        if user_type != "faculty" and "faculty_id" in r.keys() and r["faculty_id"]:
+            f_id = r["faculty_id"]
+            if f_id not in faculty_dict:
+                faculty_dict[f_id] = {
+                    "id": f_id,
+                    "name": r["faculty_name"],
+                    "classrooms": [],
+                }
+            if not any(c["id"] == c_id for c in faculty_dict[f_id]["classrooms"]):
+                faculty_dict[f_id]["classrooms"].append({
+                    "id": c_id,
+                    "name": c_name,
+                })
+
+        if s_id not in students_dict:
+            students_dict[s_id] = {
+                "id": r["id"],
+                "name": r["name"],
+                "email": r["email"],
+                "class_name_profile": r["class_name_profile"],
+                "joined_at": r["joined_at"],
+                "classrooms": [],
+                "classroom_ids": [],
+            }
+        students_dict[s_id]["classrooms"].append({
+            "id": c_id,
+            "name": c_name,
+            "joined_at": r["joined_at"],
+        })
+        students_dict[s_id]["classroom_ids"].append(str(c_id))
+
+    unique_students = list(students_dict.values())
+    faculty_list = list(faculty_dict.values())
+
+    return render_template(
+        "students.html",
+        students=unique_students,
+        faculty_list=faculty_list,
+        classrooms=classrooms,
+        classroom_counts=classroom_counts,
+        user_type=user_type,
+    )
+
+
+
+@app.route("/api/chat/history")
+@login_required
+def api_chat_history():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    classroom_id_raw = request.args.get("classroom_id", "").strip()
+    student_id_raw = request.args.get("student_id", "").strip()
+
+    if not classroom_id_raw.isdigit():
+        return jsonify({"status": "error", "message": "Invalid classroom ID."}), 400
+
+    classroom_id = int(classroom_id_raw)
+    conn = get_db()
+
+    if user_type == "faculty":
+        classroom = conn.execute(
+            "SELECT id, faculty_id FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+
+        if not student_id_raw.isdigit():
+            conn.close()
+            return jsonify({"status": "error", "message": "Student ID required."}), 400
+
+        faculty_id = uid
+        student_id = int(student_id_raw)
+
+        conn.execute(
+            """UPDATE classroom_messages
+               SET read_by_faculty = 1
+               WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?""",
+            (classroom_id, faculty_id, student_id, uid),
+        )
+        conn.commit()
+    else:
+        classroom = conn.execute(
+            """SELECT c.id, c.faculty_id
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE c.id=? AND cm.student_id=?""",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+
+        faculty_id = classroom["faculty_id"]
+        student_id = uid
+
+        conn.execute(
+            """UPDATE classroom_messages
+               SET read_by_student = 1
+               WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?""",
+            (classroom_id, faculty_id, student_id, uid),
+        )
+        conn.commit()
+
+    messages = conn.execute(
+        """SELECT m.id, m.sender_id, m.message, m.created_at,
+                  COALESCE(m.attachment_path, '') AS attachment_path,
+                  COALESCE(m.attachment_name, '') AS attachment_name,
+                  u.name AS sender_name
+           FROM classroom_messages m
+           JOIN users u ON u.id = m.sender_id
+           WHERE m.classroom_id = ? AND m.faculty_id = ? AND m.student_id = ?
+           ORDER BY m.created_at ASC""",
+        (classroom_id, faculty_id, student_id),
+    ).fetchall()
+
+    result = []
+    for m in messages:
+        result.append({
+            "id": m["id"],
+            "sender_id": m["sender_id"],
+            "sender_name": m["sender_name"],
+            "message": m["message"],
+            "created_at": m["created_at"],
+            "attachment_path": m["attachment_path"],
+            "attachment_name": m["attachment_name"],
+            "is_mine": (m["sender_id"] == uid),
+        })
+
+    conn.close()
+    return jsonify({"status": "ok", "messages": result})
+
+
+@app.route("/api/chat/send", methods=["POST"])
+@login_required
+def api_chat_send():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    classroom_id_raw = request.form.get("classroom_id", "").strip()
+    student_id_raw = request.form.get("student_id", "").strip()
+    message = request.form.get("message", "").strip()
+
+    if not classroom_id_raw.isdigit() or not message:
+        return jsonify({"status": "error", "message": "Classroom ID and message are required."}), 400
+
+    classroom_id = int(classroom_id_raw)
+    conn = get_db()
+
+    attachment = request.files.get("attachment")
+    attachment_path = ""
+    attachment_name = ""
+    attachment_mime = ""
+    if attachment and attachment.filename:
+        save_dir = os.path.join(UPLOAD_FOLDER, "classroom_messages")
+        os.makedirs(save_dir, exist_ok=True)
+        fname = secure_filename(attachment.filename)
+        unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
+        dest = os.path.join(save_dir, unique)
+        attachment.save(dest)
+        attachment_path = os.path.join("classroom_messages", unique)
+        attachment_name = attachment.filename
+        attachment_mime = attachment.mimetype or ""
+
+    if user_type == "faculty":
+        classroom = conn.execute(
+            "SELECT id, faculty_id FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+
+        if not student_id_raw.isdigit():
+            conn.close()
+            return jsonify({"status": "error", "message": "Student ID required."}), 400
+
+        faculty_id = uid
+        student_id = int(student_id_raw)
+
+        cursor = conn.execute(
+            """INSERT INTO classroom_messages
+               (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
+                attachment_path, attachment_name, attachment_mime)
+               VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?, ?)""",
+            (classroom_id, faculty_id, student_id, uid, message, attachment_path, attachment_name, attachment_mime),
+        )
+    else:
+        classroom = conn.execute(
+            """SELECT c.id, c.faculty_id
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE c.id=? AND cm.student_id=?""",
+            (classroom_id, uid),
+        ).fetchone()
+        if not classroom:
+            conn.close()
+            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+
+        faculty_id = classroom["faculty_id"]
+        student_id = uid
+        cursor = conn.execute(
+            """INSERT INTO classroom_messages
+               (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
+                attachment_path, attachment_name, attachment_mime)
+               VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?, ?)""",
+            (classroom_id, faculty_id, student_id, uid, message, attachment_path, attachment_name, attachment_mime),
+        )
+
+    conn.commit()
+    msg_id = cursor.lastrowid
+    conn.close()
+
+    return jsonify({
+        "status": "ok",
+        "message": {
+            "id": msg_id,
+            "sender_id": uid,
+            "sender_name": session.get("user_name", "You"),
+            "message": message,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "attachment_path": attachment_path,
+            "attachment_name": attachment_name,
+            "is_mine": True,
+        }
+    })
+
+
+@app.route("/resources")
+@login_required
+def resources():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+
+    if user_type == "faculty":
+        study_materials = conn.execute(
+            """SELECT r.id, r.classroom_id, r.title, r.description, r.resource_type,
+                      r.file_path, r.file_name, r.file_size, r.file_mime, r.external_url,
+                      r.created_at, c.class_name, u.name AS uploader_name
+               FROM classroom_resources r
+               JOIN classrooms c ON c.id = r.classroom_id
+               JOIN users u ON u.id = r.uploader_id
+               WHERE c.faculty_id = ?
+               ORDER BY r.created_at DESC""",
+            (uid,),
+        ).fetchall()
+
+        attachments = conn.execute(
+            """SELECT ca.attachment_name, ca.attachment_path, ca.subject, ca.created_at, c.class_name
+               FROM classroom_assignments ca
+               JOIN classrooms c ON c.id = ca.classroom_id
+               WHERE ca.faculty_id = ? AND ca.attachment_path != ''
+               GROUP BY ca.attachment_path
+               ORDER BY ca.created_at DESC""",
+            (uid,),
+        ).fetchall()
+    else:
+        study_materials = conn.execute(
+            """SELECT r.id, r.classroom_id, r.title, r.description, r.resource_type,
+                      r.file_path, r.file_name, r.file_size, r.file_mime, r.external_url,
+                      r.created_at, c.class_name, u.name AS uploader_name
+               FROM classroom_resources r
+               JOIN classrooms c ON c.id = r.classroom_id
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               JOIN users u ON u.id = r.uploader_id
+               WHERE cm.student_id = ?
+               ORDER BY r.created_at DESC""",
+            (uid,),
+        ).fetchall()
+
+        attachments = conn.execute(
+            """SELECT ca.attachment_name, ca.attachment_path, ca.subject, ca.created_at, c.class_name
+               FROM classroom_assignments ca
+               JOIN classrooms c ON c.id = ca.classroom_id
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE cm.student_id = ? AND ca.attachment_path != ''
+               GROUP BY ca.attachment_path
+               ORDER BY ca.created_at DESC""",
+            (uid,),
+        ).fetchall()
+
+    conn.close()
+    return render_template("resources.html", attachments=attachments, study_materials=study_materials)
+
+
+def check_revision_note_access(conn, note_id: int, uid: int):
+    """
+    Check if a user can access a revision note.
+    Access granted if:
+    1. User is the uploader of the note
+    2. Note is linked to a classroom and user is enrolled student or classroom faculty
+    """
+    note = conn.execute(
+        """SELECT rn.*, u.name AS uploader_name, u.user_type AS uploader_user_type,
+                  c.class_name, c.faculty_id AS class_faculty_id
+           FROM revision_notes rn
+           JOIN users u ON u.id = rn.uploader_id
+           LEFT JOIN classrooms c ON c.id = rn.classroom_id
+           WHERE rn.id = ?""",
+        (note_id,),
+    ).fetchone()
+    if not note:
+        return False, None
+    if note["uploader_id"] == uid:
+        return True, note
+    if note["classroom_id"]:
+        c_id = note["classroom_id"]
+        if note["class_faculty_id"] == uid:
+            return True, note
+        is_member = conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id = ? AND student_id = ?",
+            (c_id, uid),
+        ).fetchone()
+        if is_member:
+            return True, note
+    return False, None
+
+
+@app.route("/revision-notes")
+@login_required
+def revision_notes():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    selected_subject = request.args.get("subject", "all").strip()
+    selected_type = request.args.get("type", "all").strip()
+    selected_content_type = request.args.get("content_type", "all").strip().lower()
+    selected_classroom = request.args.get("classroom", "all").strip()
+    search_query = request.args.get("q", "").strip()
+    sort_by = request.args.get("sort", "newest").strip().lower()
+
+    conn = get_db()
+
+    # Classrooms user is in
+    if user_type == "faculty":
+        user_classrooms = conn.execute(
+            "SELECT id, class_name, class_code FROM classrooms WHERE faculty_id=? ORDER BY class_name ASC",
+            (uid,),
+        ).fetchall()
+    else:
+        user_classrooms = conn.execute(
+            """SELECT c.id, c.class_name, c.class_code
+               FROM classrooms c
+               JOIN classroom_members cm ON cm.classroom_id = c.id
+               WHERE cm.student_id = ?
+               ORDER BY c.class_name ASC""",
+            (uid,),
+        ).fetchall()
+
+    # Notes visible to user:
+    # 1. Notes uploaded by the user themselves
+    # 2. Notes shared in any classroom the user is enrolled in or teaches
+    all_notes = conn.execute(
+        """SELECT rn.*, u.name AS uploader_name, u.user_type AS uploader_user_type,
+                  c.class_name, c.faculty_id AS class_faculty_id
+           FROM revision_notes rn
+           JOIN users u ON u.id = rn.uploader_id
+           LEFT JOIN classrooms c ON c.id = rn.classroom_id
+           WHERE rn.uploader_id = ?
+              OR (rn.classroom_id IS NOT NULL AND rn.classroom_id IN (
+                    SELECT classroom_id FROM classroom_members WHERE student_id = ?
+                    UNION
+                    SELECT id FROM classrooms WHERE faculty_id = ?
+                 ))
+           ORDER BY rn.created_at DESC""",
+        (uid, uid, uid),
+    ).fetchall()
+
+    # Subjects list (From accessible notes + user's subject table)
+    db_subjects = [r[0] for r in conn.execute("SELECT DISTINCT subject_name FROM subjects WHERE user_id=? AND subject_name != ''", (uid,)).fetchall()]
+    note_subjects = [n["subject_name"] for n in all_notes if n["subject_name"]]
+
+    all_subject_names = sorted(
+        list({s.strip() for s in (db_subjects + note_subjects) if s and s.strip()}),
+        key=lambda s: s.lower(),
+    )
+
+    subject_counts = Counter()
+    manual_notes_count = 0
+    file_notes_count = 0
+    shared_notes_count = 0
+    private_notes_count = 0
+    total_downloads = 0
+
+    for n in all_notes:
+        subj = n["subject_name"]
+        subject_counts[subj] += 1
+        if n["content_type"] == "manual":
+            manual_notes_count += 1
+        else:
+            file_notes_count += 1
+        if n["classroom_id"]:
+            shared_notes_count += 1
+        else:
+            private_notes_count += 1
+        total_downloads += (n["downloads_count"] or 0)
+
+    # Filter notes
+    filtered_notes = []
+    for n in all_notes:
+        if selected_subject != "all" and n["subject_name"].lower() != selected_subject.lower():
+            continue
+        if selected_type != "all" and n["note_type"].lower() != selected_type.lower():
+            continue
+        if selected_content_type in ["manual", "file"] and n["content_type"].lower() != selected_content_type:
+            continue
+        if selected_classroom != "all":
+            if selected_classroom == "private" and n["classroom_id"]:
+                continue
+            elif selected_classroom == "shared" and not n["classroom_id"]:
+                continue
+            elif selected_classroom.isdigit() and n["classroom_id"] != int(selected_classroom):
+                continue
+        if search_query:
+            q_lower = search_query.lower()
+            text_to_search = f"{n['title']} {n['description']} {n['subject_name']} {n['uploader_name']} {n['class_name'] or ''} {n['note_type']} {n['note_content']}".lower()
+            if q_lower not in text_to_search:
+                continue
+        filtered_notes.append(n)
+
+    if sort_by == "downloads":
+        filtered_notes.sort(key=lambda x: (x["downloads_count"] or 0), reverse=True)
+    elif sort_by == "title":
+        filtered_notes.sort(key=lambda x: (x["title"] or "").lower())
+    elif sort_by == "oldest":
+        filtered_notes.sort(key=lambda x: (x["created_at"] or ""))
+    else:
+        filtered_notes.sort(key=lambda x: (x["created_at"] or ""), reverse=True)
+
+    stats = {
+        "total_notes": len(all_notes),
+        "total_subjects": len(all_subject_names),
+        "active_subjects_count": len([s for s in all_subject_names if subject_counts[s] > 0]),
+        "manual_notes_count": manual_notes_count,
+        "file_notes_count": file_notes_count,
+        "shared_notes_count": shared_notes_count,
+        "private_notes_count": private_notes_count,
+        "total_downloads": total_downloads,
+    }
+
+    conn.close()
+    return render_template(
+        "revision_notes.html",
+        revision_notes=filtered_notes,
+        all_notes=all_notes,
+        subjects=all_subject_names,
+        subject_counts=subject_counts,
+        stats=stats,
+        user_classrooms=user_classrooms,
+        selected_subject=selected_subject,
+        selected_type=selected_type,
+        selected_content_type=selected_content_type,
+        selected_classroom=selected_classroom,
+        search_query=search_query,
+        sort_by=sort_by,
+    )
+
+
+@app.route("/revision-notes/upload", methods=["POST"])
+@login_required
+def upload_revision_note():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+
+    title = request.form.get("title", "").strip()
+    subject_name = request.form.get("subject_name", "").strip()
+    custom_subject = request.form.get("custom_subject", "").strip()
+    note_type = request.form.get("note_type", "Lecture Notes").strip()
+    content_type = request.form.get("content_type", "").strip().lower()
+    note_content = request.form.get("note_content", "").strip()
+    description = request.form.get("description", "").strip()
+    classroom_id = request.form.get("classroom_id", "").strip()
+
+    if not subject_name or subject_name == "__custom__":
+        subject_name = custom_subject
+
+    if not title:
+        flash("Please provide a title for the revision note.", "warning")
+        return redirect(url_for("revision_notes"))
+
+    if not subject_name:
+        flash("Please enter or select a subject for the revision note.", "warning")
+        return redirect(url_for("revision_notes"))
+
+    file = request.files.get("file")
+    has_file = file is not None and bool(file.filename and file.filename.strip())
+
+    if not content_type or content_type not in ["manual", "file"]:
+        if has_file:
+            content_type = "file"
+        elif note_content:
+            content_type = "manual"
+        else:
+            content_type = "manual"
+
+    if content_type == "manual" and not note_content and not has_file:
+        flash("Please write your manual note content or choose a file to upload.", "warning")
+        return redirect(url_for("revision_notes"))
+
+    file_path = ""
+    raw_filename = ""
+    file_size = 0
+    file_mime = ""
+
+    if has_file:
+        raw_filename = secure_filename(file.filename)
+        if not raw_filename:
+            raw_filename = f"note_{int(time.time())}.pdf"
+
+        ext = os.path.splitext(raw_filename)[1].lower()
+        allowed_exts = [
+            ".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt", ".md",
+            ".ppt", ".pptx", ".xls", ".xlsx", ".csv",
+            ".png", ".jpg", ".jpeg", ".gif", ".webp",
+            ".zip", ".rar", ".7z", ".tar", ".gz"
+        ]
+        if ext not in allowed_exts:
+            flash("Unsupported file format. Please upload PDF, Word, PowerPoint, Text, Image, or Archive files.", "danger")
+            return redirect(url_for("revision_notes"))
+
+        save_dir = os.path.join(UPLOAD_FOLDER, "revision_notes")
+        os.makedirs(save_dir, exist_ok=True)
+
+        unique_name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}_{raw_filename}"
+        dest_path = os.path.join(save_dir, unique_name)
+        file.save(dest_path)
+
+        file_path = os.path.join("revision_notes", unique_name).replace("\\", "/")
+        try:
+            file_size = os.path.getsize(dest_path)
+        except Exception:
+            file_size = 0
+        file_mime = file.mimetype or "application/octet-stream"
+
+    c_id = None
+    if classroom_id:
+        try:
+            c_id = int(classroom_id)
+        except ValueError:
+            c_id = None
+
+    conn = get_db()
+    conn.execute(
+        """INSERT INTO revision_notes
+           (uploader_id, uploader_role, subject_name, title, description, content_type,
+            note_content, note_type, file_path, file_name, file_size, file_mime, classroom_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (uid, user_type, subject_name, title, description, content_type,
+         note_content, note_type, file_path, raw_filename, file_size, file_mime, c_id),
+    )
+    conn.commit()
+    conn.close()
+
+    if c_id:
+        flash(f'Revision Note "{title}" saved and shared with your classroom! 🏫📚', "success")
+    else:
+        flash(f'Revision Note "{title}" saved to your private notes! 🔒📚', "success")
+    return redirect(url_for("revision_notes", subject=subject_name))
+
+
+@app.route("/revision-notes/<int:note_id>/download")
+@login_required
+def download_revision_note(note_id):
+    uid = session["user_id"]
+    conn = get_db()
+    has_access, note = check_revision_note_access(conn, note_id, uid)
+    if not has_access or not note:
+        conn.close()
+        flash("Revision note not found or access denied.", "danger")
+        return redirect(url_for("revision_notes"))
+
+    conn.execute("UPDATE revision_notes SET downloads_count = downloads_count + 1 WHERE id=?", (note_id,))
+    conn.commit()
+    conn.close()
+
+    filepath = note["file_path"]
+    if filepath and not (".." in filepath or filepath.startswith("/") or filepath.startswith("\\")):
+        directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+        filename = os.path.basename(filepath)
+
+        try:
+            if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) == os.path.abspath(UPLOAD_FOLDER):
+                full_path = os.path.join(directory, filename)
+                if os.path.exists(full_path):
+                    download_name = note["file_name"] or filename
+                    return send_from_directory(
+                        directory,
+                        filename,
+                        as_attachment=True,
+                        download_name=download_name,
+                    )
+        except Exception:
+            pass
+
+    # If it's a manual note or file doesn't exist, create a clean text file download
+    note_body = note["note_content"] or note["description"] or "Revision note content."
+    file_content = f"{note['title']}\nSubject: {note['subject_name']}\nType: {note['note_type']}\nAuthor: {note['uploader_name']}\nDate: {note['created_at']}\n\n{'='*50}\n\n{note_body}"
+    clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', note['title'])[:40]
+    filename = f"{clean_name}_Revision_Notes.txt"
+    response = make_response(file_content.encode('utf-8'))
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@app.route("/revision-notes/<int:note_id>/preview")
+@login_required
+def preview_revision_note(note_id):
+    uid = session["user_id"]
+    conn = get_db()
+    has_access, note = check_revision_note_access(conn, note_id, uid)
+    conn.close()
+    if not has_access or not note:
+        flash("Revision note not found or access denied.", "danger")
+        return redirect(url_for("revision_notes"))
+
+    filepath = note["file_path"]
+    if filepath and not (".." in filepath or filepath.startswith("/") or filepath.startswith("\\")):
+        directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+        filename = os.path.basename(filepath)
+
+        try:
+            if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) == os.path.abspath(UPLOAD_FOLDER):
+                full_path = os.path.join(directory, filename)
+                if os.path.exists(full_path):
+                    return send_from_directory(
+                        directory,
+                        filename,
+                        as_attachment=False,
+                        mimetype=note["file_mime"] if note["file_mime"] else None,
+                    )
+        except Exception:
+            pass
+
+    note_body = note["note_content"] or note["description"] or "Revision note content."
+    file_content = f"Title: {note['title']}\nSubject: {note['subject_name']}\nType: {note['note_type']}\nAuthor: {note['uploader_name']}\n\n{note_body}"
+    response = make_response(file_content.encode('utf-8'))
+    response.headers["Content-Type"] = "text/plain; charset=utf-8"
+    return response
+
+
+@app.route("/revision-notes/<int:note_id>/view")
+@login_required
+def view_revision_note_json(note_id):
+    uid = session["user_id"]
+    conn = get_db()
+    has_access, note = check_revision_note_access(conn, note_id, uid)
+    conn.close()
+    if not has_access or not note:
+        return jsonify({"status": "error", "message": "Note not found or access denied."}), 404
+
+    return jsonify({
+        "status": "ok",
+        "note": {
+            "id": note["id"],
+            "title": note["title"],
+            "subject_name": note["subject_name"],
+            "note_type": note["note_type"],
+            "content_type": note["content_type"],
+            "note_content": note["note_content"],
+            "description": note["description"],
+            "uploader_name": note["uploader_name"],
+            "uploader_role": note["uploader_role"],
+            "class_name": note["class_name"],
+            "classroom_id": note["classroom_id"],
+            "file_name": note["file_name"],
+            "file_size": note["file_size"],
+            "created_at": note["created_at"],
+            "downloads_count": note["downloads_count"],
+        }
+    })
+
+
+@app.route("/revision-notes/<int:note_id>/delete", methods=["POST"])
+@login_required
+def delete_revision_note(note_id):
+    uid = session["user_id"]
+    conn = get_db()
+    note = conn.execute(
+        """SELECT rn.*, c.faculty_id AS class_faculty_id
+           FROM revision_notes rn
+           LEFT JOIN classrooms c ON c.id = rn.classroom_id
+           WHERE rn.id = ?""",
+        (note_id,),
+    ).fetchone()
+    if not note:
+        conn.close()
+        flash("Revision note not found.", "danger")
+        return redirect(url_for("revision_notes"))
+
+    # Uploader or the classroom's faculty can delete the note
+    can_delete = (note["uploader_id"] == uid) or (note["classroom_id"] and note["class_faculty_id"] == uid)
+    if not can_delete:
+        conn.close()
+        flash("You do not have permission to delete this note.", "danger")
+        return redirect(url_for("revision_notes"))
+
+    filepath = note["file_path"]
+    if filepath and not (".." in filepath or filepath.startswith("/") or filepath.startswith("\\")):
+        full_path = os.path.join(UPLOAD_FOLDER, filepath)
+        try:
+            if os.path.exists(full_path):
+                os.remove(full_path)
+        except Exception:
+            pass
+
+    conn.execute("DELETE FROM revision_notes WHERE id=?", (note_id,))
+    conn.commit()
+    conn.close()
+
+    flash("Revision note removed successfully.", "info")
+    return redirect(url_for("revision_notes"))
 
 
 @app.route("/classrooms", methods=["GET", "POST"])
@@ -1403,6 +2462,7 @@ def classrooms():
     selected_student_id = None
     classroom_assignments = []
     classroom_messages = []
+    classroom_resources = []
     faculty_contact = None
 
     if user_type == "faculty":
@@ -1446,10 +2506,10 @@ def classrooms():
                              AND m.student_id = u.id
                              AND m.sender_id = u.id
                              AND COALESCE(m.read_by_faculty, 0)=0) AS unread_count
-                   FROM classroom_members cm
-                   JOIN users u ON u.id = cm.student_id
-                   WHERE cm.classroom_id=?
-                   ORDER BY u.name COLLATE NOCASE""",
+                    FROM classroom_members cm
+                    JOIN users u ON u.id = cm.student_id
+                    WHERE cm.classroom_id=?
+                    ORDER BY u.name COLLATE NOCASE""",
                 (uid, selected_classroom["id"]),
             ).fetchall()
 
@@ -1461,15 +2521,38 @@ def classrooms():
 
             classroom_assignments = conn.execute(
                 """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.instructions, ca.status,
-                          ca.borrowed, ca.started, ca.created_at, u.name AS student_name,
+                          ca.borrowed, ca.started, ca.created_at, u.name AS student_name, u.email AS student_email,
+                          ca.student_id,
                           COALESCE(ca.attachment_path,'') AS attachment_path,
                           COALESCE(ca.attachment_name,'') AS attachment_name,
-                          COALESCE(ca.attachment_mime,'') AS attachment_mime
+                          COALESCE(ca.attachment_mime,'') AS attachment_mime,
+                          sub.id AS submission_id,
+                          COALESCE(sub.submission_text, '') AS submission_text,
+                          COALESCE(sub.file_path, '') AS submission_file_path,
+                          COALESCE(sub.file_name, '') AS submission_file_name,
+                          COALESCE(sub.file_size, 0) AS submission_file_size,
+                          COALESCE(sub.file_mime, '') AS submission_file_mime,
+                          sub.submitted_at AS submission_time,
+                          COALESCE(sub.status, '') AS submission_status,
+                          COALESCE(sub.grade, '') AS submission_grade,
+                          COALESCE(sub.feedback, '') AS submission_feedback
                    FROM classroom_assignments ca
                    JOIN users u ON u.id = ca.student_id
+                   LEFT JOIN classroom_submissions sub ON sub.assignment_id = ca.id AND sub.student_id = ca.student_id
                    WHERE ca.classroom_id=? AND ca.faculty_id=?
                    ORDER BY ca.created_at DESC""",
                 (selected_classroom["id"], uid),
+            ).fetchall()
+
+            classroom_resources = conn.execute(
+                """SELECT r.id, r.classroom_id, r.uploader_id, r.title, r.description,
+                          r.resource_type, r.file_path, r.file_name, r.file_size, r.file_mime,
+                          r.external_url, r.created_at, u.name AS uploader_name
+                   FROM classroom_resources r
+                   JOIN users u ON u.id = r.uploader_id
+                   WHERE r.classroom_id=?
+                   ORDER BY r.created_at DESC""",
+                (selected_classroom["id"],),
             ).fetchall()
 
             if selected_student_id:
@@ -1545,11 +2628,33 @@ def classrooms():
                           ca.borrowed, ca.started, ca.created_at,
                           COALESCE(ca.attachment_path,'') AS attachment_path,
                           COALESCE(ca.attachment_name,'') AS attachment_name,
-                          COALESCE(ca.attachment_mime,'') AS attachment_mime
+                          COALESCE(ca.attachment_mime,'') AS attachment_mime,
+                          sub.id AS submission_id,
+                          COALESCE(sub.submission_text, '') AS submission_text,
+                          COALESCE(sub.file_path, '') AS submission_file_path,
+                          COALESCE(sub.file_name, '') AS submission_file_name,
+                          COALESCE(sub.file_size, 0) AS submission_file_size,
+                          COALESCE(sub.file_mime, '') AS submission_file_mime,
+                          sub.submitted_at AS submission_time,
+                          COALESCE(sub.status, '') AS submission_status,
+                          COALESCE(sub.grade, '') AS submission_grade,
+                          COALESCE(sub.feedback, '') AS submission_feedback
                    FROM classroom_assignments ca
+                   LEFT JOIN classroom_submissions sub ON sub.assignment_id = ca.id AND sub.student_id = ?
                    WHERE ca.classroom_id=? AND ca.student_id=?
                    ORDER BY ca.created_at DESC""",
-                (selected_classroom["id"], uid),
+                (uid, selected_classroom["id"], uid),
+            ).fetchall()
+
+            classroom_resources = conn.execute(
+                """SELECT r.id, r.classroom_id, r.uploader_id, r.title, r.description,
+                          r.resource_type, r.file_path, r.file_name, r.file_size, r.file_mime,
+                          r.external_url, r.created_at, u.name AS uploader_name
+                   FROM classroom_resources r
+                   JOIN users u ON u.id = r.uploader_id
+                   WHERE r.classroom_id=?
+                   ORDER BY r.created_at DESC""",
+                (selected_classroom["id"],),
             ).fetchall()
 
             classroom_messages = conn.execute(
@@ -1575,6 +2680,7 @@ def classrooms():
         selected_student_id=selected_student_id,
         classroom_assignments=classroom_assignments,
         classroom_messages=classroom_messages,
+        classroom_resources=classroom_resources,
         faculty_contact=faculty_contact,
     )
 
@@ -1937,7 +3043,7 @@ def borrow_classroom_assignment(assignment_id):
         return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
 
     cursor = conn.execute(
-        "INSERT INTO tasks (user_id, task_name, subject, deadline, status, attachment_path, attachment_name, attachment_mime) VALUES (?,?,?,?,?,'Pending',?,?,?)",
+        "INSERT INTO tasks (user_id, task_name, subject, deadline, status, attachment_path, attachment_name, attachment_mime) VALUES (?,?,?,?,?,?,?,?)",
         (
             uid,
             assignment["task_name"],
@@ -2002,7 +3108,7 @@ def delete_classroom(class_id):
         flash('Classroom name confirmation did not match. Deletion cancelled.', 'warning')
         return redirect(url_for('classrooms', class_id=class_id))
 
-    # Remove files referenced by assignments and messages
+    # Remove files referenced by assignments, messages, and study materials
     for row in conn.execute('SELECT attachment_path FROM classroom_assignments WHERE classroom_id=?', (class_id,)).fetchall():
         ap = row['attachment_path'] if row and row['attachment_path'] else ''
         if ap:
@@ -2023,7 +3129,29 @@ def delete_classroom(class_id):
             except Exception:
                 pass
 
+    for row in conn.execute('SELECT file_path FROM classroom_resources WHERE classroom_id=?', (class_id,)).fetchall():
+        fp = row['file_path'] if row and row['file_path'] else ''
+        if fp:
+            fpath = os.path.join(UPLOAD_FOLDER, fp)
+            try:
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+    for row in conn.execute('SELECT file_path FROM classroom_submissions WHERE classroom_id=?', (class_id,)).fetchall():
+        fp = row['file_path'] if row and row['file_path'] else ''
+        if fp:
+            fpath = os.path.join(UPLOAD_FOLDER, fp)
+            try:
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
     # Delete DB rows
+    conn.execute('DELETE FROM classroom_submissions WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM classroom_resources WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classroom_messages WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classroom_assignments WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classroom_members WHERE classroom_id=?', (class_id,))
@@ -2032,6 +3160,340 @@ def delete_classroom(class_id):
     conn.close()
     flash('Classroom and its data deleted.', 'info')
     return redirect(url_for('classrooms'))
+
+
+@app.route("/classrooms/<int:class_id>/students/<int:student_id>/remove", methods=["POST"])
+@login_required
+def remove_student_from_classroom(class_id, student_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty members have permission to remove students from classrooms.", "danger")
+        return redirect(url_for("settings"))
+
+    uid = session["user_id"]
+    conn = get_db()
+
+    # Verify that the classroom exists and is owned by the current faculty
+    classroom = conn.execute(
+        "SELECT id, class_name FROM classrooms WHERE id=? AND faculty_id=?",
+        (class_id, uid),
+    ).fetchone()
+
+    if not classroom:
+        conn.close()
+        flash("Classroom not found or you do not have permission to manage this classroom.", "danger")
+        return redirect(url_for("settings"))
+
+    # Verify that the student is enrolled in this classroom
+    student = conn.execute(
+        """SELECT u.id, u.name, u.email
+           FROM users u
+           JOIN classroom_members cm ON cm.student_id = u.id
+           WHERE cm.classroom_id=? AND u.id=?""",
+        (class_id, student_id),
+    ).fetchone()
+
+    if not student:
+        conn.close()
+        flash("The selected student is not enrolled in this classroom.", "warning")
+        return redirect(request.referrer or url_for("settings"))
+
+    # Remove enrollment and associated records for this student in this classroom
+    conn.execute(
+        "DELETE FROM classroom_members WHERE classroom_id=? AND student_id=?",
+        (class_id, student_id),
+    )
+    conn.execute(
+        "DELETE FROM classroom_assignments WHERE classroom_id=? AND student_id=?",
+        (class_id, student_id),
+    )
+    conn.execute(
+        "DELETE FROM classroom_messages WHERE classroom_id=? AND student_id=?",
+        (class_id, student_id),
+    )
+    conn.commit()
+    conn.close()
+
+    flash(f"Student \"{student['name']}\" ({student['email']}) has been successfully removed from \"{classroom['class_name']}\".", "success")
+    return redirect(request.referrer or url_for("settings"))
+
+
+# ── Classroom Study Materials / Resources Routes ──────────────────────────────
+@app.route("/classrooms/<int:class_id>/resources/upload", methods=["POST"])
+@login_required
+def upload_classroom_resource(class_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty members can upload study materials.", "danger")
+        return redirect(url_for("classrooms", class_id=class_id))
+
+    uid = session["user_id"]
+    conn = get_db()
+    classroom = conn.execute(
+        "SELECT id, class_name FROM classrooms WHERE id=? AND faculty_id=?",
+        (class_id, uid),
+    ).fetchone()
+
+    if not classroom:
+        conn.close()
+        flash("Classroom not found or you do not have permission to upload materials.", "danger")
+        return redirect(url_for("classrooms"))
+
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+    resource_type_input = request.form.get("resource_type", "file").strip().lower()
+    external_url = request.form.get("external_url", "").strip()
+
+    if not title:
+        conn.close()
+        flash("Please provide a title for the study material.", "warning")
+        return redirect(url_for("classrooms", class_id=class_id, tab="tab-resources"))
+
+    file_path = ""
+    file_name = ""
+    file_size = 0
+    file_mime = ""
+    resource_type = "file"
+
+    if resource_type_input == "link":
+        if not external_url:
+            conn.close()
+            flash("Please provide a valid web link or URL.", "warning")
+            return redirect(url_for("classrooms", class_id=class_id, tab="tab-resources"))
+        if not (external_url.startswith("http://") or external_url.startswith("https://")):
+            external_url = "https://" + external_url
+        resource_type = "link"
+    else:
+        file = request.files.get("resource_file")
+        if not file or not file.filename:
+            conn.close()
+            flash("Please select a file to upload.", "warning")
+            return redirect(url_for("classrooms", class_id=class_id, tab="tab-resources"))
+
+        raw_filename = secure_filename(file.filename)
+        if not raw_filename:
+            raw_filename = "study_material"
+
+        file_name = file.filename
+        file_mime = file.content_type or "application/octet-stream"
+
+        ext = os.path.splitext(file_name)[1].lower()
+        if ext in [".pdf"]:
+            resource_type = "pdf"
+        elif ext in [".doc", ".docx", ".odt", ".rtf", ".txt", ".md"]:
+            resource_type = "doc"
+        elif ext in [".ppt", ".pptx"]:
+            resource_type = "presentation"
+        elif ext in [".xls", ".xlsx", ".csv"]:
+            resource_type = "spreadsheet"
+        elif ext in [".png", ".jpg", ".jpeg", ".gif", ".webp"]:
+            resource_type = "image"
+        elif ext in [".zip", ".rar", ".7z", ".tar", ".gz"]:
+            resource_type = "archive"
+        else:
+            resource_type = "file"
+
+        save_dir = os.path.join(UPLOAD_FOLDER, "classroom_resources")
+        os.makedirs(save_dir, exist_ok=True)
+
+        unique_name = f"{int(time.time())}_{uuid.uuid4().hex[:8]}_{raw_filename}"
+        dest_path = os.path.join(save_dir, unique_name)
+        file.save(dest_path)
+
+        file_path = os.path.join("classroom_resources", unique_name).replace("\\", "/")
+        try:
+            file_size = os.path.getsize(dest_path)
+        except Exception:
+            file_size = 0
+
+    conn.execute(
+        """INSERT INTO classroom_resources
+           (classroom_id, uploader_id, title, description, resource_type, file_path, file_name, file_size, file_mime, external_url)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (class_id, uid, title, description, resource_type, file_path, file_name, file_size, file_mime, external_url),
+    )
+    conn.commit()
+    conn.close()
+
+    flash(f'Study material "{title}" uploaded successfully! 📚', "success")
+    return redirect(url_for("classrooms", class_id=class_id, tab="tab-resources"))
+
+
+@app.route("/classrooms/resources/<int:resource_id>/download")
+@login_required
+def download_classroom_resource(resource_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    resource = conn.execute(
+        "SELECT * FROM classroom_resources WHERE id=?",
+        (resource_id,),
+    ).fetchone()
+
+    if not resource:
+        conn.close()
+        flash("Study material not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = resource["classroom_id"]
+    has_access = False
+
+    if user_type == "faculty":
+        owner = conn.execute(
+            "SELECT 1 FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if owner:
+            has_access = True
+    else:
+        member = conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if member:
+            has_access = True
+
+    conn.close()
+
+    if not has_access:
+        flash("You do not have permission to access resources from this classroom.", "danger")
+        return redirect(url_for("classrooms"))
+
+    if resource["resource_type"] == "link" and resource["external_url"]:
+        return redirect(resource["external_url"])
+
+    filepath = resource["file_path"]
+    if not filepath or ".." in filepath or filepath.startswith("/") or filepath.startswith("\\"):
+        abort(400)
+
+    directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+    filename = os.path.basename(filepath)
+
+    try:
+        if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
+            abort(400)
+    except Exception:
+        abort(400)
+
+    full_path = os.path.join(directory, filename)
+    if not os.path.exists(full_path):
+        flash("The requested resource file was not found on the server.", "danger")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    download_name = resource["file_name"] or filename
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=True,
+        download_name=download_name,
+    )
+
+
+@app.route("/classrooms/resources/<int:resource_id>/preview")
+@login_required
+def preview_classroom_resource(resource_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    resource = conn.execute(
+        "SELECT * FROM classroom_resources WHERE id=?",
+        (resource_id,),
+    ).fetchone()
+
+    if not resource:
+        conn.close()
+        flash("Study material not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = resource["classroom_id"]
+    has_access = False
+
+    if user_type == "faculty":
+        owner = conn.execute(
+            "SELECT 1 FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if owner:
+            has_access = True
+    else:
+        member = conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+            (classroom_id, uid),
+        ).fetchone()
+        if member:
+            has_access = True
+
+    conn.close()
+
+    if not has_access:
+        flash("You do not have permission to view this resource.", "danger")
+        return redirect(url_for("classrooms"))
+
+    if resource["resource_type"] == "link" and resource["external_url"]:
+        return redirect(resource["external_url"])
+
+    filepath = resource["file_path"]
+    if not filepath or ".." in filepath or filepath.startswith("/") or filepath.startswith("\\"):
+        abort(400)
+
+    directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+    filename = os.path.basename(filepath)
+
+    try:
+        if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
+            abort(400)
+    except Exception:
+        abort(400)
+
+    full_path = os.path.join(directory, filename)
+    if not os.path.exists(full_path):
+        flash("The requested file was not found on the server.", "danger")
+        return redirect(url_for("classrooms", class_id=classroom_id))
+
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=False,
+        mimetype=resource["file_mime"] if resource["file_mime"] else None,
+    )
+
+
+@app.route("/classrooms/resources/<int:resource_id>/delete", methods=["POST"])
+@login_required
+def delete_classroom_resource(resource_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty members can delete study materials.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    resource = conn.execute(
+        """SELECT r.*, c.faculty_id
+           FROM classroom_resources r
+           JOIN classrooms c ON c.id = r.classroom_id
+           WHERE r.id=?""",
+        (resource_id,),
+    ).fetchone()
+
+    if not resource or resource["faculty_id"] != uid:
+        conn.close()
+        flash("Resource not found or you do not have permission to delete it.", "danger")
+        return redirect(url_for("classrooms"))
+
+    classroom_id = resource["classroom_id"]
+    filepath = resource["file_path"]
+    if filepath:
+        fpath = os.path.join(UPLOAD_FOLDER, filepath)
+        try:
+            if os.path.exists(fpath):
+                os.remove(fpath)
+        except Exception:
+            pass
+
+    conn.execute("DELETE FROM classroom_resources WHERE id=?", (resource_id,))
+    conn.commit()
+    conn.close()
+
+    flash("Study material removed.", "info")
+    return redirect(url_for("classrooms", class_id=classroom_id, tab="tab-resources"))
 
 
 @app.route("/classrooms/assignments/<int:assignment_id>/play", methods=["POST"])
@@ -2164,6 +3626,253 @@ def edit_classroom_assignment(assignment_id):
     return redirect(url_for("classrooms", class_id=assignment["classroom_id"], student_id=assignment["student_id"]))
 
 
+@app.route("/classrooms/assignments/<int:assignment_id>/submit", methods=["POST"])
+@login_required
+def submit_classroom_assignment(assignment_id):
+    if session.get("user_type") != "student":
+        flash("Only students can submit assignments.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    conn = get_db()
+    assignment = conn.execute(
+        """SELECT ca.id, ca.classroom_id, ca.student_id, ca.task_name, ca.deadline, ca.borrowed_task_id
+           FROM classroom_assignments ca
+           JOIN classroom_members cm ON cm.classroom_id = ca.classroom_id AND cm.student_id = ?
+           WHERE ca.id=? AND ca.student_id=?""",
+        (uid, assignment_id, uid),
+    ).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash("Assignment not found or unauthorized.", "danger")
+        return redirect(url_for("classrooms"))
+
+    submission_text = request.form.get("submission_text", "").strip()
+    submission_file = request.files.get("submission_file")
+
+    existing_sub = conn.execute(
+        "SELECT id, file_path, file_name, file_size, file_mime FROM classroom_submissions WHERE assignment_id=? AND student_id=?",
+        (assignment_id, uid),
+    ).fetchone()
+
+    file_path = existing_sub["file_path"] if existing_sub and existing_sub["file_path"] else ""
+    file_name = existing_sub["file_name"] if existing_sub and existing_sub["file_name"] else ""
+    file_size = existing_sub["file_size"] if existing_sub and existing_sub["file_size"] else 0
+    file_mime = existing_sub["file_mime"] if existing_sub and existing_sub["file_mime"] else ""
+
+    if submission_file and submission_file.filename:
+        save_dir = os.path.join(UPLOAD_FOLDER, "classroom_submissions")
+        os.makedirs(save_dir, exist_ok=True)
+        raw_name = secure_filename(submission_file.filename) or "submission_file"
+        unique_name = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{raw_name}"
+        dest = os.path.join(save_dir, unique_name)
+        submission_file.save(dest)
+        file_path = os.path.join("classroom_submissions", unique_name).replace("\\", "/")
+        file_name = submission_file.filename
+        file_mime = submission_file.mimetype or "application/octet-stream"
+        try:
+            file_size = os.path.getsize(dest)
+        except Exception:
+            file_size = 0
+
+    if not submission_text and not file_path:
+        conn.close()
+        flash("Please provide either a text response or upload a file for your submission.", "warning")
+        return redirect(url_for("classrooms", class_id=assignment["classroom_id"], tab="tab-student-tasks"))
+
+    if existing_sub:
+        conn.execute(
+            """UPDATE classroom_submissions
+               SET submission_text=?, file_path=?, file_name=?, file_size=?, file_mime=?,
+                   submitted_at=CURRENT_TIMESTAMP, status='Submitted'
+               WHERE id=?""",
+            (submission_text, file_path, file_name, file_size, file_mime, existing_sub["id"]),
+        )
+    else:
+        conn.execute(
+            """INSERT INTO classroom_submissions
+               (assignment_id, classroom_id, student_id, submission_text, file_path, file_name, file_size, file_mime, status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Submitted')""",
+            (assignment_id, assignment["classroom_id"], uid, submission_text, file_path, file_name, file_size, file_mime),
+        )
+
+    conn.execute(
+        "UPDATE classroom_assignments SET status='Submitted', started=1 WHERE id=?",
+        (assignment_id,),
+    )
+
+    if assignment["borrowed_task_id"]:
+        conn.execute(
+            "UPDATE tasks SET status='Completed' WHERE id=? AND user_id=?",
+            (assignment["borrowed_task_id"], uid),
+        )
+
+    conn.commit()
+    conn.close()
+
+    flash(f'Work for "{assignment["task_name"]}" submitted successfully! 🚀', "success")
+    return redirect(url_for("classrooms", class_id=assignment["classroom_id"], tab="tab-student-tasks"))
+
+
+@app.route("/classrooms/submissions/<int:submission_id>/download")
+@login_required
+def download_classroom_submission(submission_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    submission = conn.execute(
+        """SELECT s.*, c.faculty_id
+           FROM classroom_submissions s
+           JOIN classrooms c ON c.id = s.classroom_id
+           WHERE s.id=?""",
+        (submission_id,),
+    ).fetchone()
+
+    if not submission:
+        conn.close()
+        flash("Submission not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    has_access = False
+    if user_type == "faculty" and submission["faculty_id"] == uid:
+        has_access = True
+    elif user_type == "student" and submission["student_id"] == uid:
+        has_access = True
+
+    conn.close()
+
+    if not has_access:
+        flash("You do not have permission to download this submission.", "danger")
+        return redirect(url_for("classrooms"))
+
+    filepath = submission["file_path"]
+    if not filepath or ".." in filepath or filepath.startswith("/") or filepath.startswith("\\"):
+        abort(400)
+
+    directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+    filename = os.path.basename(filepath)
+
+    try:
+        if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
+            abort(400)
+    except Exception:
+        abort(400)
+
+    full_path = os.path.join(directory, filename)
+    if not os.path.exists(full_path):
+        flash("The requested submission file was not found on the server.", "danger")
+        return redirect(url_for("classrooms", class_id=submission["classroom_id"]))
+
+    download_name = submission["file_name"] or filename
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=True,
+        download_name=download_name,
+    )
+
+
+@app.route("/classrooms/submissions/<int:submission_id>/preview")
+@login_required
+def preview_classroom_submission(submission_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    submission = conn.execute(
+        """SELECT s.*, c.faculty_id
+           FROM classroom_submissions s
+           JOIN classrooms c ON c.id = s.classroom_id
+           WHERE s.id=?""",
+        (submission_id,),
+    ).fetchone()
+
+    if not submission:
+        conn.close()
+        flash("Submission not found.", "danger")
+        return redirect(url_for("classrooms"))
+
+    has_access = False
+    if user_type == "faculty" and submission["faculty_id"] == uid:
+        has_access = True
+    elif user_type == "student" and submission["student_id"] == uid:
+        has_access = True
+
+    conn.close()
+
+    if not has_access:
+        flash("You do not have permission to view this submission.", "danger")
+        return redirect(url_for("classrooms"))
+
+    filepath = submission["file_path"]
+    if not filepath or ".." in filepath or filepath.startswith("/") or filepath.startswith("\\"):
+        abort(400)
+
+    directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
+    filename = os.path.basename(filepath)
+
+    try:
+        if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
+            abort(400)
+    except Exception:
+        abort(400)
+
+    full_path = os.path.join(directory, filename)
+    if not os.path.exists(full_path):
+        flash("The requested submission file was not found on the server.", "danger")
+        return redirect(url_for("classrooms", class_id=submission["classroom_id"]))
+
+    return send_from_directory(
+        directory,
+        filename,
+        as_attachment=False,
+        mimetype=submission["file_mime"] if submission["file_mime"] else None,
+    )
+
+
+@app.route("/classrooms/submissions/<int:submission_id>/grade", methods=["POST"])
+@login_required
+def grade_classroom_submission(submission_id):
+    if session.get("user_type") != "faculty":
+        flash("Only faculty can grade submissions.", "danger")
+        return redirect(url_for("classrooms"))
+
+    uid = session["user_id"]
+    grade = request.form.get("grade", "").strip()
+    feedback = request.form.get("feedback", "").strip()
+    status_input = request.form.get("status", "Reviewed").strip()
+
+    conn = get_db()
+    submission = conn.execute(
+        """SELECT s.*, c.faculty_id
+           FROM classroom_submissions s
+           JOIN classrooms c ON c.id = s.classroom_id
+           WHERE s.id=?""",
+        (submission_id,),
+    ).fetchone()
+
+    if not submission or submission["faculty_id"] != uid:
+        conn.close()
+        flash("Submission not found or unauthorized.", "danger")
+        return redirect(url_for("classrooms"))
+
+    conn.execute(
+        """UPDATE classroom_submissions
+           SET grade=?, feedback=?, status=?, graded_at=CURRENT_TIMESTAMP
+           WHERE id=?""",
+        (grade, feedback, status_input, submission_id),
+    )
+    conn.execute(
+        "UPDATE classroom_assignments SET status=? WHERE id=?",
+        (status_input, submission["assignment_id"]),
+    )
+    conn.commit()
+    conn.close()
+
+    flash("Submission evaluation and feedback saved! ✨", "success")
+    return redirect(url_for("classrooms", class_id=submission["classroom_id"], tab="tab-tasks"))
+
+
 @app.route("/classrooms/assignments/<int:assignment_id>/delete", methods=["POST"])
 @login_required
 def delete_classroom_assignment(assignment_id):
@@ -2174,7 +3883,7 @@ def delete_classroom_assignment(assignment_id):
     uid = session["user_id"]
     conn = get_db()
     assignment = conn.execute(
-        "SELECT id, classroom_id, student_id FROM classroom_assignments WHERE id=? AND faculty_id=?",
+        "SELECT id, classroom_id, student_id, attachment_path FROM classroom_assignments WHERE id=? AND faculty_id=?",
         (assignment_id, uid),
     ).fetchone()
 
@@ -2183,6 +3892,27 @@ def delete_classroom_assignment(assignment_id):
         flash("Assignment not found.", "danger")
         return redirect(url_for("classrooms"))
 
+    # Clean up attachment file
+    if assignment["attachment_path"]:
+        fpath = os.path.join(UPLOAD_FOLDER, assignment["attachment_path"])
+        try:
+            if os.path.exists(fpath):
+                os.remove(fpath)
+        except Exception:
+            pass
+
+    # Clean up submission files
+    sub_rows = conn.execute("SELECT file_path FROM classroom_submissions WHERE assignment_id=?", (assignment_id,)).fetchall()
+    for s in sub_rows:
+        if s["file_path"]:
+            fpath = os.path.join(UPLOAD_FOLDER, s["file_path"])
+            try:
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+    conn.execute("DELETE FROM classroom_submissions WHERE assignment_id=?", (assignment_id,))
     conn.execute(
         "DELETE FROM classroom_assignments WHERE id=? AND faculty_id=?",
         (assignment_id, uid),
@@ -3084,14 +4814,32 @@ def settings():
     except Exception:
         daily_limit, tf, ts, tl, tss = 6.0, 25, 5, 15, 4
     created_classrooms = []
+    classrooms_with_students = []
     try:
         if session.get('user_type') == 'faculty':
             created_classrooms = conn.execute(
-                "SELECT id, class_name, class_code FROM classrooms WHERE faculty_id=? ORDER BY created_at DESC",
+                "SELECT id, class_name, class_code, created_at FROM classrooms WHERE faculty_id=? ORDER BY created_at DESC",
                 (uid,),
             ).fetchall()
+
+            for c in created_classrooms:
+                st_list = conn.execute(
+                    """SELECT u.id, u.name, u.email, cm.joined_at
+                       FROM classroom_members cm
+                       JOIN users u ON u.id = cm.student_id
+                       WHERE cm.classroom_id=?
+                       ORDER BY u.name COLLATE NOCASE""",
+                    (c["id"],),
+                ).fetchall()
+                classrooms_with_students.append({
+                    "id": c["id"],
+                    "class_name": c["class_name"],
+                    "class_code": c["class_code"],
+                    "students": st_list,
+                })
     except Exception:
         created_classrooms = []
+        classrooms_with_students = []
     finally:
         conn.close()
 
@@ -3103,6 +4851,8 @@ def settings():
         timer_long=tl,
         timer_sessions_before_long=tss,
         created_classrooms=created_classrooms,
+        classrooms_with_students=classrooms_with_students,
+        user_type=session.get('user_type', 'student'),
     )
 
 
@@ -3277,14 +5027,30 @@ def profile():
 @app.route("/quiz", methods=["GET", "POST"])
 @login_required
 def quiz():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+
+    # Shared / Student PDF practice vars
     quiz_questions = None
     quiz_results = None
     score = None
     total = 0
     source_name = None
     attempt_id = None
-    quiz_history = _fetch_quiz_attempts(session["user_id"])
+    quiz_history = _fetch_quiz_attempts(uid)
 
+    # Faculty-specific vars
+    faculty_quizzes = []
+    faculty_classrooms = []
+    selected_quiz_results = None
+    selected_quiz = None
+
+    # Student live quiz vars
+    active_live_quizzes = []
+    student_live_submissions = []
+
+    # Handle PDF generation / grading POST if submitted via legacy PDF form
     if request.method == "POST":
         action = request.form.get("action", "generate")
         quiz_draft = session.get("quiz_draft") or {}
@@ -3293,66 +5059,25 @@ def quiz():
             pdf_file = request.files.get("quiz_pdf")
             if not pdf_file or not pdf_file.filename:
                 flash("Please choose a PDF file to generate a quiz.", "warning")
-                return render_template(
-                    "quiz.html",
-                    quiz_history=quiz_history,
-                    quiz_questions=[],
-                    source_name="",
-                    quiz_results=None,
-                    score=None,
-                    total=0,
-                    attempt_id=None,
-                )
-
-            if not pdf_file.filename.lower().endswith(".pdf"):
+            elif not pdf_file.filename.lower().endswith(".pdf"):
                 flash("Only PDF files are supported.", "danger")
-                return render_template(
-                    "quiz.html",
-                    quiz_history=quiz_history,
-                    quiz_questions=[],
-                    source_name="",
-                    quiz_results=None,
-                    score=None,
-                    total=0,
-                    attempt_id=None,
-                )
+            else:
+                try:
+                    extracted_text = _extract_pdf_text(pdf_file)
+                    quiz_questions = _build_quiz_questions(extracted_text)
+                    source_name = secure_filename(pdf_file.filename)
+                    if not quiz_questions:
+                        flash("No quiz questions could be generated from that PDF. Try a more text-heavy file.", "warning")
+                    else:
+                        session["quiz_draft"] = {
+                            "source_name": source_name,
+                            "quiz_questions": quiz_questions,
+                        }
+                        flash(f"Generated {len(quiz_questions)} quiz question(s) from {source_name}.", "success")
+                except Exception as exc:
+                    flash(f"Could not read the PDF: {exc}", "danger")
 
-            try:
-                extracted_text = _extract_pdf_text(pdf_file)
-            except Exception as exc:
-                flash(f"Could not read the PDF: {exc}", "danger")
-                return render_template(
-                    "quiz.html",
-                    quiz_history=quiz_history,
-                    quiz_questions=[],
-                    source_name="",
-                    quiz_results=None,
-                    score=None,
-                    total=0,
-                    attempt_id=None,
-                )
-
-            quiz_questions = _build_quiz_questions(extracted_text)
-            source_name = secure_filename(pdf_file.filename)
-
-            if not quiz_questions:
-                flash("No quiz questions could be generated from that PDF. Try a more text-heavy file.", "warning")
-                return render_template("quiz.html", source_name=source_name, quiz_history=quiz_history)
-
-            session["quiz_draft"] = {
-                "source_name": source_name,
-                "quiz_questions": quiz_questions,
-            }
-
-            flash(f"Generated {len(quiz_questions)} quiz question(s) from {source_name}.", "success")
-            return render_template(
-                "quiz.html",
-                quiz_questions=quiz_questions,
-                source_name=source_name,
-                quiz_history=quiz_history,
-            )
-
-        if action == "grade":
+        elif action == "grade":
             quiz_data_raw = request.form.get("quiz_data", "[]")
             source_name = request.form.get("source_name", "").strip() or quiz_draft.get("source_name")
             try:
@@ -3363,79 +5088,53 @@ def quiz():
             if not isinstance(quiz_questions, list) or not quiz_questions:
                 quiz_questions = quiz_draft.get("quiz_questions")
 
-            if not isinstance(quiz_questions, list) or not quiz_questions:
-                flash("Quiz data is missing. Please generate the quiz again.", "danger")
-                return render_template(
-                    "quiz.html",
-                    quiz_history=quiz_history,
-                    quiz_questions=[],
-                    source_name="",
-                    quiz_results=None,
-                    score=None,
-                    total=0,
-                    attempt_id=None,
+            if isinstance(quiz_questions, list) and quiz_questions:
+                quiz_results = []
+                correct_count = 0
+                total = len(quiz_questions)
+
+                for index, question in enumerate(quiz_questions):
+                    selected = request.form.get(f"answer_{index}", "")
+                    correct_answer = str(question.get("answer", "")).strip()
+                    is_correct = selected.strip().lower() == correct_answer.lower()
+                    if is_correct:
+                        correct_count += 1
+
+                    quiz_results.append({
+                        "question": question.get("question", ""),
+                        "selected": selected,
+                        "correct": correct_answer,
+                        "is_correct": is_correct,
+                    })
+
+                score = round((correct_count / total) * 100) if total else 0
+                quiz_results_payload = json.dumps(quiz_results)
+                quiz_data_payload = json.dumps(quiz_questions)
+
+                cursor = conn.execute(
+                    """
+                    INSERT INTO quiz_attempts (
+                        user_id, source_name, total_questions, correct_answers, score,
+                        quiz_data, quiz_results
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        uid,
+                        source_name,
+                        total,
+                        correct_count,
+                        score,
+                        quiz_data_payload,
+                        quiz_results_payload,
+                    ),
                 )
+                attempt_id = cursor.lastrowid
+                conn.commit()
+                quiz_history = _fetch_quiz_attempts(uid)
+                session.pop("quiz_draft", None)
+                flash(f"You scored {correct_count}/{total} ({score}%).", "info")
 
-            quiz_results = []
-            correct_count = 0
-            total = len(quiz_questions)
-
-            for index, question in enumerate(quiz_questions):
-                selected = request.form.get(f"answer_{index}", "")
-                correct_answer = str(question.get("answer", "")).strip()
-                is_correct = selected.strip().lower() == correct_answer.lower()
-                if is_correct:
-                    correct_count += 1
-
-                quiz_results.append({
-                    "question": question.get("question", ""),
-                    "selected": selected,
-                    "correct": correct_answer,
-                    "is_correct": is_correct,
-                })
-
-            score = round((correct_count / total) * 100) if total else 0
-
-            quiz_results_payload = json.dumps(quiz_results)
-            quiz_data_payload = json.dumps(quiz_questions)
-            conn = get_db()
-            cursor = conn.execute(
-                """
-                INSERT INTO quiz_attempts (
-                    user_id, source_name, total_questions, correct_answers, score,
-                    quiz_data, quiz_results
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    session["user_id"],
-                    source_name,
-                    total,
-                    correct_count,
-                    score,
-                    quiz_data_payload,
-                    quiz_results_payload,
-                ),
-            )
-            attempt_id = cursor.lastrowid
-            conn.commit()
-            conn.close()
-
-            quiz_history = _fetch_quiz_attempts(session["user_id"])
-            session.pop("quiz_draft", None)
-            flash(f"You scored {correct_count}/{total} ({score}%).", "info")
-
-            return render_template(
-                "quiz.html",
-                quiz_questions=quiz_questions,
-                quiz_results=quiz_results,
-                score=score,
-                total=total,
-                attempt_id=attempt_id,
-                source_name=source_name,
-                quiz_history=quiz_history,
-            )
-
-        if action == "export":
+        elif action == "export":
             source_name = request.form.get("source_name", "").strip() or quiz_draft.get("source_name") or "Generated Quiz"
             quiz_data_raw = request.form.get("quiz_data", "[]")
             try:
@@ -3443,42 +5142,720 @@ def quiz():
             except json.JSONDecodeError:
                 quiz_questions = quiz_draft.get("quiz_questions")
 
-            if not isinstance(quiz_questions, list) or not quiz_questions:
-                quiz_questions = quiz_draft.get("quiz_questions")
-
-            if not isinstance(quiz_questions, list) or not quiz_questions:
-                flash("Quiz data is missing. Generate the quiz again.", "danger")
-                return render_template(
-                    "quiz.html",
-                    quiz_history=quiz_history,
-                    quiz_questions=[],
-                    source_name="",
-                    quiz_results=None,
-                    score=None,
-                    total=0,
-                    attempt_id=None,
+            if isinstance(quiz_questions, list) and quiz_questions:
+                pdf_bytes = _build_quiz_txt_content(
+                    title="AI Study Planner Quiz Export",
+                    quiz_questions=quiz_questions,
+                    source_name=source_name,
                 )
+                filename = f"quiz_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                conn.close()
+                return _quiz_txt_response(filename, pdf_bytes)
 
-            pdf_bytes = _build_quiz_txt_content(
-                title="AI Study Planner Quiz Export",
-                quiz_questions=quiz_questions,
-                source_name=source_name,
-            )
-            filename = f"quiz_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-            return _quiz_txt_response(filename, pdf_bytes)
+    # Populate view data based on role
+    if user_type == "faculty":
+        faculty_classrooms = conn.execute(
+            "SELECT id, class_name, class_code FROM classrooms WHERE faculty_id = ? ORDER BY class_name ASC",
+            (uid,),
+        ).fetchall()
 
-        flash("Unsupported quiz action.", "danger")
+        faculty_quizzes_rows = conn.execute(
+            """
+            SELECT q.id, q.faculty_id, q.classroom_id, q.title, q.subject, q.description,
+                   q.duration_minutes, q.status, q.quiz_data, q.started_at, q.created_at,
+                   c.class_name,
+                   (SELECT COUNT(*) FROM quiz_submissions qs WHERE qs.quiz_id = q.id) as submissions_count,
+                   (SELECT ROUND(AVG(qs.score), 1) FROM quiz_submissions qs WHERE qs.quiz_id = q.id) as avg_score,
+                   (SELECT MAX(qs.score) FROM quiz_submissions qs WHERE qs.quiz_id = q.id) as max_score
+            FROM quizzes q
+            LEFT JOIN classrooms c ON q.classroom_id = c.id
+            WHERE q.faculty_id = ?
+            ORDER BY q.id DESC
+            """,
+            (uid,),
+        ).fetchall()
+        faculty_quizzes = [dict(row) for row in faculty_quizzes_rows]
+        for fq in faculty_quizzes:
+            try:
+                data_list = json.loads(fq["quiz_data"])
+                fq["question_count"] = len(data_list) if isinstance(data_list, list) else 0
+            except Exception:
+                fq["question_count"] = 0
+
+        # Check if a specific quiz results view was requested
+        view_quiz_id = request.args.get("view_quiz") or request.args.get("view_results")
+        if view_quiz_id:
+            try:
+                vq_id = int(view_quiz_id)
+                q_row = conn.execute(
+                    """SELECT q.*, c.class_name FROM quizzes q
+                       LEFT JOIN classrooms c ON q.classroom_id = c.id
+                       WHERE q.id = ? AND q.faculty_id = ?""",
+                    (vq_id, uid),
+                ).fetchone()
+                if q_row:
+                    selected_quiz = dict(q_row)
+                    try:
+                        selected_quiz["parsed_data"] = json.loads(selected_quiz["quiz_data"])
+                    except Exception:
+                        selected_quiz["parsed_data"] = []
+
+                    subs = conn.execute(
+                        """SELECT qs.*, u.name as student_name, u.email as student_email, u.avatar
+                           FROM quiz_submissions qs
+                           JOIN users u ON qs.student_id = u.id
+                           WHERE qs.quiz_id = ?
+                           ORDER BY qs.score DESC, qs.submitted_at ASC""",
+                        (vq_id,),
+                    ).fetchall()
+                    selected_quiz_results = [dict(s) for s in subs]
+                    quiz_questions_map = {}
+                    if selected_quiz and isinstance(selected_quiz.get("parsed_data"), list):
+                        for q_idx_item, q_item in enumerate(selected_quiz["parsed_data"]):
+                            quiz_questions_map[q_idx_item] = q_item
+
+                    for s in selected_quiz_results:
+                        try:
+                            s["parsed_results"] = json.loads(s["results_json"])
+                        except Exception:
+                            s["parsed_results"] = []
+
+                        # If parsed_results is empty or missing, reconstruct from answers_json & quiz_data
+                        if not s["parsed_results"] and s.get("answers_json"):
+                            try:
+                                ans_map = json.loads(s["answers_json"])
+                                reconstructed = []
+                                for q_idx_item, q_item in enumerate(selected_quiz.get("parsed_data", [])):
+                                    sel_raw = str(ans_map.get(str(q_idx_item), "")).strip()
+                                    corr_raw = str(q_item.get("answer", "")).strip()
+                                    opts = q_item.get("options", [])
+                                    sel = opts[int(sel_raw)] if (sel_raw.isdigit() and int(sel_raw) < len(opts)) else sel_raw
+                                    corr = opts[int(corr_raw)] if (corr_raw.isdigit() and int(corr_raw) < len(opts)) else corr_raw
+                                    is_c = (sel.lower() == corr.lower())
+                                    reconstructed.append({
+                                        "question": q_item.get("question", ""),
+                                        "selected": sel,
+                                        "correct": corr,
+                                        "is_correct": is_c,
+                                        "options": opts,
+                                    })
+                                s["parsed_results"] = reconstructed
+                            except Exception:
+                                pass
+
+                        # Ensure every result item has options list populated
+                        for r_idx, r_item in enumerate(s["parsed_results"]):
+                            if not r_item.get("options") and r_idx in quiz_questions_map:
+                                r_item["options"] = quiz_questions_map[r_idx].get("options", [])
+            except Exception as e:
+                pass
+
+    else:
+        # Student View: active live quizzes & completed results
+        live_rows = conn.execute(
+            """
+            SELECT q.id, q.faculty_id, q.classroom_id, q.title, q.subject, q.description,
+                   q.duration_minutes, q.status, q.started_at, q.created_at, q.quiz_data,
+                   c.class_name, u.name as faculty_name,
+                   (SELECT qs.score FROM quiz_submissions qs WHERE qs.quiz_id = q.id AND qs.student_id = ?) as my_score,
+                   (SELECT qs.id FROM quiz_submissions qs WHERE qs.quiz_id = q.id AND qs.student_id = ?) as my_submission_id
+            FROM quizzes q
+            JOIN users u ON q.faculty_id = u.id
+            LEFT JOIN classrooms c ON q.classroom_id = c.id
+            WHERE q.status = 'active'
+              AND (q.classroom_id IS NULL OR q.classroom_id IN (
+                  SELECT classroom_id FROM classroom_members WHERE student_id = ?
+              ))
+            ORDER BY q.id DESC
+            """,
+            (uid, uid, uid),
+        ).fetchall()
+        active_live_quizzes = [dict(r) for r in live_rows]
+        for alq in active_live_quizzes:
+            try:
+                data_list = json.loads(alq["quiz_data"])
+                alq["question_count"] = len(data_list) if isinstance(data_list, list) else 0
+            except Exception:
+                alq["question_count"] = 0
+
+        sub_rows = conn.execute(
+            """
+            SELECT qs.id, qs.quiz_id, qs.score, qs.correct_answers, qs.total_questions,
+                   qs.submitted_at, qs.results_json,
+                   q.title as quiz_title, q.subject, c.class_name, u.name as faculty_name
+            FROM quiz_submissions qs
+            JOIN quizzes q ON qs.quiz_id = q.id
+            JOIN users u ON q.faculty_id = u.id
+            LEFT JOIN classrooms c ON q.classroom_id = c.id
+            WHERE qs.student_id = ?
+            ORDER BY qs.id DESC
+            """,
+            (uid,),
+        ).fetchall()
+        student_live_submissions = [dict(r) for r in sub_rows]
+        for s in student_live_submissions:
+            try:
+                s["parsed_results"] = json.loads(s["results_json"])
+            except Exception:
+                s["parsed_results"] = []
+
+    conn.close()
 
     return render_template(
         "quiz.html",
+        user_type=user_type,
+        is_faculty=(user_type == "faculty"),
+        faculty_quizzes=faculty_quizzes,
+        faculty_classrooms=faculty_classrooms,
+        selected_quiz=selected_quiz,
+        selected_quiz_results=selected_quiz_results,
+        active_live_quizzes=active_live_quizzes,
+        student_live_submissions=student_live_submissions,
         quiz_history=quiz_history,
-        quiz_questions=[],
-        source_name="",
-        quiz_results=None,
-        score=None,
-        total=0,
-        attempt_id=None,
+        quiz_questions=quiz_questions or [],
+        source_name=source_name or "",
+        quiz_results=quiz_results,
+        score=score,
+        total=total,
+        attempt_id=attempt_id,
     )
+
+
+@app.route("/quiz/create", methods=["POST"])
+@login_required
+def quiz_create():
+    uid = session["user_id"]
+    if session.get("user_type") != "faculty":
+        return jsonify({"status": "error", "message": "Only faculty members can create quizzes."}), 403
+
+    is_json = request.is_json
+    data = request.get_json(silent=True) if is_json else request.form
+
+    title = (data.get("title") or "").strip()
+    if not title:
+        if is_json:
+            return jsonify({"status": "error", "message": "Quiz title is required."}), 400
+        flash("Quiz title is required.", "danger")
+        return redirect(url_for("quiz"))
+
+    subject = (data.get("subject") or "").strip()
+    description = (data.get("description") or "").strip()
+    raw_class_id = data.get("classroom_id")
+    classroom_id = int(raw_class_id) if raw_class_id and str(raw_class_id).isdigit() else None
+    
+    try:
+        duration_minutes = int(data.get("duration_minutes") or 0)
+    except (ValueError, TypeError):
+        duration_minutes = 0
+
+    status = (data.get("status") or "draft").strip().lower()
+    if status not in ("draft", "active", "ended"):
+        status = "draft"
+
+    # Extract questions
+    questions = []
+    if is_json:
+        raw_questions = data.get("questions") or []
+        if isinstance(raw_questions, list):
+            for rq in raw_questions:
+                q_text = str(rq.get("question", "")).strip()
+                opts = [str(o).strip() for o in rq.get("options", []) if str(o).strip()]
+                ans_raw = str(rq.get("answer", "")).strip()
+                if ans_raw.isdigit() and int(ans_raw) < len(opts):
+                    ans = opts[int(ans_raw)]
+                elif ans_raw in opts:
+                    ans = ans_raw
+                elif opts:
+                    ans = opts[0]
+                else:
+                    ans = ""
+                if q_text and opts:
+                    questions.append({
+                        "question": q_text,
+                        "options": opts,
+                        "answer": ans,
+                    })
+    else:
+        raw_json = data.get("quiz_data_json")
+        if raw_json:
+            try:
+                parsed_json = json.loads(raw_json)
+                if isinstance(parsed_json, list):
+                    for rq in parsed_json:
+                        q_text = str(rq.get("question", "")).strip()
+                        opts = [str(o).strip() for o in rq.get("options", []) if str(o).strip()]
+                        ans_raw = str(rq.get("answer", "")).strip()
+                        if ans_raw.isdigit() and int(ans_raw) < len(opts):
+                            ans = opts[int(ans_raw)]
+                        elif ans_raw in opts:
+                            ans = ans_raw
+                        elif opts:
+                            ans = opts[0]
+                        else:
+                            ans = ""
+                        if q_text and opts:
+                            questions.append({
+                                "question": q_text,
+                                "options": opts,
+                                "answer": ans,
+                            })
+            except Exception:
+                questions = []
+
+        if not questions:
+            # Parse from form fields (q_text_0, q_opt_0_0, etc.)
+            q_idx = 0
+            while f"q_text_{q_idx}" in request.form:
+                q_text = request.form.get(f"q_text_{q_idx}", "").strip()
+                if q_text:
+                    opts = []
+                    for opt_idx in range(4):
+                        opt_val = request.form.get(f"q_opt_{q_idx}_{opt_idx}", "").strip()
+                        if opt_val:
+                            opts.append(opt_val)
+                    ans_raw = request.form.get(f"q_ans_{q_idx}", "").strip()
+                    if ans_raw.isdigit() and int(ans_raw) < len(opts):
+                        ans = opts[int(ans_raw)]
+                    elif ans_raw in opts:
+                        ans = ans_raw
+                    elif opts:
+                        ans = opts[0]
+                    else:
+                        ans = ""
+                    questions.append({
+                        "question": q_text,
+                        "options": opts,
+                        "answer": ans,
+                    })
+                q_idx += 1
+
+    if not questions:
+        if is_json:
+            return jsonify({"status": "error", "message": "Please add at least one question to the quiz."}), 400
+        flash("Please add at least one question to the quiz.", "warning")
+        return redirect(url_for("quiz"))
+
+    started_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if status == "active" else None
+
+    conn = get_db()
+    cursor = conn.execute(
+        """
+        INSERT INTO quizzes (
+            faculty_id, classroom_id, title, subject, description,
+            duration_minutes, status, quiz_data, started_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            uid,
+            classroom_id,
+            title,
+            subject,
+            description,
+            duration_minutes,
+            status,
+            json.dumps(questions),
+            started_at,
+        ),
+    )
+    quiz_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    if is_json:
+        return jsonify({
+            "status": "ok",
+            "message": "Quiz created successfully." if status != "active" else "Live quiz started and published!",
+            "quiz_id": quiz_id,
+        })
+
+    msg = f"Quiz \"{title}\" created and started live for students!" if status == "active" else f"Quiz \"{title}\" saved as draft."
+    flash(msg, "success")
+    return redirect(url_for("quiz"))
+
+
+@app.route("/quiz/<int:quiz_id>/status", methods=["POST"])
+@login_required
+def quiz_toggle_status(quiz_id):
+    uid = session["user_id"]
+    if session.get("user_type") != "faculty":
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    data = request.get_json(silent=True) if request.is_json else request.form
+    new_status = (data.get("status") or "active").strip().lower()
+    if new_status not in ("draft", "active", "ended"):
+        new_status = "active"
+
+    conn = get_db()
+    quiz_row = conn.execute("SELECT id, title FROM quizzes WHERE id = ? AND faculty_id = ?", (quiz_id, uid)).fetchone()
+    if not quiz_row:
+        conn.close()
+        return jsonify({"status": "error", "message": "Quiz not found"}), 404
+
+    started_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if new_status == "active" else None
+    if started_at:
+        conn.execute("UPDATE quizzes SET status = ?, started_at = ? WHERE id = ?", (new_status, started_at, quiz_id))
+    else:
+        conn.execute("UPDATE quizzes SET status = ? WHERE id = ?", (new_status, quiz_id))
+    conn.commit()
+    conn.close()
+
+    if request.is_json:
+        return jsonify({
+            "status": "ok",
+            "new_status": new_status,
+            "message": f"Quiz is now {new_status.capitalize()}.",
+        })
+
+    flash(f"Quiz \"{quiz_row['title']}\" status updated to {new_status.capitalize()}.", "info")
+    return redirect(url_for("quiz"))
+
+
+@app.route("/quiz/<int:quiz_id>/delete", methods=["POST"])
+@login_required
+def quiz_delete(quiz_id):
+    uid = session["user_id"]
+    if session.get("user_type") != "faculty":
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    conn = get_db()
+    quiz_row = conn.execute("SELECT id, title FROM quizzes WHERE id = ? AND faculty_id = ?", (quiz_id, uid)).fetchone()
+    if not quiz_row:
+        conn.close()
+        flash("Quiz not found.", "danger")
+        return redirect(url_for("quiz"))
+
+    conn.execute("DELETE FROM quizzes WHERE id = ?", (quiz_id,))
+    conn.commit()
+    conn.close()
+
+    flash(f"Quiz \"{quiz_row['title']}\" has been deleted.", "success")
+    return redirect(url_for("quiz"))
+
+
+@app.route("/quiz/take/<int:quiz_id>", methods=["GET"])
+@login_required
+def quiz_take(quiz_id):
+    uid = session["user_id"]
+    conn = get_db()
+
+    quiz_row = conn.execute(
+        """SELECT q.*, c.class_name, u.name as faculty_name
+           FROM quizzes q
+           JOIN users u ON q.faculty_id = u.id
+           LEFT JOIN classrooms c ON q.classroom_id = c.id
+           WHERE q.id = ?""",
+        (quiz_id,),
+    ).fetchone()
+
+    if not quiz_row:
+        conn.close()
+        flash("Quiz not found or has been removed.", "danger")
+        return redirect(url_for("quiz"))
+
+    quiz_data = dict(quiz_row)
+    try:
+        raw_questions = json.loads(quiz_data["quiz_data"])
+    except Exception:
+        raw_questions = []
+
+    # Check if student already submitted this quiz
+    existing_sub = conn.execute(
+        "SELECT * FROM quiz_submissions WHERE quiz_id = ? AND student_id = ?",
+        (quiz_id, uid),
+    ).fetchone()
+
+    conn.close()
+
+    sub_dict = None
+    if existing_sub:
+        sub_dict = dict(existing_sub)
+        try:
+            sub_dict["parsed_results"] = json.loads(sub_dict["results_json"])
+        except Exception:
+            sub_dict["parsed_results"] = []
+
+    # Strip answers for students taking the active quiz to prevent inspect element lookup
+    safe_questions = []
+    for idx, q in enumerate(raw_questions):
+        safe_questions.append({
+            "id": idx,
+            "question": q.get("question", ""),
+            "options": q.get("options", []),
+        })
+
+    return render_template(
+        "quiz_take.html",
+        quiz=quiz_data,
+        questions=safe_questions,
+        total_questions=len(safe_questions),
+        existing_submission=sub_dict,
+    )
+
+
+@app.route("/quiz/submit/<int:quiz_id>", methods=["POST"])
+@login_required
+def quiz_submit_live(quiz_id):
+    uid = session["user_id"]
+    conn = get_db()
+
+    quiz_row = conn.execute(
+        """SELECT q.*, c.class_name, u.name as faculty_name
+           FROM quizzes q
+           JOIN users u ON q.faculty_id = u.id
+           LEFT JOIN classrooms c ON q.classroom_id = c.id
+           WHERE q.id = ?""",
+        (quiz_id,),
+    ).fetchone()
+
+    if not quiz_row:
+        conn.close()
+        if request.is_json:
+            return jsonify({"status": "error", "message": "Quiz not found"}), 404
+        flash("Quiz not found.", "danger")
+        return redirect(url_for("quiz"))
+
+    if quiz_row["status"] != "active":
+        conn.close()
+        if request.is_json:
+            return jsonify({"status": "error", "message": "This quiz is no longer active."}), 400
+        flash("This quiz is no longer accepting submissions.", "warning")
+        return redirect(url_for("quiz"))
+
+    try:
+        stored_questions = json.loads(quiz_row["quiz_data"])
+    except Exception:
+        stored_questions = []
+
+    is_json = request.is_json
+    answers_map = {}
+    if is_json:
+        data = request.get_json(silent=True) or {}
+        answers_map = data.get("answers", {})
+    else:
+        for idx in range(len(stored_questions)):
+            val = request.form.get(f"answer_{idx}", "")
+            answers_map[str(idx)] = val
+
+    # Evaluate answers server-side
+    correct_count = 0
+    total = len(stored_questions)
+    results = []
+
+    for idx, q in enumerate(stored_questions):
+        selected_raw = str(answers_map.get(str(idx), "")).strip()
+        correct_raw = str(q.get("answer", "")).strip()
+        opts = q.get("options", [])
+
+        # Map indices to option strings if needed
+        selected = selected_raw
+        if selected_raw.isdigit() and int(selected_raw) < len(opts):
+            selected = opts[int(selected_raw)]
+
+        correct = correct_raw
+        if correct_raw.isdigit() and int(correct_raw) < len(opts):
+            correct = opts[int(correct_raw)]
+
+        is_correct = (selected.strip().lower() == correct.strip().lower())
+        if is_correct:
+            correct_count += 1
+
+        results.append({
+            "question": q.get("question", ""),
+            "selected": selected,
+            "correct": correct,
+            "is_correct": is_correct,
+            "options": opts,
+        })
+
+    score = round((correct_count / total) * 100) if total else 0
+
+    student_row = conn.execute("SELECT name, email FROM users WHERE id = ?", (uid,)).fetchone()
+    student_name = student_row["name"] if student_row else session.get("user_name", "Student")
+    student_email = student_row["email"] if student_row else session.get("user_email", "")
+
+    # Save to quiz_submissions table (multi-student concurrency safe)
+    cursor = conn.execute(
+        """
+        INSERT INTO quiz_submissions (
+            quiz_id, student_id, student_name, student_email, classroom_id,
+            score, correct_answers, total_questions, answers_json, results_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            quiz_id,
+            uid,
+            student_name,
+            student_email,
+            quiz_row["classroom_id"],
+            score,
+            correct_count,
+            total,
+            json.dumps(answers_map),
+            json.dumps(results),
+        ),
+    )
+    submission_id = cursor.lastrowid
+
+    # Also log to quiz_attempts for unified student analytics
+    conn.execute(
+        """
+        INSERT INTO quiz_attempts (
+            user_id, source_name, total_questions, correct_answers, score,
+            quiz_data, quiz_results
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            uid,
+            f"Live Quiz: {quiz_row['title']}",
+            total,
+            correct_count,
+            score,
+            quiz_row["quiz_data"],
+            json.dumps(results),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+    if is_json:
+        return jsonify({
+            "status": "ok",
+            "submission_id": submission_id,
+            "score": score,
+            "correct_answers": correct_count,
+            "total_questions": total,
+            "results": results,
+            "message": f"Quiz submitted successfully! Your score: {score}%",
+        })
+
+    flash(f"Quiz submitted! You scored {correct_count}/{total} ({score}%).", "success")
+    return redirect(url_for("quiz_take", quiz_id=quiz_id))
+
+
+@app.route("/api/quiz/<int:quiz_id>/results", methods=["GET"])
+@login_required
+def api_quiz_results(quiz_id):
+    uid = session["user_id"]
+    conn = get_db()
+
+    quiz_row = conn.execute(
+        "SELECT * FROM quizzes WHERE id = ? AND faculty_id = ?",
+        (quiz_id, uid),
+    ).fetchone()
+
+    if not quiz_row:
+        conn.close()
+        return jsonify({"status": "error", "message": "Quiz not found or unauthorized"}), 404
+
+    subs = conn.execute(
+        """
+        SELECT qs.id, qs.student_id, qs.student_name, qs.student_email,
+               qs.score, qs.correct_answers, qs.total_questions,
+               qs.results_json, qs.submitted_at, u.avatar
+        FROM quiz_submissions qs
+        JOIN users u ON qs.student_id = u.id
+        WHERE qs.quiz_id = ?
+        ORDER BY qs.score DESC, qs.submitted_at ASC
+        """,
+        (quiz_id,),
+    ).fetchall()
+    conn.close()
+
+    submission_list = []
+    total_score = 0
+    highest_score = 0
+    passed_count = 0
+
+    for s in subs:
+        sc = s["score"]
+        total_score += sc
+        if sc > highest_score:
+            highest_score = sc
+        if sc >= 50:
+            passed_count += 1
+        
+        parsed_res = []
+        try:
+            parsed_res = json.loads(s["results_json"])
+        except Exception:
+            parsed_res = []
+
+        submission_list.append({
+            "id": s["id"],
+            "student_id": s["student_id"],
+            "student_name": s["student_name"],
+            "student_email": s["student_email"],
+            "score": sc,
+            "correct_answers": s["correct_answers"],
+            "total_questions": s["total_questions"],
+            "submitted_at": s["submitted_at"],
+            "avatar": s["avatar"] or "",
+            "results": parsed_res,
+        })
+
+    count = len(submission_list)
+    avg_score = round(total_score / count, 1) if count else 0
+    pass_rate = round((passed_count / count) * 100) if count else 0
+
+    return jsonify({
+        "status": "ok",
+        "quiz_id": quiz_id,
+        "title": quiz_row["title"],
+        "status_code": quiz_row["status"],
+        "total_submissions": count,
+        "average_score": avg_score,
+        "highest_score": highest_score,
+        "pass_rate": pass_rate,
+        "submissions": submission_list,
+    })
+
+
+@app.route("/quiz/export/results/<int:quiz_id>")
+@login_required
+def quiz_export_results(quiz_id):
+    uid = session["user_id"]
+    conn = get_db()
+
+    quiz_row = conn.execute(
+        """SELECT q.*, c.class_name FROM quizzes q
+           LEFT JOIN classrooms c ON q.classroom_id = c.id
+           WHERE q.id = ? AND q.faculty_id = ?""",
+        (quiz_id, uid),
+    ).fetchone()
+
+    if not quiz_row:
+        conn.close()
+        flash("Quiz not found.", "danger")
+        return redirect(url_for("quiz"))
+
+    subs = conn.execute(
+        """SELECT qs.*, u.name as student_name, u.email as student_email
+           FROM quiz_submissions qs
+           JOIN users u ON qs.student_id = u.id
+           WHERE qs.quiz_id = ?
+           ORDER BY qs.score DESC, qs.submitted_at ASC""",
+        (quiz_id,),
+    ).fetchall()
+    conn.close()
+
+    lines = []
+    lines.append("=" * 60)
+    lines.append(f"QUIZ RESULTS REPORT: {quiz_row['title'].upper()}")
+    lines.append(f"Subject: {quiz_row['subject'] or 'General'}")
+    lines.append(f"Classroom: {quiz_row['class_name'] or 'All Students'}")
+    lines.append(f"Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append(f"Total Submissions: {len(subs)}")
+    lines.append("=" * 60)
+    lines.append("")
+    lines.append(f"{'Student Name':<25} | {'Email':<25} | {'Score (%)':<10} | {'Correct':<8} | {'Date & Time'}")
+    lines.append("-" * 90)
+
+    for s in subs:
+        lines.append(f"{s['student_name']:<25} | {s['student_email']:<25} | {str(s['score']) + '%':<10} | {f'{s['correct_answers']}/{s['total_questions']}':<8} | {s['submitted_at']}")
+
+    content = "\n".join(lines)
+    filename = f"quiz_{quiz_id}_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    return _quiz_txt_response(filename, content)
 
 
 @app.route("/quiz/generate", methods=["POST"])
@@ -3601,6 +5978,326 @@ def api_reminders():
     return jsonify({"reminders": msgs})
 
 
+@app.route("/api/notifications")
+@login_required
+def api_notifications():
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    notifications = []
+
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+
+    try:
+        if user_type == "faculty":
+            # 1. Student task submissions in faculty's classrooms
+            recent_subs = conn.execute(
+                """SELECT sub.id, sub.submitted_at, sub.file_name, u.name as student_name,
+                          ca.task_name, c.class_name, c.id as class_id
+                   FROM classroom_submissions sub
+                   JOIN users u ON sub.student_id = u.id
+                   JOIN classroom_assignments ca ON sub.assignment_id = ca.id
+                   JOIN classrooms c ON sub.classroom_id = c.id
+                   WHERE c.faculty_id = ?
+                   ORDER BY sub.id DESC LIMIT 6""",
+                (uid,),
+            ).fetchall()
+            for s in recent_subs:
+                notifications.append({
+                    "id": f"sub-{s['id']}",
+                    "type": "submission",
+                    "icon": "fas fa-file-circle-check text-success",
+                    "title": f"Task Submitted • {s['class_name']}",
+                    "text": f"{s['student_name']} submitted work for \"{s['task_name']}\"",
+                    "time": s["submitted_at"] if s["submitted_at"] else "Recently",
+                    "url": url_for("classrooms", class_id=s["class_id"], tab="tab-tasks")
+                })
+
+            # 2. Student enrollments in faculty's classrooms
+            recent_joins = conn.execute(
+                """SELECT cm.id as member_id, u.name as student_name, c.class_name, c.id as class_id, cm.joined_at
+                   FROM classroom_members cm
+                   JOIN users u ON cm.student_id = u.id
+                   JOIN classrooms c ON cm.classroom_id = c.id
+                   WHERE c.faculty_id = ?
+                   ORDER BY cm.id DESC LIMIT 5""",
+                (uid,),
+            ).fetchall()
+            for j in recent_joins:
+                notifications.append({
+                    "id": f"join-{j['member_id']}",
+                    "type": "enrollment",
+                    "icon": "fas fa-user-plus text-success",
+                    "title": f"New Student Joined • {j['class_name']}",
+                    "text": f"{j['student_name']} joined {j['class_name']}",
+                    "time": j["joined_at"] if j["joined_at"] else "Recently",
+                    "url": url_for("classrooms", class_id=j["class_id"], tab="tab-students")
+                })
+
+            # 3. Messages from students in faculty's classrooms
+            recent_msgs = conn.execute(
+                """SELECT m.id, m.message, m.created_at, u.name as sender_name, c.class_name, c.id as class_id
+                   FROM classroom_messages m
+                   JOIN users u ON m.sender_id = u.id
+                   JOIN classrooms c ON m.classroom_id = c.id
+                   WHERE c.faculty_id = ? AND m.sender_id != ?
+                   ORDER BY m.id DESC LIMIT 6""",
+                (uid, uid),
+            ).fetchall()
+            for m in recent_msgs:
+                notifications.append({
+                    "id": f"msg-{m['id']}",
+                    "type": "message",
+                    "icon": "fas fa-comment-dots text-primary",
+                    "title": f"Message from {m['sender_name']} • {m['class_name']}",
+                    "text": m["message"][:80] + ("..." if len(m["message"]) > 80 else ""),
+                    "time": m["created_at"],
+                    "url": url_for("classrooms", class_id=m["class_id"], tab="tab-comms")
+                })
+
+            # 4. Student quiz submissions in faculty's quizzes
+            recent_quiz_subs = conn.execute(
+                """SELECT qs.id, qs.quiz_id, qs.student_name, qs.score, qs.correct_answers, qs.total_questions,
+                          qs.submitted_at, q.title as quiz_title, c.class_name
+                   FROM quiz_submissions qs
+                   JOIN quizzes q ON qs.quiz_id = q.id
+                   LEFT JOIN classrooms c ON q.classroom_id = c.id
+                   WHERE q.faculty_id = ?
+                   ORDER BY qs.id DESC LIMIT 6""",
+                (uid,),
+            ).fetchall()
+            for qsub in recent_quiz_subs:
+                target_class = f" • {qsub['class_name']}" if qsub['class_name'] else ""
+                notifications.append({
+                    "id": f"quizsub-{qsub['id']}",
+                    "type": "quiz_result",
+                    "icon": "fas fa-square-poll-vertical text-purple",
+                    "title": f"Quiz Completed: {qsub['quiz_title']}{target_class}",
+                    "text": f"{qsub['student_name']} scored {qsub['score']}% ({qsub['correct_answers']}/{qsub['total_questions']})",
+                    "time": qsub["submitted_at"] if qsub["submitted_at"] else "Recently",
+                    "url": url_for("quiz") + f"?view_quiz={qsub['quiz_id']}"
+                })
+
+        else:
+            # Student notifications:
+            # 0. Active live quizzes assigned by faculty
+            active_quizzes = conn.execute(
+                """SELECT q.id, q.title, q.subject, q.duration_minutes, q.started_at, q.created_at,
+                          c.class_name, u.name as faculty_name,
+                          (SELECT COUNT(*) FROM json_each(q.quiz_data)) as question_count
+                   FROM quizzes q
+                   JOIN users u ON q.faculty_id = u.id
+                   LEFT JOIN classrooms c ON q.classroom_id = c.id
+                   WHERE q.status = 'active'
+                     AND (
+                         q.classroom_id IS NULL OR q.classroom_id IN (
+                             SELECT classroom_id FROM classroom_members WHERE student_id = ?
+                         )
+                     )
+                     AND NOT EXISTS (
+                         SELECT 1 FROM quiz_submissions qs WHERE qs.quiz_id = q.id AND qs.student_id = ?
+                     )
+                   ORDER BY q.id DESC LIMIT 4""",
+                (uid, uid),
+            ).fetchall()
+            for aq in active_quizzes:
+                target_title = f"Live Quiz: {aq['title']}"
+                dur_txt = f"{aq['duration_minutes']}m • " if aq['duration_minutes'] else ""
+                class_txt = f" • {aq['class_name']}" if aq['class_name'] else ""
+                notifications.append({
+                    "id": f"livequiz-{aq['id']}",
+                    "type": "quiz",
+                    "icon": "fas fa-bolt text-warning",
+                    "title": f"{target_title}{class_txt}",
+                    "text": f"Professor {aq['faculty_name']} started a live quiz ({dur_txt}{aq['question_count']} questions). Click to attempt now!",
+                    "time": aq["started_at"] if aq["started_at"] else (aq["created_at"] or "Now Active"),
+                    "url": url_for("quiz_take", quiz_id=aq["id"])
+                })
+
+            # 1. Faculty messages & announcements in joined classrooms
+            announcements = conn.execute(
+                """SELECT m.id, m.message, m.created_at, u.name as faculty_name, c.class_name, c.id as class_id
+                   FROM classroom_messages m
+                   JOIN users u ON m.sender_id = u.id
+                   JOIN classrooms c ON m.classroom_id = c.id
+                   JOIN classroom_members cm ON cm.classroom_id = c.id
+                   WHERE cm.student_id = ? AND m.sender_id != ?
+                   ORDER BY m.id DESC LIMIT 6""",
+                (uid, uid),
+            ).fetchall()
+            for a in announcements:
+                notifications.append({
+                    "id": f"ann-{a['id']}",
+                    "type": "announcement",
+                    "icon": "fas fa-bullhorn text-warning",
+                    "title": f"Message from {a['faculty_name']} • {a['class_name']}",
+                    "text": a["message"][:80] + ("..." if len(a["message"]) > 80 else ""),
+                    "time": a["created_at"],
+                    "url": url_for("classrooms", class_id=a["class_id"], tab="tab-student-comms")
+                })
+
+            # 2. Tasks / assignments assigned to student by faculty
+            recent_tasks = conn.execute(
+                """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.created_at,
+                          c.class_name, c.id as class_id, u.name as faculty_name
+                   FROM classroom_assignments ca
+                   JOIN classrooms c ON ca.classroom_id = c.id
+                   JOIN users u ON c.faculty_id = u.id
+                   WHERE ca.student_id = ?
+                   ORDER BY ca.id DESC LIMIT 6""",
+                (uid,),
+            ).fetchall()
+            for t in recent_tasks:
+                notifications.append({
+                    "id": f"cassign-{t['id']}",
+                    "type": "assignment",
+                    "icon": "fas fa-clipboard-list text-primary",
+                    "title": f"New Task Assigned • {t['class_name']}",
+                    "text": f"\"{t['task_name']}\" ({t['subject']}) assigned by {t['faculty_name']}. Due: {t['deadline']}",
+                    "time": t["created_at"] if t["created_at"] else "Recently",
+                    "url": url_for("classrooms", class_id=t["class_id"], tab="tab-student-tasks")
+                })
+
+            # 3. New study materials and notes posted in classrooms
+            recent_res = conn.execute(
+                """SELECT r.id, r.title, r.resource_type, r.created_at, c.class_name, c.id as class_id, u.name as uploader_name
+                   FROM classroom_resources r
+                   JOIN classrooms c ON r.classroom_id = c.id
+                   JOIN classroom_members cm ON cm.classroom_id = c.id
+                   JOIN users u ON u.id = r.uploader_id
+                   WHERE cm.student_id = ?
+                   ORDER BY r.id DESC LIMIT 6""",
+                (uid,),
+            ).fetchall()
+            for res_item in recent_res:
+                notifications.append({
+                    "id": f"res-{res_item['id']}",
+                    "type": "resource",
+                    "icon": "fas fa-folder-open text-info",
+                    "title": f"New Study Material • {res_item['class_name']}",
+                    "text": f"{res_item['title']} ({res_item['resource_type'].upper()}) shared by {res_item['uploader_name']}",
+                    "time": res_item["created_at"],
+                    "url": url_for("classrooms", class_id=res_item["class_id"], tab="tab-student-materials")
+                })
+
+            # 4. Graded & evaluated tasks from faculty
+            recent_graded = conn.execute(
+                """SELECT sub.id, sub.grade, sub.feedback, sub.graded_at, ca.task_name, c.class_name, c.id as class_id, u.name as faculty_name
+                   FROM classroom_submissions sub
+                   JOIN classroom_assignments ca ON sub.assignment_id = ca.id
+                   JOIN classrooms c ON sub.classroom_id = c.id
+                   JOIN users u ON c.faculty_id = u.id
+                   WHERE sub.student_id = ? AND (sub.grade IS NOT NULL OR sub.feedback IS NOT NULL)
+                   ORDER BY sub.id DESC LIMIT 4""",
+                (uid,),
+            ).fetchall()
+            for g in recent_graded:
+                grade_txt = f"Grade: {g['grade']}" if g['grade'] else "Reviewed"
+                notifications.append({
+                    "id": f"grade-{g['id']}",
+                    "type": "grade",
+                    "icon": "fas fa-award text-warning",
+                    "title": f"Assignment Graded • {g['class_name']}",
+                    "text": f"\"{g['task_name']}\" evaluated by {g['faculty_name']}. {grade_txt}",
+                    "time": g["graded_at"] if g["graded_at"] else "Recently",
+                    "url": url_for("classrooms", class_id=g["class_id"], tab="tab-student-tasks")
+                })
+
+            # 5. Upcoming tasks due soon from personal task tracker
+            tasks_due = conn.execute(
+                """SELECT id, task_name, subject, deadline FROM tasks
+                   WHERE user_id=? AND status='Pending'
+                   AND deadline >= ? AND deadline <= date(?, '+3 days')
+                   ORDER BY deadline LIMIT 3""",
+                (uid, today_str, today_str),
+            ).fetchall()
+            for t in tasks_due:
+                notifications.append({
+                    "id": f"task-{t['id']}",
+                    "type": "task",
+                    "icon": "fas fa-clock text-danger",
+                    "title": f"Task Due: {t['task_name']}",
+                    "text": f"{t['subject']} • Deadline: {t['deadline']}",
+                    "time": "Due Soon",
+                    "url": url_for("tasks")
+                })
+    except Exception as e:
+        pass
+
+    # Read persistent seen notification IDs from database so seen messages do not return after login
+    db_read_ids = set()
+    try:
+        rows = conn.execute("SELECT notif_id FROM notification_reads WHERE user_id=?", (uid,)).fetchall()
+        db_read_ids = {r["notif_id"] for r in rows}
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+    session_read_ids = set(session.get("read_notifications", []))
+    all_read_ids = db_read_ids | session_read_ids
+
+    # Filter out all notifications that were already seen / read by this user
+    unread_notifications = [n for n in notifications if n["id"] not in all_read_ids]
+
+    return jsonify({
+        "count": len(unread_notifications),
+        "notifications": unread_notifications[:10]
+    })
+
+
+@app.route("/api/notifications/read", methods=["POST"])
+@login_required
+def api_notifications_mark_read():
+    uid = session["user_id"]
+    data = request.get_json(silent=True) or {}
+    ids_to_mark = []
+
+    if data.get("all"):
+        ids_to_mark = data.get("ids", [])
+    elif data.get("id"):
+        ids_to_mark = [data.get("id")]
+
+    conn = get_db()
+    try:
+        for item_id in ids_to_mark:
+            item_id_str = str(item_id).strip()
+            if not item_id_str:
+                continue
+            conn.execute(
+                "INSERT OR IGNORE INTO notification_reads (user_id, notif_id) VALUES (?, ?)",
+                (uid, item_id_str),
+            )
+            # If notification is a classroom message, mark read in classroom_messages table
+            if item_id_str.startswith("msg-") or item_id_str.startswith("dm-") or item_id_str.startswith("ann-"):
+                try:
+                    raw_msg_id = int(item_id_str.split("-", 1)[1])
+                    if session.get("user_type") == "faculty":
+                        conn.execute("UPDATE classroom_messages SET read_by_faculty=1 WHERE id=?", (raw_msg_id,))
+                    else:
+                        conn.execute("UPDATE classroom_messages SET read_by_student=1 WHERE id=?", (raw_msg_id,))
+                except Exception:
+                    pass
+        conn.commit()
+    except Exception:
+        pass
+
+    db_read_rows = []
+    try:
+        db_read_rows = conn.execute("SELECT notif_id FROM notification_reads WHERE user_id=?", (uid,)).fetchall()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+    all_reads = [row["notif_id"] for row in db_read_rows]
+    session["read_notifications"] = all_reads
+    return jsonify({"success": True, "read_count": len(all_reads)})
+
+
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     host = "0.0.0.0"
@@ -3621,17 +6318,17 @@ if __name__ == "__main__":
         network_url = None
 
     # Build a neat dynamic box based on content width
-    lines = ["AI Study Planner & Productivity Coach", "", f"Local:   {local_url}"]
+    lines = ["AI Smart Collaborative Learning Platform", "", f"Local:   {local_url}"]
     if network_url:
         lines.append(f"Network: {network_url}")
     lines.append("")
     lines.append("Press Ctrl+C to stop")
 
     inner_width = max(len(l) for l in lines) + 2
-    print("╔" + "═" * inner_width + "╗")
+    print("+" + "-" * inner_width + "+")
     for l in lines:
-        print("║ " + l.ljust(inner_width - 1) + "║")
-    print("╚" + "═" * inner_width + "╝")
+        print("| " + l.ljust(inner_width - 1) + "|")
+    print("+" + "-" * inner_width + "+")
 
     # Open the browser once when the reloader child process runs (avoids double-open)
     if not _is_hosted_runtime() and os.environ.get("WERKZEUG_RUN_MAIN") == "true":

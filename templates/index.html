@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title> AI SmartClass — Smarter Classrooms. Better Learning. Powered by AI.</title>
-  <meta name="description" content="SmartClass AI is an AI-powered smart classroom management platform connecting faculty and students in one centralized academic workspace.">
+  <meta name="description"
+    content="SmartClass AI is an AI-powered smart classroom management platform connecting faculty and students in one centralized academic workspace.">
 
   <!-- Fonts: Instrument Serif (display), Inter (body/UI), JetBrains Mono (labels & data) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 </head>
+
 <body>
-<!--   landing body 8-8-26-->
+  <!--   landing body 8-8-26-->
 
 
 
@@ -44,15 +49,16 @@
         <a href="{{ url_for('signup') }}" class="btn btn--primary">Get Started</a>
       </div>
 
-      <button class="navbar__burger" id="navBurger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navLinks">
+      <button class="navbar__burger" id="navBurger" aria-label="Toggle navigation menu" aria-expanded="false"
+        aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
 
 
-  
-  
+
+
   <!-- Mobile nav panel -->
   <div class="mobile-nav" id="mobileNav">
     <a href="#home">Home</a>
@@ -83,7 +89,7 @@
             learning assistance.
           </p>
           <div class="hero__cta">
-            <a href="/html/signup.html" class="btn btn--primary btn--lg">Get Started</a>
+            <a href="{{ url_for('signup') }}" class="btn btn--primary btn--lg">Get Started</a>
             <a href="#features" class="btn btn--outline btn--lg">Explore Features</a>
           </div>
           <div class="hero__trust">
@@ -101,7 +107,9 @@
             <div class="mock-window__body">
               <div class="mock-card mock-card--wide">
                 <p class="mock-card__label">Student Dashboard</p>
-                <div class="mock-progress"><div class="mock-progress__fill" style="width:72%"></div></div>
+                <div class="mock-progress">
+                  <div class="mock-progress__fill" style="width:72%"></div>
+                </div>
                 <p class="mock-card__meta">Progress overview <span class="tag tag--sample">sample</span></p>
               </div>
 
@@ -109,7 +117,8 @@
                 <div class="mock-card mock-card--chat">
                   <p class="mock-card__label">AI Assistant</p>
                   <p class="mock-chat mock-chat--in">Ask a question to see academic guidance here.</p>
-                  <p class="mock-chat mock-chat--out">AI responses will appear here after Groq integration is connected.</p>
+                  <p class="mock-chat mock-chat--out">AI responses will appear here after Groq integration is connected.
+                  </p>
                 </div>
                 <div class="mock-card mock-card--stack">
                   <p class="mock-card__label">Upcoming Quiz</p>
@@ -121,7 +130,8 @@
               <div class="mock-card">
                 <p class="mock-card__label">Assignments &amp; Quizzes</p>
                 <div class="mock-list">
-                  <div class="mock-list__row"><span>Assignment title</span><span class="tag tag--due">Due date</span></div>
+                  <div class="mock-list__row"><span>Assignment title</span><span class="tag tag--due">Due date</span>
+                  </div>
                   <div class="mock-list__row"><span>Quiz title</span><span class="tag tag--sample">sample</span></div>
                   <div class="mock-list__row"><span>Group report</span><span class="tag tag--ok">Submitted</span></div>
                 </div>
@@ -175,7 +185,8 @@
       <div class="container solution__grid">
         <div>
           <p class="eyebrow eyebrow--light">the solution</p>
-          <h2 class="section__heading section__heading--light">One Platform. One Classroom. <span class="mark mark--light">Smarter Learning.</span></h2>
+          <h2 class="section__heading section__heading--light">One Platform. One Classroom. <span
+              class="mark mark--light">Smarter Learning.</span></h2>
           <p class="solution__text">
             SmartClass AI integrates classroom management, collaboration, productivity, analytics
             and AI assistance into a single connected workspace — so faculty spend less time on
@@ -205,22 +216,70 @@
 
         <div class="grid grid--4 feature-grid">
           <!-- 16 feature cards -->
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🧠</span><h3>AI Quiz Generator</h3><p>Generate practice quizzes by subject, topic, and difficulty.</p></article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🗓️</span><h3>AI Study Planner</h3><p>Build a personalized study schedule around your exams and free time.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">📝</span><h3>Assignments</h3><p>Create, assign, and track assignments for classes, groups, or individuals.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">❓</span><h3>Quizzes</h3><p>Build timed MCQ quizzes and instantly view student scores.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">🏫</span><h3>Smart Classroom Management</h3><p>Create classrooms and manage everything from one place with a unique join code.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">👥</span><h3>Student Groups</h3><p>Organize students into project groups in a few clicks.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">📚</span><h3>Notes &amp; Resources</h3><p>Share PDFs, documents, and reference materials with your class.</p></article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🤖</span><h3>AI Chatbot</h3><p>Get instant academic help, explanations, and coding assistance.</p></article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">📄</span><h3>AI Note Summarizer</h3><p>Turn long notes into concise, revision-ready summaries.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">📊</span><h3>Progress Analytics</h3><p>Visualize quiz scores, submissions, and academic trends over time.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">⏰</span><h3>Timetable Generator</h3><p>Generate a personal weekly timetable around your college schedule.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">💬</span><h3>Group Discussions</h3><p>A private space for each group to coordinate project work.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">🗒️</span><h3>Personal Workspace</h3><p>Manage personal notes, to-dos, and study plans in one place.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">⏱️</span><h3>Focus Timer</h3><p>Stay on task with focus sessions, breaks, and session tracking.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">✉️</span><h3>Faculty Communication</h3><p>Reach faculty directly with academic questions and project queries.</p></article>
-          <article class="feature-card"><span class="feature-card__icon">🔔</span><h3>Notifications</h3><p>Never miss a deadline, quiz, or faculty announcement.</p></article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🧠</span>
+            <h3>AI Quiz Generator</h3>
+            <p>Generate practice quizzes by subject, topic, and difficulty.</p>
+          </article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🗓️</span>
+            <h3>AI Study Planner</h3>
+            <p>Build a personalized study schedule around your exams and free time.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">📝</span>
+            <h3>Assignments</h3>
+            <p>Create, assign, and track assignments for classes, groups, or individuals.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">❓</span>
+            <h3>Quizzes</h3>
+            <p>Build timed MCQ quizzes and instantly view student scores.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">🏫</span>
+            <h3>Smart Classroom Management</h3>
+            <p>Create classrooms and manage everything from one place with a unique join code.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">👥</span>
+            <h3>Student Groups</h3>
+            <p>Organize students into project groups in a few clicks.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">📚</span>
+            <h3>Notes &amp; Resources</h3>
+            <p>Share PDFs, documents, and reference materials with your class.</p>
+          </article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🤖</span>
+            <h3>AI Chatbot</h3>
+            <p>Get instant academic help, explanations, and coding assistance.</p>
+          </article>
+          <article class="feature-card feature-card--ai"><span class="feature-card__icon">📄</span>
+            <h3>AI Note Summarizer</h3>
+            <p>Turn long notes into concise, revision-ready summaries.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">📊</span>
+            <h3>Progress Analytics</h3>
+            <p>Visualize quiz scores, submissions, and academic trends over time.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">⏰</span>
+            <h3>Timetable Generator</h3>
+            <p>Generate a personal weekly timetable around your college schedule.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">💬</span>
+            <h3>Group Discussions</h3>
+            <p>A private space for each group to coordinate project work.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">🗒️</span>
+            <h3>Personal Workspace</h3>
+            <p>Manage personal notes, to-dos, and study plans in one place.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">⏱️</span>
+            <h3>Focus Timer</h3>
+            <p>Stay on task with focus sessions, breaks, and session tracking.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">✉️</span>
+            <h3>Faculty Communication</h3>
+            <p>Reach faculty directly with academic questions and project queries.</p>
+          </article>
+          <article class="feature-card"><span class="feature-card__icon">🔔</span>
+            <h3>Notifications</h3>
+            <p>Never miss a deadline, quiz, or faculty announcement.</p>
+          </article>
         </div>
       </div>
     </section>
@@ -243,7 +302,8 @@
           </ul>
 
           <a href="#ai-assistant" class="btn btn--accent btn--lg" data-demo>Try AI Assistant</a>
-          <p class="ai__note">AI features are planned to connect through the Groq API in the next phase. This landing page is a frontend preview only.</p>
+          <p class="ai__note">AI features are planned to connect through the Groq API in the next phase. This landing
+            page is a frontend preview only.</p>
         </div>
 
         <div class="ai__preview" aria-hidden="true">
@@ -340,8 +400,10 @@
     <section class="section section--navy" id="analytics">
       <div class="container">
         <p class="eyebrow eyebrow--light">progress analytics</p>
-        <h2 class="section__heading section__heading--light section__heading--center">See Academic Progress at a Glance</h2>
-        <p class="section__closer section__closer--light">Illustrative dashboard preview — <span class="tag tag--sample">preview</span>, not connected to a live account.</p>
+        <h2 class="section__heading section__heading--light section__heading--center">See Academic Progress at a Glance
+        </h2>
+        <p class="section__closer section__closer--light">Illustrative dashboard preview — <span
+            class="tag tag--sample">preview</span>, not connected to a live account.</p>
 
         <div class="analytics-grid">
           <div class="chart-card">
@@ -371,14 +433,30 @@
         <h2 class="section__heading section__heading--center">Why SmartClass AI?</h2>
 
         <div class="grid grid--4">
-          <div class="benefit"><span class="benefit__icon">🏛️</span><p>Centralized Classroom Management</p></div>
-          <div class="benefit"><span class="benefit__icon">🪶</span><p>Reduced Faculty Workload</p></div>
-          <div class="benefit"><span class="benefit__icon">🗃️</span><p>Better Student Organization</p></div>
-          <div class="benefit"><span class="benefit__icon">🎯</span><p>Personalized AI Assistance</p></div>
-          <div class="benefit"><span class="benefit__icon">🤝</span><p>Improved Collaboration</p></div>
-          <div class="benefit"><span class="benefit__icon">⚡</span><p>Faster Academic Communication</p></div>
-          <div class="benefit"><span class="benefit__icon">📈</span><p>Better Progress Tracking</p></div>
-          <div class="benefit"><span class="benefit__icon">🚀</span><p>Increased Student Productivity</p></div>
+          <div class="benefit"><span class="benefit__icon">🏛️</span>
+            <p>Centralized Classroom Management</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">🪶</span>
+            <p>Reduced Faculty Workload</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">🗃️</span>
+            <p>Better Student Organization</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">🎯</span>
+            <p>Personalized AI Assistance</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">🤝</span>
+            <p>Improved Collaboration</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">⚡</span>
+            <p>Faster Academic Communication</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">📈</span>
+            <p>Better Progress Tracking</p>
+          </div>
+          <div class="benefit"><span class="benefit__icon">🚀</span>
+            <p>Increased Student Productivity</p>
+          </div>
         </div>
       </div>
     </section>
@@ -432,9 +510,10 @@
   <!-- Toast for "demo" notice on non-functional buttons -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-   
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
   <script src="/js/main.js"></script>
 </body>
+
 </html>

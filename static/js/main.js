@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── Reminder toasts ──────────────────────────────────────────────────────── */
 async function loadReminders() {
   try {
-    const res  = await fetch('/api/reminders');
+    const res = await fetch('/api/reminders');
     if (!res.ok) return;
     const data = await res.json();
 

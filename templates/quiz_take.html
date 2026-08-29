@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.title }} — Live Assessment{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --quiz-primary: #6366f1;
+    --quiz-primary-dark: #4f46e5;
+    --quiz-bg: #f8fafc;
+    --quiz-surface: #ffffff;
+    --quiz-border: #e2e8f0;
+  }
+  [data-bs-theme="dark"] {
+    --quiz-bg: #0f172a;
+    --quiz-surface: #1e293b;
+    --quiz-border: #334155;
+  }
+
+  .quiz-take-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #8b5cf6 100%);
+    border-radius: 18px;
+    color: #ffffff;
+    padding: 2.25rem 2rem;
+    position: relative;
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3);
+  }
+
+  .quiz-timer-pill {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 50rem;
+    padding: 0.5rem 1.25rem;
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-family: monospace;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .quiz-timer-pill.urgent {
+    background: rgba(239, 68, 68, 0.85);
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+
+  .question-step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    background: var(--quiz-surface);
+    border: 1px solid var(--quiz-border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .question-step-dot.active {
+    background: var(--quiz-primary);
+    color: #ffffff;
+    border-color: var(--quiz-primary);
+  }
+  .question-step-dot.answered {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+  }
+
+  .quiz-opt-label {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border: 2px solid var(--quiz-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--quiz-surface);
+    font-size: 1rem;
+    user-select: none;
+  }
+  .quiz-opt-label:hover {
+    border-color: var(--quiz-primary);
+    background: rgba(99, 102, 241, 0.04);
+  }
+  .quiz-opt-input:checked + .quiz-opt-label {
+    border-color: var(--quiz-primary);
+    background: rgba(99, 102, 241, 0.1);
+    font-weight: 600;
+  }
+
+  .opt-letter {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.06);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+  .quiz-opt-input:checked + .quiz-opt-label .opt-letter {
+    background: var(--quiz-primary);
+    color: #ffffff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Header Banner -->
+  <div class="quiz-take-header mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+    <div>
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+        <span class="badge bg-light text-dark fw-bold px-3 py-1 rounded-pill">
+          <i class="fas fa-bolt text-warning me-1"></i> Live Assessment
+        </span>
+        {% if quiz.subject %}
+        <span class="badge bg-white bg-opacity-25 text-white px-2.5 py-1 rounded-pill">
+          {{ quiz.subject }}
+        </span>
+        {% endif %}
+        {% if quiz.class_name %}
+        <span class="badge bg-white bg-opacity-25 text-white px-2.5 py-1 rounded-pill">
+          <i class="fas fa-chalkboard me-1"></i>{{ quiz.class_name }}
+        </span>
+        {% endif %}
+      </div>
+      <h1 class="h3 fw-bold mb-1">{{ quiz.title }}</h1>
+      <p class="mb-0 text-white-75 small">
+        Instructor: <strong>{{ quiz.faculty_name }}</strong> • {{ total_questions }} Questions
+        {% if quiz.duration_minutes %} • Time Limit: {{ quiz.duration_minutes }} mins{% endif %}
+      </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      {% if not existing_submission and quiz.duration_minutes > 0 %}
+      <div class="quiz-timer-pill" id="quizTimerDisplay">
+        <i class="fas fa-stopwatch"></i>
+        <span id="timerText">{{ quiz.duration_minutes }}:00</span>
+      </div>
+      {% endif %}
+      <a href="{{ url_for('quiz') }}" class="btn btn-outline-light rounded-pill px-3">
+        <i class="fas fa-arrow-left me-1"></i> Exit
+      </a>
+    </div>
+  </div>
+
+  {% if existing_submission %}
+  <!-- ── SUBMISSION RESULT VIEW ──────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4 p-md-5">
+      <div class="text-center mb-4">
+        <div class="d-inline-flex p-3 rounded-circle {% if existing_submission.score >= 50 %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %} mb-3">
+          <i class="fas {% if existing_submission.score >= 50 %}fa-trophy{% else %}fa-circle-xmark{% endif %} fs-1"></i>
+        </div>
+        <h2 class="fw-bold mb-1">Quiz Completed!</h2>
+        <p class="text-muted">You have already submitted this assessment. Here are your final results:</p>
+      </div>
+
+      <div class="row g-3 justify-content-center mb-5">
+        <div class="col-6 col-md-3">
+          <div class="p-3 bg-body-tertiary rounded-4 text-center border">
+            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Score</small>
+            <span class="h2 fw-bold text-primary mb-0">{{ existing_submission.score }}%</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-3 bg-body-tertiary rounded-4 text-center border">
+            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Correct Answers</small>
+            <span class="h2 fw-bold text-success mb-0">{{ existing_submission.correct_answers }}/{{ existing_submission.total_questions }}</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="p-3 bg-body-tertiary rounded-4 text-center border">
+            <small class="text-muted text-uppercase fw-semibold d-block mb-1">Status</small>
+            <span class="h2 fw-bold {% if existing_submission.score >= 50 %}text-success{% else %}text-danger{% endif %} mb-0">
+              {% if existing_submission.score >= 50 %}Passed{% else %}Review Needed{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Review Breakdown -->
+      <h4 class="fw-bold mb-3"><i class="fas fa-list-check text-primary me-2"></i>Question Breakdown</h4>
+      <div class="d-flex flex-column gap-3">
+        {% for r in existing_submission.parsed_results %}
+        <div class="p-3 rounded-4 border {% if r.is_correct %}border-success bg-success bg-opacity-10{% else %}border-danger bg-danger bg-opacity-10{% endif %}">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <span class="fw-bold">Q{{ loop.index }}. {{ r.question }}</span>
+            <span class="badge {% if r.is_correct %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-2.5 py-1">
+              {% if r.is_correct %}<i class="fas fa-check me-1"></i>Correct{% else %}<i class="fas fa-xmark me-1"></i>Incorrect{% endif %}
+            </span>
+          </div>
+          <div class="small">
+            <div class="text-muted">Your answer: <strong class="{% if r.is_correct %}text-success{% else %}text-danger{% endif %}">{{ r.selected or 'No answer selected' }}</strong></div>
+            {% if not r.is_correct %}
+            <div class="text-success fw-semibold mt-1">Correct answer: {{ r.correct }}</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center mt-5">
+        <a href="{{ url_for('quiz') }}" class="btn btn-primary btn-lg rounded-pill px-4">
+          <i class="fas fa-arrow-left me-2"></i>Return to Quizzes Hub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% elif questions|length == 0 %}
+  <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+    <i class="fas fa-circle-exclamation text-warning fs-1 mb-3"></i>
+    <h3 class="fw-bold">No Questions Found</h3>
+    <p class="text-muted">This quiz does not have any questions configured yet.</p>
+    <a href="{{ url_for('quiz') }}" class="btn btn-outline-primary rounded-pill mt-2">Back to Quizzes</a>
+  </div>
+
+  {% else %}
+  <!-- ── ACTIVE QUIZ SOLVING INTERFACE ───────────────────────────────── -->
+  <div class="row g-4">
+    <!-- Question Stepper Left / Main -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-4">
+        
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-1.5 rounded-pill" id="qBadge">
+            Question 1 of {{ total_questions }}
+          </span>
+          <span class="small text-muted" id="answeredCountText">0 answered</span>
+        </div>
+
+        <div class="progress mb-4" style="height: 8px;">
+          <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated" id="stepperProgressBar" style="width: 0%;"></div>
+        </div>
+
+        <!-- Question View Container -->
+        <form id="liveQuizForm" method="POST" action="{{ url_for('quiz_submit_live', quiz_id=quiz.id) }}">
+          <div id="questionsContainer">
+            {% for q in questions %}
+            {% set q_idx = loop.index0 %}
+            <div class="question-pane {% if not loop.first %}d-none{% endif %}" id="qPane_{{ q_idx }}" data-index="{{ q_idx }}">
+              <h4 class="fw-bold mb-4" style="line-height: 1.4;">{{ loop.index }}. {{ q.question }}</h4>
+              
+              <div class="d-flex flex-column gap-2.5">
+                {% set letters = ['A', 'B', 'C', 'D', 'E', 'F'] %}
+                {% for opt in q.options %}
+                <div>
+                  <input type="radio" class="visually-hidden quiz-opt-input" name="answer_{{ q_idx }}" id="opt_{{ q_idx }}_{{ loop.index0 }}" value="{{ opt }}" />
+                  <label class="quiz-opt-label w-100" for="opt_{{ q_idx }}_{{ loop.index0 }}">
+                    <span class="opt-letter">{{ letters[loop.index0] if loop.index0 < letters|length else loop.index }}</span>
+                    <span>{{ opt }}</span>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="d-flex justify-content-between align-items-center mt-5 pt-3 border-top">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" id="prevBtn" disabled>
+              <i class="fas fa-arrow-left me-1"></i> Previous
+            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-primary rounded-pill px-4" id="nextBtn">
+                Next <i class="fas fa-arrow-right ms-1"></i>
+              </button>
+              <button type="button" class="btn btn-success rounded-pill px-4 d-none" id="submitModalBtn" data-bs-toggle="modal" data-bs-target="#confirmSubmitModal">
+                <i class="fas fa-check-circle me-1"></i> Submit Quiz
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Question Navigator Sidebar -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 2rem;">
+        <h5 class="fw-bold mb-3"><i class="fas fa-grid-2 me-2 text-primary"></i>Questions Palette</h5>
+        <div class="d-flex flex-wrap gap-2 mb-4" id="questionDotsPalette">
+          {% for q in questions %}
+          <button type="button" class="question-step-dot {% if loop.first %}active{% endif %}" id="dot_{{ loop.index0 }}" onclick="jumpToQuestion({{ loop.index0 }})">
+            {{ loop.index }}
+          </button>
+          {% endfor %}
+        </div>
+
+        <div class="p-3 bg-body-tertiary rounded-3 border small">
+          <div class="d-flex align-items-center gap-2 mb-1.5">
+            <span class="question-step-dot answered" style="width:18px;height:18px;font-size:0.6rem;">✓</span>
+            <span class="text-muted">Answered</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-1.5">
+            <span class="question-step-dot active" style="width:18px;height:18px;font-size:0.6rem;"></span>
+            <span class="text-muted">Current Question</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="question-step-dot" style="width:18px;height:18px;font-size:0.6rem;"></span>
+            <span class="text-muted">Unanswered</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Submit Modal -->
+  <div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-body p-4 text-center">
+          <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-3">
+            <i class="fas fa-paper-plane fs-2"></i>
+          </div>
+          <h4 class="fw-bold mb-2">Submit Quiz Answers?</h4>
+          <p class="text-muted" id="modalSummaryText">Are you sure you want to finish and submit your quiz?</p>
+          <div class="d-flex gap-2 justify-content-center mt-4">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Keep Reviewing</button>
+            <button type="button" class="btn btn-success rounded-pill px-4" id="finalSubmitBtn" onclick="submitQuizNow()">
+              Yes, Submit Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not existing_submission and questions|length > 0 %}
+<script>
+  let currentIdx = 0;
+  const totalQ = {{ total_questions }};
+  const answeredAnswers = {};
+
+  function updateUI() {
+    // Show active pane
+    document.querySelectorAll('.question-pane').forEach((pane, idx) => {
+      pane.classList.toggle('d-none', idx !== currentIdx);
+    });
+
+    // Update Dots
+    document.querySelectorAll('.question-step-dot').forEach((dot, idx) => {
+      dot.classList.toggle('active', idx === currentIdx);
+      dot.classList.toggle('answered', Boolean(answeredAnswers[idx]));
+    });
+
+    // Update Progress
+    const answeredCount = Object.keys(answeredAnswers).length;
+    const pct = Math.round((answeredCount / totalQ) * 100);
+    const progressEl = document.getElementById('stepperProgressBar');
+    if (progressEl) progressEl.style.width = pct + '%';
+
+    const countText = document.getElementById('answeredCountText');
+    if (countText) countText.textContent = `${answeredCount} of ${totalQ} answered`;
+
+    const badge = document.getElementById('qBadge');
+    if (badge) badge.textContent = `Question ${currentIdx + 1} of ${totalQ}`;
+
+    // Prev / Next button states
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn) prevBtn.disabled = (currentIdx === 0);
+
+    const isLast = (currentIdx === totalQ - 1);
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitModalBtn');
+
+    if (nextBtn) nextBtn.classList.toggle('d-none', isLast);
+    if (submitBtn) submitBtn.classList.toggle('d-none', !isLast);
+  }
+
+  function jumpToQuestion(idx) {
+    if (idx >= 0 && idx < totalQ) {
+      currentIdx = idx;
+      updateUI();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Listen for option changes
+    document.querySelectorAll('.quiz-opt-input').forEach(input => {
+      input.addEventListener('change', (e) => {
+        const name = e.target.name; // answer_0
+        const qIdx = parseInt(name.replace('answer_', ''), 10);
+        answeredAnswers[qIdx] = e.target.value;
+        updateUI();
+      });
+    });
+
+    const nextBtn = document.getElementById('nextBtn');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        if (currentIdx < totalQ - 1) {
+          currentIdx++;
+          updateUI();
+        }
+      });
+    }
+
+    const prevBtn = document.getElementById('prevBtn');
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        if (currentIdx > 0) {
+          currentIdx--;
+          updateUI();
+        }
+      });
+    }
+
+    // Timer Countdown handling
+    const durationMins = {{ quiz.duration_minutes|default(0) }};
+    if (durationMins > 0) {
+      let timeLeftSec = durationMins * 60;
+      const timerDisplay = document.getElementById('quizTimerDisplay');
+      const timerText = document.getElementById('timerText');
+
+      const timerInterval = setInterval(() => {
+        timeLeftSec--;
+        if (timeLeftSec <= 0) {
+          clearInterval(timerInterval);
+          if (timerText) timerText.textContent = "00:00";
+          alert("Time's up! Your quiz will now be submitted automatically.");
+          submitQuizNow();
+          return;
+        }
+
+        const m = Math.floor(timeLeftSec / 60);
+        const s = timeLeftSec % 60;
+        if (timerText) {
+          timerText.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+        if (timeLeftSec <= 60 && timerDisplay) {
+          timerDisplay.classList.add('urgent');
+        }
+      }, 1000);
+    }
+  });
+
+  function submitQuizNow() {
+    const btn = document.getElementById('finalSubmitBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    }
+    const form = document.getElementById('liveQuizForm');
+    if (form) form.submit();
+  }
+</script>
+{% endif %}
+{% endblock %}

@@ -1,313 +1,576 @@
 {% extends "base.html" %}
-{% block title %}Find your PG, your people, your city{% endblock %}
+{% block title %}AI SmartClass — Faculty Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+  rel="stylesheet">
+<style>
+  :root {
+    --faculty-primary: #2563eb;
+    --faculty-primary-dark: #1d4ed8;
+    --faculty-primary-light: #eff4ff;
+    --faculty-surface: #ffffff;
+    --faculty-bg: #f8fafc;
+    --faculty-border: #e2e8f0;
+    --faculty-text-main: #0f172a;
+    --faculty-text-muted: #64748b;
+    --faculty-radius: 16px;
+    --faculty-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --faculty-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  }
+
+  [data-bs-theme="dark"] {
+    --faculty-surface: #1e293b;
+    --faculty-bg: #0f172a;
+    --faculty-border: #334155;
+    --faculty-text-main: #f8fafc;
+    --faculty-text-muted: #94a3b8;
+    --faculty-primary-light: rgba(37, 99, 235, 0.15);
+  }
+
+  body {
+    background-color: var(--faculty-bg);
+    font-family: 'Inter', sans-serif;
+    color: var(--faculty-text-main);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .faculty-brand {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+  }
+
+  .faculty-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+    border-radius: var(--faculty-radius);
+    color: #ffffff;
+    padding: 2.25rem 2rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.3);
+  }
+
+  .faculty-header::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .stat-card {
+    background: var(--faculty-surface);
+    border: 1px solid var(--faculty-border);
+    border-radius: var(--faculty-radius);
+    padding: 1.5rem;
+    box-shadow: var(--faculty-shadow-sm);
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--faculty-shadow);
+    border-color: var(--faculty-primary);
+  }
+
+  .stat-icon-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .icon-blue {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .icon-green {
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+
+  .icon-purple {
+    background: #faf5ff;
+    color: #9333ea;
+  }
+
+  .icon-amber {
+    background: #fffbeb;
+    color: #d97706;
+  }
+
+  [data-bs-theme="dark"] .icon-blue {
+    background: rgba(37, 99, 235, 0.2);
+    color: #60a5fa;
+  }
+
+  [data-bs-theme="dark"] .icon-green {
+    background: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+  }
+
+  [data-bs-theme="dark"] .icon-purple {
+    background: rgba(147, 51, 234, 0.2);
+    color: #c084fc;
+  }
+
+  [data-bs-theme="dark"] .icon-amber {
+    background: rgba(217, 119, 6, 0.2);
+    color: #fbbf24;
+  }
+
+  .dashboard-card {
+    background: var(--faculty-surface);
+    border: 1px solid var(--faculty-border);
+    border-radius: var(--faculty-radius);
+    padding: 1.5rem;
+    box-shadow: var(--faculty-shadow-sm);
+    margin-bottom: 1.5rem;
+  }
+
+  .class-code-badge {
+    background: var(--faculty-primary-light);
+    color: var(--faculty-primary);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    border: 1px dashed rgba(37, 99, 235, 0.4);
+    transition: all 0.2s ease;
+  }
+
+  .class-code-badge:hover {
+    background: var(--faculty-primary);
+    color: #ffffff;
+  }
+
+  .quick-action-btn {
+    border-radius: 12px;
+    padding: 0.65rem 1.1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .student-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--faculty-primary-light);
+    color: var(--faculty-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .table-custom th {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--faculty-text-muted);
+    border-bottom: 2px solid var(--faculty-border);
+  }
+
+  .table-custom td {
+    vertical-align: middle;
+    border-color: var(--faculty-border);
+  }
+
+  .badge-status {
+    padding: 0.35em 0.7em;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="container-fluid px-4 py-4">
 
-<section class="hero">
-  <div class="hero-orbit" aria-hidden="true"></div>
-  <div class="container hero-grid">
+  <!-- ── Welcome Header ────────────────────────────────────────────── -->
+  <div class="faculty-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
     <div>
-      <span class="eyebrow">Live in {{ stats.cities }}+ cities</span>
-      <h1>Your <span class="underline">new city</span>, sorted —<br>PG, essentials &amp; support in one map.</h1>
-      <p class="hero-sub">PG Buddy helps students find verified paying-guest housing, discover nearby shops, clinics and services, and get help fast — all in one place.</p>
-      <div class="hero-ctas">
-        <a href="#pg" class="btn btn-primary">Browse PGs</a>
-        <a href="{{ url_for('register') }}?role=pg_owner" class="btn btn-outline">List your property</a>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat"><div class="num">{{ stats.pgs }}+</div><div class="label">Verified PGs</div></div>
-        <div class="hero-stat"><div class="num">{{ stats.businesses }}+</div><div class="label">Local services</div></div>
-        <div class="hero-stat"><div class="num">{{ stats.students }}+</div><div class="label">Students onboard</div></div>
-      </div>
+      <span class="badge bg-light text-dark fw-bold mb-2 px-3 py-1 rounded-pill">
+        <i class="fas fa-chalkboard-teacher me-1 text-primary"></i> Faculty Portal
+      </span>
+      <h1 class="h2 mb-1">Welcome, Professor {{ session.get('user_name', 'Faculty') }}!</h1>
+      <p class="mb-0 text-white-50">Manage your smart classrooms, track student progress, and distribute AI learning
+        tasks.</p>
     </div>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{{ url_for('classrooms') }}" class="btn btn-light text-primary quick-action-btn shadow-sm">
+        <i class="fas fa-plus-circle"></i> Create Classroom
+      </a>
+      <a href="{{ url_for('quiz') }}" class="btn btn-outline-light quick-action-btn">
+        <i class="fas fa-robot"></i> AI Quiz Generator
+      </a>
+    </div>
+  </div>
 
-    <!-- Signature element: one console, three category-aware search modes -->
-    <form class="search-console" action="{{ url_for('pg_search') }}" method="get">
-      <div class="console-tabs" role="tablist" aria-label="Search category">
-        <button type="button" class="console-tab active" data-target="pg" role="tab" aria-selected="true">🏠 PG</button>
-        <button type="button" class="console-tab" data-target="other" role="tab" aria-selected="false">🛍️ Other</button>
-        <button type="button" class="console-tab" data-target="medical" role="tab" aria-selected="false">🏥 Medical</button>
-      </div>
-
-      <div class="console-panel active" id="panel-pg">
-        <div class="console-row">
-          <div class="console-field">
-            <label for="pg-city">City</label>
-            <input id="pg-city" name="city" type="text" placeholder="e.g. Pune" value="Pune">
+  <!-- ── KPI Stat Cards ────────────────────────────────────────────── -->
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-semibold text-uppercase">Total Classrooms</div>
+            <div class="h2 fw-bold mb-0 mt-1">{{ classrooms|length }}</div>
+            <div class="small text-muted mt-1"><i class="fas fa-chalkboard text-primary me-1"></i> Active learning hubs
+            </div>
           </div>
-          <div class="console-field">
-            <label for="pg-gender">Preference</label>
-            <select id="pg-gender" name="gender">
-              <option value="">Any</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="co-ed">Co-ed</option>
-            </select>
+          <div class="stat-icon-badge icon-blue">
+            <i class="fas fa-school"></i>
           </div>
         </div>
-        <div class="console-field">
-          <label for="pg-budget">Max budget / month</label>
-          <input id="pg-budget" name="budget" type="number" placeholder="e.g. 10000">
-        </div>
-        <button type="submit" class="btn btn-accent btn-block console-submit">Search PGs</button>
       </div>
-
-      <div class="console-panel" id="panel-other">
-        <div class="console-field">
-          <label for="other-type">Looking for</label>
-          <select id="other-type" name="category">
-            <option value="shop">Shops</option>
-            <option value="business">Businesses &amp; services</option>
-          </select>
-        </div>
-        <div class="console-field">
-          <label for="other-city">Near</label>
-          <input id="other-city" name="city" type="text" placeholder="e.g. Baner, Pune" value="Pune">
-        </div>
-        <button type="submit" class="btn btn-accent btn-block console-submit">Discover nearby</button>
-      </div>
-
-      <div class="console-panel" id="panel-medical">
-        <div class="console-field">
-          <label for="med-city">Area</label>
-          <input id="med-city" name="city" type="text" placeholder="e.g. Kothrud, Pune" value="Pune">
-        </div>
-        <div class="console-field">
-          <label for="med-type">Type</label>
-          <select id="med-type" name="type">
-            <option value="">All</option>
-            <option value="clinic">Clinic</option>
-            <option value="pharmacy">Pharmacy</option>
-            <option value="hospital">Hospital</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-accent btn-block console-submit">Find medical help</button>
-      </div>
-    </form>
-  </div>
-</section>
-
-<!-- ============================ PG section ============================ -->
-<section class="section" id="pg">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="section-tag">01 · Housing</span>
-        <h2>PGs students are booking now</h2>
-        <p>Verified listings with real seat counts — no more calling five numbers to find one that's actually available.</p>
-      </div>
-      <a href="{{ url_for('pg_search') }}" class="section-link">View all PGs →</a>
     </div>
 
-    <div class="card-grid">
-      {% for pg in featured_pgs %}
-      <article class="pg-card">
-        <div class="card-media">
-          <span class="media-icon">🏠</span>
-          {% if pg.available_seats > 0 %}
-            <span class="seat-pill">{{ pg.available_seats }} seats left</span>
-          {% else %}
-            <span class="seat-pill full">Full</span>
-          {% endif %}
-          <span class="category-pill">{{ pg.gender_preference }}</span>
-        </div>
-        <div class="card-body">
-          <h3>{{ pg.name }}</h3>
-          <div class="card-meta">📍 {{ pg.address }}, {{ pg.city }}</div>
-          <p class="card-desc">{{ pg.description }}</p>
-          <div class="card-foot">
-            <div class="price-tag mono">₹{{ "{:,}".format(pg.price) }}<span>/mo</span></div>
-            <div class="rating">★ {{ pg.rating }}</div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-semibold text-uppercase">Enrolled Students</div>
+            <div class="h2 fw-bold mb-0 mt-1">{{ total_students }}</div>
+            <div class="small text-success mt-1"><i class="fas fa-users text-success me-1"></i> Total active learners
+            </div>
+          </div>
+          <div class="stat-icon-badge icon-green">
+            <i class="fas fa-user-graduate"></i>
           </div>
         </div>
-      </article>
-      {% else %}
-      <div class="empty-state">No PGs listed yet — be the first owner to add one.</div>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- ============================ Other section ============================ -->
-<section class="section section-alt" id="other">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="section-tag">02 · Nearby</span>
-        <h2>Everything within walking distance</h2>
-        <p>Shops, businesses and services near your PG — added and kept up to date by the owners themselves.</p>
       </div>
     </div>
 
-    <div class="cat-strip">
-      <div class="cat-tile"><span class="cat-icon">🛍️</span><h4>Shops</h4><p>Stationery, groceries, printouts and daily essentials.</p></div>
-      <div class="cat-tile"><span class="cat-icon">💼</span><h4>Businesses</h4><p>Laundry, tailoring, tuition centres, salons and more.</p></div>
-      <div class="cat-tile"><span class="cat-icon">🏥</span><h4>Medical</h4><p>Clinics, pharmacies and diagnostic centres nearby.</p></div>
-    </div>
-
-    <div class="card-grid">
-      {% for biz in (shops + services + medical) %}
-      <article class="biz-card">
-        <div class="card-media">
-          <span class="media-icon">
-            {% if biz.category == 'shop' %}🛍️{% elif biz.category == 'business' %}💼{% else %}🏥{% endif %}
-          </span>
-          <span class="category-pill">{{ biz.category }}</span>
-        </div>
-        <div class="card-body">
-          <h3>{{ biz.name }}</h3>
-          <div class="card-meta">📍 {{ biz.address }}, {{ biz.city }}</div>
-          <p class="card-desc">{{ biz.description }}</p>
-          <div class="card-foot">
-            <div class="card-meta mono">🕑 {{ biz.timings }}</div>
-            <div class="rating">★ {{ biz.rating }}</div>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-semibold text-uppercase">Active Tasks</div>
+            <div class="h2 fw-bold mb-0 mt-1">{{ assignments|length }}</div>
+            <div class="small text-muted mt-1"><i class="fas fa-tasks text-purple me-1"></i> Classroom assignments</div>
+          </div>
+          <div class="stat-icon-badge icon-purple">
+            <i class="fas fa-clipboard-list"></i>
           </div>
         </div>
-      </article>
-      {% else %}
-      <div class="empty-state">No local listings yet — owners can add their business in minutes.</div>
-      {% endfor %}
+      </div>
     </div>
-  </div>
-</section>
 
-<!-- ============================ Features ============================ -->
-<section class="section">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="section-tag">Why PG Buddy</span>
-        <h2>Built for the first weeks in a new city</h2>
-      </div>
-    </div>
-    <div class="feature-grid">
-      <div class="feature-item">
-        <div class="feature-icon">🔍</div>
-        <h4>Real-time seats</h4>
-        <p>Availability updates as owners enroll students — no dead listings.</p>
-      </div>
-      <div class="feature-item">
-        <div class="feature-icon">🗺️</div>
-        <h4>Map-first discovery</h4>
-        <p>See PGs and essentials plotted relative to your campus or office.</p>
-      </div>
-      <div class="feature-item">
-        <div class="feature-icon">💬</div>
-        <h4>Direct messaging</h4>
-        <p>Talk to PG and business owners without leaving the app.</p>
-      </div>
-      <div class="feature-item">
-        <div class="feature-icon">🆘</div>
-        <h4>Support, always on</h4>
-        <p>Emergency numbers, complaints and student resources in one tab.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================ How it works ============================ -->
-<section class="section section-alt">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="section-tag">How it works</span>
-        <h2>From search to move-in, in four steps</h2>
-      </div>
-    </div>
-    <div class="steps">
-      <div class="step"><h4>Search &amp; filter</h4><p>Set your city, budget and preferences to shortlist PGs.</p></div>
-      <div class="step"><h4>Compare &amp; message</h4><p>Check photos, amenities and reviews, then message the owner.</p></div>
-      <div class="step"><h4>Enroll online</h4><p>Reserve your seat and track your enrollment from your dashboard.</p></div>
-      <div class="step"><h4>Settle in</h4><p>Find nearby shops, clinics and support the moment you move in.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================ Owner CTA ============================ -->
-<section class="section">
-  <div class="container">
-    <div class="owner-cta">
-      <div>
-        <span class="eyebrow" style="background:rgba(46,196,182,0.18);color:#8FEAE1">For owners</span>
-        <h2>List your PG or business in minutes</h2>
-        <p>Manage seats, students, images and messages from one dashboard — free to list.</p>
-        <div class="owner-cta-actions">
-          <a href="{{ url_for('register') }}?role=pg_owner" class="btn btn-accent">Register as PG owner</a>
-          <a href="{{ url_for('register') }}?role=business_owner" class="btn btn-outline" style="color:var(--paper);border-color:rgba(247,247,242,0.3)">Register a business</a>
+    <div class="col-6 col-lg-3">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small fw-semibold text-uppercase">Class Engagement</div>
+            <div class="h2 fw-bold mb-0 mt-1">{{ engagement_score }}%</div>
+            <div class="small text-warning mt-1"><i class="fas fa-chart-line text-warning me-1"></i> High activity rate
+            </div>
+          </div>
+          <div class="stat-icon-badge icon-amber">
+            <i class="fas fa-award"></i>
+          </div>
         </div>
       </div>
-      <div class="owner-cta-panel">
-        <ul>
-          <li>Upload up to 4 photos per listing</li>
-          <li>Track seats and enrolled students live</li>
-          <li>Message students directly</li>
-          <li>Update timings, pricing and details anytime</li>
-        </ul>
+    </div>
+  </div>
+
+  <!-- ── Main Grid: Classrooms & Visual Analytics ──────────────────── -->
+  <div class="row g-4 mb-4">
+    <!-- Classrooms Hub -->
+    <div class="col-lg-7">
+      <div class="dashboard-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-0">My Classrooms</h5>
+            <small class="text-muted">Active classes with codes and student enrollment</small>
+          </div>
+          <a href="{{ url_for('classrooms') }}" class="btn btn-sm btn-outline-primary">
+            View All <i class="fas fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+
+        {% if classrooms %}
+        <div class="row g-3">
+          {% for c in classrooms %}
+          <div class="col-md-6">
+            <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between bg-light-subtle">
+              <div>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="fw-bold mb-0 text-truncate" style="max-width: 170px;" title="{{ c.class_name }}">
+                    <i class="fas fa-book text-primary me-2"></i>{{ c.class_name }}
+                  </h6>
+                  <span class="badge bg-primary-subtle text-primary rounded-pill">
+                    {{ c.student_count }} student{{ 's' if c.student_count != 1 else '' }}
+                  </span>
+                </div>
+                <div class="my-3">
+                  <div class="text-muted small mb-1">Class Code (Click to Copy):</div>
+                  <div class="class-code-badge"
+                    onclick="navigator.clipboard.writeText('{{ c.class_code }}'); alert('Class code copied: {{ c.class_code }}');"
+                    title="Click to copy code">
+                    <span>{{ c.class_code }}</span>
+                    <i class="far fa-copy"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                <small class="text-muted"><i class="far fa-clock me-1"></i>{{ c.created_at[:10] if c.created_at else
+                  'Active' }}</small>
+                <a href="{{ url_for('classrooms', class_id=c.id) }}" class="btn btn-sm btn-primary">
+                  Manage Class <i class="fas fa-chevron-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <div class="mb-3 text-muted" style="font-size: 3rem;">
+            <i class="fas fa-chalkboard"></i>
+          </div>
+          <h6>No Classrooms Created Yet</h6>
+          <p class="text-muted small">Create your first smart classroom to share study schedules, assignments and
+            quizzes.</p>
+          <a href="{{ url_for('classrooms') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i> Create Classroom
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Analytics & Activity Chart -->
+    <div class="col-lg-5">
+      <div class="dashboard-card h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-0">Class Analytics</h5>
+            <small class="text-muted">Weekly submission & completion rate</small>
+          </div>
+          <span class="badge bg-success-subtle text-success">Live Insights</span>
+        </div>
+        <div style="height: 260px; position: relative;">
+          <canvas id="facultyAnalyticsChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- ============================ Support ============================ -->
-<section class="section section-alt" id="support">
-  <div class="container">
-    <div class="section-head">
-      <div>
-        <span class="section-tag">03 · Support</span>
-        <h2>Help is always one tab away</h2>
-        <p>Emergency contacts, hospitals, resources and a direct line to file complaints or feedback.</p>
+  <!-- ── Student Assignments & Activity Roster ─────────────────────── -->
+  <div class="row g-4">
+    <!-- Active Assignments -->
+    <div class="col-lg-8">
+      <div class="dashboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-0">Recent Classroom Assignments</h5>
+            <small class="text-muted">Tasks and study items assigned to students</small>
+          </div>
+          <a href="{{ url_for('classrooms') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-plus me-1"></i> Assign New
+          </a>
+        </div>
+
+        {% if assignments %}
+        <div class="table-responsive">
+          <table class="table table-custom align-middle">
+            <thead>
+              <tr>
+                <th>Assignment</th>
+                <th>Subject</th>
+                <th>Student</th>
+                <th>Deadline</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in assignments[:6] %}
+              <tr>
+                <td class="fw-semibold">
+                  <div class="text-truncate" style="max-width: 200px;">{{ a.task_name }}</div>
+                  {% if a.attachment_name %}
+                  <small class="text-muted"><i class="fas fa-paperclip me-1"></i>{{ a.attachment_name }}</small>
+                  {% endif %}
+                </td>
+                <td><span class="badge bg-secondary-subtle text-secondary">{{ a.subject }}</span></td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="student-avatar">{{ a.student_name[:1].upper() if a.student_name else 'S' }}</div>
+                    <span>{{ a.student_name or 'All' }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="small {% if a.deadline < today_str %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                    <i class="far fa-calendar me-1"></i>{{ a.deadline }}
+                  </span>
+                </td>
+                <td>
+                  {% if a.status == 'Completed' %}
+                  <span class="badge bg-success-subtle text-success badge-status"><i
+                      class="fas fa-check me-1"></i>Done</span>
+                  {% elif a.status == 'In Progress' or a.started == 1 %}
+                  <span class="badge bg-info-subtle text-info badge-status"><i
+                      class="fas fa-spinner fa-spin me-1"></i>In Progress</span>
+                  {% else %}
+                  <span class="badge bg-warning-subtle text-warning badge-status"><i
+                      class="fas fa-clock me-1"></i>Assigned</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="fas fa-tasks mb-2 fs-3"></i>
+          <p class="mb-0">No active assignments dispatched yet. Create assignments from your classroom management tab.
+          </p>
+        </div>
+        {% endif %}
       </div>
     </div>
-    <div class="support-grid">
-      <div class="support-card emergency">
-        <h4>🚨 Emergency</h4>
-        <p>Police 100 · Ambulance 108 · Women's helpline 1091</p>
-        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Open support</a>
-      </div>
-      <div class="support-card">
-        <h4>🏥 Nearby hospitals</h4>
-        <p>Verified hospitals and clinics close to your PG.</p>
-        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">View list</a>
-      </div>
-      <div class="support-card">
-        <h4>📚 Student resources</h4>
-        <p>City guides, safety tips and settling-in checklists.</p>
-        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">Browse resources</a>
-      </div>
-      <div class="support-card">
-        <h4>📝 Complaints &amp; feedback</h4>
-        <p>Raise an issue with your PG or the platform — tracked to resolution.</p>
-        <a href="{{ url_for('login') }}" class="btn btn-sm btn-outline">File a report</a>
+
+    <!-- Quick Tools & Resources -->
+    <div class="col-lg-4">
+      <div class="dashboard-card">
+        <h5 class="mb-3">Faculty Quick Actions</h5>
+
+        <div class="d-grid gap-2">
+          <a href="{{ url_for('quiz') }}"
+            class="btn btn-outline-primary text-start p-3 rounded-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-badge icon-blue" style="width:40px;height:40px;font-size:1.1rem;">
+              <i class="fas fa-brain"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Generate AI Quiz</div>
+              <small class="text-muted">Create quizzes instantly from PDF or text</small>
+            </div>
+          </a>
+
+          <a href="{{ url_for('classrooms') }}"
+            class="btn btn-outline-success text-start p-3 rounded-3 d-flex align-items-center gap-3">
+            <div class="stat-icon-badge icon-green" style="width:40px;height:40px;font-size:1.1rem;">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Class Announcements</div>
+              <small class="text-muted">Message students & answer questions</small>
+            </div>
+          </a>
+
+          <a href="{{ url_for('subjects') }}"
+            class="btn btn-outline-purple text-start p-3 rounded-3 d-flex align-items-center gap-3 border">
+            <div class="stat-icon-badge icon-purple" style="width:40px;height:40px;font-size:1.1rem;">
+              <i class="fas fa-book-open"></i>
+            </div>
+            <div>
+              <div class="fw-bold">Curriculum & Subjects</div>
+              <small class="text-muted">Configure course chapters and exams</small>
+            </div>
+          </a>
+        </div>
+
+        <div class="mt-4 p-3 bg-light-subtle rounded-3 border">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <i class="fas fa-lightbulb text-warning"></i>
+            <span class="fw-bold small">Faculty Tip</span>
+          </div>
+          <p class="small text-muted mb-0">
+            Share your classroom code with students so they can join and receive auto-scheduled AI study tasks aligned
+            with your syllabus.
+          </p>
+        </div>
       </div>
     </div>
   </div>
-</section>
 
+</div>
+
+<!-- ── Chart.js Initialization ────────────────────────────────────────── -->
 <script>
-  // Simple interactive tab switching logic for the search console widget
-  document.addEventListener('DOMContentLoaded', () => {
-    const tabs = document.querySelectorAll('.console-tab');
-    const panels = document.querySelectorAll('.console-panel');
+  document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("facultyAnalyticsChart");
+    if (!ctx) return;
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        tabs.forEach(t => {
-          t.classList.remove('active');
-          t.setAttribute('aria-selected', 'false');
-        });
-        panels.forEach(p => p.classList.remove('active'));
+    const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+    const textColor = isDark ? "#94a3b8" : "#64748b";
+    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
 
-        tab.classList.add('active');
-        tab.setAttribute('aria-selected', 'true');
-        
-        const targetId = 'panel-' + tab.getAttribute('data-target');
-        const targetPanel = document.getElementById(targetId);
-        if (targetPanel) {
-          targetPanel.classList.add('active');
+    new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        datasets: [
+          {
+            label: "Assignments Completed",
+            data: [12, 19, 15, 22, 28, 14, 20],
+            backgroundColor: "#2563eb",
+            borderRadius: 6,
+          },
+          {
+            label: "Quiz Attempts",
+            data: [8, 14, 12, 18, 24, 10, 16],
+            backgroundColor: "#38bdf8",
+            borderRadius: 6,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "top",
+            labels: {
+              color: textColor,
+              font: { family: "'Inter', sans-serif", size: 12 }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: gridColor },
+            ticks: { color: textColor }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: gridColor },
+            ticks: { color: textColor }
+          }
         }
-      });
+      }
     });
   });
 </script>
-
 {% endblock %}
