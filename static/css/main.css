@@ -252,6 +252,110 @@ button:focus-visible,
   padding: 14px 28px;
   font-size: 1rem;
 }
+/* From Uiverse.io by gharsh11032000 */ 
+.animated-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  min-height: 46px;
+  gap: 4px;
+  padding: 6px 26px;
+  border: 2px solid;
+  border-color: #4f46e5;
+  margin: 0 auto 1.5rem;
+  font-size: 16px;
+  background-color: #4f46e5;
+  border-radius: 100px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.28);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button svg {
+  position: absolute;
+  width: 28px;
+  fill: #1f387e;
+  z-index: 9;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .account-icon {
+  position: absolute;
+  width: 24px;
+  color: #ffffff;
+  font-size: 20px;
+  z-index: 9;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .arr-1 {
+  right: 16px;
+}
+
+.animated-button .arr-2 {
+  left: -25%;
+}
+
+.animated-button .circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  background-color: #4f46e5;
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button .text {
+  position: relative;
+  z-index: 1;
+  transform: translateX(-17px);
+  transition: all 0.9s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.animated-button:hover {
+  box-shadow: 0 9px 16px rgba(79, 70, 229, 0.4);
+  color: #ffffff;
+  background-color: #4338ca;
+  border-radius: 15px;
+}
+
+.animated-button:hover .arr-1 {
+  right: -25%;
+}
+
+.animated-button:hover .arr-2 {
+  left: 16px;
+}
+
+.animated-button:hover .text {
+  transform: translateX(17px);
+}
+
+.animated-button:hover svg {
+  fill: #1f387e;
+}
+
+.animated-button:active {
+  scale: 0.95;
+  box-shadow: 0 0 0 4px var(--teal);
+}
+
+.animated-button:hover .circle {
+  width: 290px;
+  height: 290px;
+  opacity: 2;
+}
+
+
 
 /* ==========================================================================
    Navbar

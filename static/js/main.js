@@ -22,11 +22,6 @@
   }
 
   function persistTheme(theme) {
-    const previousTheme = root.getAttribute('data-bs-theme');
-    if (previousTheme && previousTheme !== theme) {
-      root.classList.add('theme-changing');
-      window.setTimeout(() => root.classList.remove('theme-changing'), 420);
-    }
     root.setAttribute('data-bs-theme', theme);
     try {
       localStorage.setItem('theme', theme);

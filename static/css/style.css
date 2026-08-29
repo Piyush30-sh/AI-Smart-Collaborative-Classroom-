@@ -37,40 +37,6 @@ body::after,
     border-color 0.38s ease, box-shadow 0.38s ease;
 }
 
-html.theme-changing body {
-  animation: themeShift 0.42s ease both;
-}
-
-html.theme-changing .main-content {
-  animation: themeContentShift 0.42s ease both;
-}
-
-@keyframes themeShift {
-  0% {
-    filter: brightness(1);
-  }
-
-  45% {
-    filter: brightness(1.08) saturate(1.04);
-  }
-
-  100% {
-    filter: brightness(1);
-  }
-}
-
-@keyframes themeContentShift {
-  0% {
-    opacity: 0.9;
-    transform: translateY(2px);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 [data-bs-theme="dark"] body {
   background:
     radial-gradient(circle at 2% 0%, rgba(59, 130, 246, 0.14), transparent 35%),
@@ -119,13 +85,16 @@ html.theme-changing .main-content {
   border-radius: 0;
   transition: all 0.3s ease-in-out;
 }
-
+#mainNav .navbar-nav > .nav-item > .nav-link.active::before {
+    display: none;
+  }
 .nav-link:hover::before {
   width: 100%;
   border-radius: 50%;
 }
 
 #mainNav .navbar-nav>.nav-item>.nav-link.active {
+  
   color: var(--bs-primary);
   font-weight: 700;
   background: color-mix(in srgb, var(--bs-primary) 11%, transparent);
@@ -196,18 +165,21 @@ html.theme-changing .main-content {
 }
 
 .user-menu__toggle:hover img {
-  transform: scale(1.25);
-  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.2);
+  transform: scale(1.42);
+  box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.2);
 }
 
 .user-menu__toggle:hover {
-  transform: none !important;
+  background: color-mix(in srgb, var(--bs-primary) 10%, var(--bs-body-bg));
+  border-color: color-mix(in srgb, var(--bs-primary) 28%, var(--bs-border-color));
+ color: var(--bs-primary); 
+
 }
 
-.user-menu__toggle::after {
-
+.user-menu__toggle::after {  
   margin-left: 0.45rem;
   transition: transform 0.2s ease;
+  transform: scale(1.42);
 }
 
 .user-menu.show .user-menu__toggle::after {
@@ -221,7 +193,7 @@ html.theme-changing .main-content {
   border: 1px solid color-mix(in srgb, var(--bs-primary) 18%, var(--bs-border-color));
   border-radius: 14px;
   background: color-mix(in srgb, var(--bs-body-bg) 92%, var(--bs-primary));
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.183) !important;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.564) !important;
   transform-origin: top right;
 }
 
@@ -237,9 +209,11 @@ html.theme-changing .main-content {
   border-radius: 9px;
   font-size: 0.9rem;
   opacity: 0;
-  animation: profileItemIn 0.24s ease-out forwards;
+  animation: profileItemIn 0.38s ease-out forwards;
 }
-
+.user-menu__list .dropdown-item:hover {
+box-shadow: rgba(0, 0, 0, 0.222) 0px 5px 15px;
+}
 .user-menu__list .dropdown-item i {
   width: 1.1rem;
   color: var(--bs-primary);

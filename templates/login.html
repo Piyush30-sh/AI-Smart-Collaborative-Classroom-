@@ -76,7 +76,18 @@
         {% endif %}
         {% endwith %}
 
+        <!-- Role Selector Toggle (Student vs Faculty) -->
+        <div class="role-selector mb-4 p-1 rounded-3 d-flex">
+          <button type="button" class="role-btn active" id="btnStudent" onclick="switchRole('student')">
+            🎓 Student
+          </button>
+          <button type="button" class="role-btn" id="btnFaculty" onclick="switchRole('faculty')">
+            🏫 Faculty
+          </button>
+        </div>
+
         <form method="POST">
+          <input type="hidden" id="userType" name="user_type" value="student" />
           <div class="mb-3">
             <label for="email" class="form-label fw-semibold">Email address</label>
             <div class="input-group">
@@ -104,10 +115,22 @@
           <div class="mb-3 text-end small">
             <a href="{{ url_for('forgot') }}" class="fw-bold" style="color: #427ddd;">Forgot password?</a>
           </div>
+<!-- From Uiverse.io by gharsh11032000 --> 
+<button type="submit" class="animated-button" id="submitBtn">
+  <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+    ></path>
+  </svg>
+  <span class="text">Login As Student</span>
+  <span class="circle"></span>
+  <svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"
+    ></path>
+  </svg>
+</button>
 
-          <button type="submit" id="submitBtn" class="btn btn-primary w-100 fw-semibold py-2.5 mb-3">
-            <i class="fas fa-sign-in-alt me-2"></i>Login
-          </button>
         </form>
 
 
@@ -126,6 +149,28 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
   <script>
+    let currentRole = 'student';
+
+    // Switch Role Logic
+    function switchRole(role) {
+      currentRole = role;
+      const btnStudent = document.getElementById('btnStudent');
+      const btnFaculty = document.getElementById('btnFaculty');
+      const submitBtn = document.querySelector('#submitBtn .text');
+      const userTypeInput = document.getElementById('userType');
+
+      userTypeInput.value = role;
+      if (role === 'student') {
+        btnStudent.classList.add('active');
+        btnFaculty.classList.remove('active');
+        submitBtn.textContent = 'Login As Student';
+      } else {
+        btnFaculty.classList.add('active');
+        btnStudent.classList.remove('active');
+        submitBtn.textContent = 'Login As Faculty';
+      }
+    }
+
     // Initialize password visibility toggle with proper event handling
     function initPasswordToggle() {
       const togglePwd = document.getElementById('togglePwd');

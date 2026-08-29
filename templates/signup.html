@@ -125,9 +125,22 @@
             <div class="form-text text-muted small" id="strengthText"></div>
           </div>
 
-          <button type="submit" id="submitBtn" class="btn btn-primary w-100 fw-semibold py-2.5 mb-3" >
-            <i class="fas fa-user-plus me-2"></i>Create Student Account
-          </button>
+         <!-- From Uiverse.io by gharsh11032000 --> 
+<button type="submit" class="animated-button" id="submitBtn">
+ <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
+  <path 
+    d="M11 11C13.7614 11 16 8.76142 16 6C16 3.23858 13.7614 1 11 1C8.23858 1 6 3.23858 6 6C6 8.76142 8.23858 11 11 11ZM11 13C7.33 13 0 14.84 0 18.5V21H14.5C13.55 19.78 13 18.23 13 16.5C13 15.22 13.38 14.03 14.04 13.03C13.08 12.98 12.06 13 11 13ZM19 13H17V16H14V18H17V21H19V18H22V16H19V13Z"
+  ></path>
+</svg>
+
+  <span class="text">Create Student Account</span>
+  <span class="circle"></span>
+<svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
+  <path 
+    d="M11 11C13.7614 11 16 8.76142 16 6C16 3.23858 13.7614 1 11 1C8.23858 1 6 3.23858 6 6C6 8.76142 8.23858 11 11 11ZM11 13C7.33 13 0 14.84 0 18.5V21H14.5C13.55 19.78 13 18.23 13 16.5C13 15.22 13.38 14.03 14.04 13.03C13.08 12.98 12.06 13 11 13ZM19 13H17V16H14V18H17V21H19V18H22V16H19V13Z"
+  ></path>
+</svg>
+</button>
         </form>
 
         
@@ -149,7 +162,7 @@
       currentRole = role;
       const btnStudent = document.getElementById('btnStudent');
       const btnFaculty = document.getElementById('btnFaculty');
-      const submitBtn = document.getElementById('submitBtn');
+      const submitBtn = document.querySelector('#submitBtn .text');
       const emailInput = document.getElementById('email');
       const userTypeInput = document.getElementById('userType');
 
@@ -157,12 +170,12 @@
       if (role === 'student') {
         btnStudent.classList.add('active');
         btnFaculty.classList.remove('active');
-        submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Student Account';
+        submitBtn.textContent = 'Create Student Account';
         emailInput.placeholder = 'student@university.edu';
       } else {
         btnFaculty.classList.add('active');
         btnStudent.classList.remove('active');
-        submitBtn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Create Faculty Account';
+        submitBtn.textContent = 'Create Faculty Account';
         emailInput.placeholder = 'faculty@university.edu';
       }
     }
