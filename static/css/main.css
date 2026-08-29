@@ -253,6 +253,14 @@ button:focus-visible,
   font-size: 1rem;
 }
 
+.btn-sm,
+.btn.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  gap: 5px;
+}
+
+
 /* ==========================================================================
    Navbar
    ========================================================================== */
@@ -1034,7 +1042,7 @@ button:focus-visible,
 /* ==========================================================================
    How it works — steps
    ========================================================================== */
-   
+
 .steps {
   position: relative;
   display: grid;
@@ -3972,6 +3980,19 @@ body.dash-body {
 .stat-card__delta--flat {
   background: var(--paper);
   color: var(--muted);
+}
+
+.btn--lg {
+  padding: 16px 32px;
+  font-size: 1.05rem;
+  border-radius: var(--radius);
+}
+
+.btn-sm,
+.btn.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.8125rem;
+  gap: 5px;
 }
 
 .empty-state {

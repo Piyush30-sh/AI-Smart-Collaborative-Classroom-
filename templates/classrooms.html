@@ -718,15 +718,15 @@
                           </div>
                         </div>
 
-                        <div class="pt-2 border-top d-flex align-items-center justify-content-between gap-1">
-                          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5" style="font-size:.75rem;" data-bs-toggle="modal" data-bs-target="#resourceModal{{ r.id }}">
+                        <div class="pt-3 border-top mt-auto d-flex align-items-center justify-content-between gap-1">
+                          <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1" style="font-size:.76rem; padding:.32rem .65rem;" data-bs-toggle="modal" data-bs-target="#resourceModal{{ r.id }}">
                             <i class="fas fa-circle-info me-1"></i>Details
                           </button>
-                          <div class="d-flex gap-1">
-                            <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2.5" style="font-size:.75rem;">
+                          <div class="d-flex align-items-center gap-1">
+                            <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1" style="font-size:.76rem; padding:.32rem .65rem;">
                               <i class="fas fa-eye me-1"></i>Preview
                             </a>
-                            <a href="{{ url_for('download_classroom_resource', resource_id=r.id) }}" class="btn btn-sm btn-primary rounded-pill px-2.5" style="font-size:.75rem;">
+                            <a href="{{ url_for('download_classroom_resource', resource_id=r.id) }}" class="btn btn-sm btn-primary rounded-pill px-2.5 py-1" style="font-size:.76rem; padding:.32rem .75rem;">
                               <i class="fas fa-download me-1"></i>Download
                             </a>
                           </div>
