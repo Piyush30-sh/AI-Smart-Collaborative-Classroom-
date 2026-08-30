@@ -467,7 +467,7 @@
         <h2>Ready to Build a Smarter Classroom?</h2>
         <p>Bring teaching, learning, collaboration and AI together in one platform.</p>
         <div class="cta__actions">
-          <a href="/html/signup.html" class="btn btn--primary btn--lg">Get Started</a>
+          <a href="{{ url_for('signup') }}" class="btn btn--primary btn--lg">Get Started</a>
           <a href="#features" class="btn btn--outline btn--lg">Explore SmartClass AI</a>
         </div>
       </div>
@@ -492,13 +492,17 @@
 
       <div class="footer__col">
         <h4>Account</h4>
-        <a href="/html/login.html">Login</a>
-        <a href="/html/signup.html">Register</a>
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('signup') }}">Register</a>
       </div>
 
       <div class="footer__col">
-        <h4>Technology</h4>
-        <p class="footer__tech">HTML · CSS · JavaScript · Python · FastAPI · SQLite · MySQL · Groq AI</p>
+        <h4>About the Project</h4>
+        <p class="footer__tech">
+          AI-Smart Collaborative Classroom is designed to enhance
+          teaching and learning through AI-powered tools, collaboration,
+          and intelligent performance insights.
+        </p>
       </div>
     </div>
     <div class="container footer__bottom">
