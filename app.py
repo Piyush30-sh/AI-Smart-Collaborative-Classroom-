@@ -27,6 +27,7 @@ import pandas as pd
 from pypdf import PdfReader
 
 from ai_engine.schedule_generator import generate_schedule, get_priority_breakdown
+from ai_engine.mcq_engine import build_smart_quiz
 from utils.productivity_tracker import (
     calculate_productivity_score,
     get_weekly_stats,
@@ -603,7 +604,7 @@ def _build_distractors(answer: str, answer_pool, term_frequency: Counter):
     return distractors
 
 
-def _build_quiz_questions(text: str, limit: int = QUIZ_MAX_QUESTIONS):
+def _build_quiz_questions_nlp_fallback(text: str, limit: int = 50):
     normalized = _normalize_quiz_text(_quiz_content_text(text))
     if not normalized:
         return []
@@ -709,6 +710,14 @@ def _build_quiz_questions(text: str, limit: int = QUIZ_MAX_QUESTIONS):
             break
 
     return questions
+
+
+def _build_quiz_questions(text: str, limit: int = 50):
+    """
+    Intelligent Quiz Builder:
+    Extracts MCQ tests with Answer Key resolution, OpenAI LLM generation, or NLP fallback.
+    """
+    return build_smart_quiz(text, fallback_builder_fn=_build_quiz_questions_nlp_fallback, limit=limit)
 
 
 def _fetch_quiz_attempts(user_id: int, limit: int = 10):
