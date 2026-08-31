@@ -211,6 +211,57 @@
     font-size: 0.75rem;
     font-weight: 600;
   }
+
+  .analytics-stat-pill {
+    background: var(--faculty-bg);
+    border: 1px solid var(--faculty-border);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+  }
+
+  .analytics-stat-pill:hover {
+    border-color: var(--faculty-primary);
+  }
+
+  .faculty-main-card {
+    height: 450px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .classrooms-scroll-list {
+    max-height: 350px;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+  }
+
+  .classrooms-scroll-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .classrooms-scroll-list::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .classrooms-scroll-list::-webkit-scrollbar-thumb {
+    background: var(--faculty-border);
+    border-radius: 6px;
+  }
+
+  .chart-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 240px;
+    min-height: 240px;
+    max-height: 240px;
+  }
 </style>
 {% endblock %}
 
@@ -306,11 +357,13 @@
   <!-- ── Main Grid: Classrooms & Visual Analytics ──────────────────── -->
   <div class="row g-4 mb-4">
     <!-- Classrooms Hub -->
-    <div class="col-lg-7">
-      <div class="dashboard-card h-100">
+    <div class="col-lg-6">
+      <div class="dashboard-card faculty-main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <h5 class="mb-0">My Classrooms</h5>
+            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+              <i class="fas fa-school text-primary"></i> My Classrooms
+            </h5>
             <small class="text-muted">Active classes with codes and student enrollment</small>
           </div>
           <a href="{{ url_for('classrooms') }}" class="btn btn-sm btn-outline-primary">
@@ -319,48 +372,48 @@
         </div>
 
         {% if classrooms %}
-        <div class="row g-3">
-          {% for c in classrooms %}
-          <div class="col-md-6">
-            <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between bg-light-subtle">
-              <div>
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                  <h6 class="fw-bold mb-0 text-truncate" style="max-width: 170px;" title="{{ c.class_name }}">
-                    <i class="fas fa-book text-primary me-2"></i>{{ c.class_name }}
-                  </h6>
-                  <span class="badge bg-primary-subtle text-primary rounded-pill">
-                    {{ c.student_count }} student{{ 's' if c.student_count != 1 else '' }}
-                  </span>
-                </div>
-                <div class="my-3">
-                  <div class="text-muted small mb-1">Class Code (Click to Copy):</div>
-                  <div class="class-code-badge"
-                    onclick="navigator.clipboard.writeText('{{ c.class_code }}'); alert('Class code copied: {{ c.class_code }}');"
-                    title="Click to copy code">
-                    <span>{{ c.class_code }}</span>
-                    <i class="far fa-copy"></i>
+        <div class="classrooms-scroll-list flex-grow-1">
+          <div class="row g-3">
+            {% for c in classrooms %}
+            <div class="col-md-6">
+              <div class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between bg-light-subtle">
+                <div>
+                  <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="fw-bold mb-0 text-truncate" style="max-width: 150px;" title="{{ c.class_name }}">
+                      <i class="fas fa-book text-primary me-1.5"></i>{{ c.class_name }}
+                    </h6>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill" style="font-size: 0.72rem;">
+                      {{ c.student_count }} student{{ 's' if c.student_count != 1 else '' }}
+                    </span>
+                  </div>
+                  <div class="my-2.5">
+                    <div class="text-muted small mb-1" style="font-size: 0.72rem;">Class Code (Click to Copy):</div>
+                    <div class="class-code-badge"
+                      onclick="navigator.clipboard.writeText('{{ c.class_code }}'); alert('Class code copied: {{ c.class_code }}');"
+                      title="Click to copy code">
+                      <span>{{ c.class_code }}</span>
+                      <i class="far fa-copy"></i>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="pt-2 border-top d-flex justify-content-between align-items-center">
-                <small class="text-muted"><i class="far fa-clock me-1"></i>{{ c.created_at[:10] if c.created_at else
-                  'Active' }}</small>
-                <a href="{{ url_for('classrooms', class_id=c.id) }}" class="btn btn-sm btn-primary">
-                  Manage Class <i class="fas fa-chevron-right ms-1"></i>
-                </a>
+                <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                  <small class="text-muted" style="font-size: 0.72rem;"><i class="far fa-clock me-1"></i>{{ c.created_at[:10] if c.created_at else 'Active' }}</small>
+                  <a href="{{ url_for('classrooms', class_id=c.id) }}" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.78rem;">
+                    Manage <i class="fas fa-chevron-right ms-1"></i>
+                  </a>
+                </div>
               </div>
             </div>
+            {% endfor %}
           </div>
-          {% endfor %}
         </div>
         {% else %}
-        <div class="text-center py-5">
+        <div class="text-center py-5 my-auto">
           <div class="mb-3 text-muted" style="font-size: 3rem;">
             <i class="fas fa-chalkboard"></i>
           </div>
           <h6>No Classrooms Created Yet</h6>
-          <p class="text-muted small">Create your first smart classroom to share study schedules, assignments and
-            quizzes.</p>
+          <p class="text-muted small">Create your first smart classroom to share study schedules, assignments and quizzes.</p>
           <a href="{{ url_for('classrooms') }}" class="btn btn-primary btn-sm">
             <i class="fas fa-plus me-1"></i> Create Classroom
           </a>
@@ -370,17 +423,55 @@
     </div>
 
     <!-- Analytics & Activity Chart -->
-    <div class="col-lg-5">
-      <div class="dashboard-card h-100">
+    <div class="col-lg-6">
+      <div class="dashboard-card faculty-main-card">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <h5 class="mb-0">Class Analytics</h5>
+            <h5 class="mb-0 fw-bold d-flex align-items-center gap-2">
+              <i class="fas fa-chart-column text-primary"></i> Class Analytics
+            </h5>
             <small class="text-muted">Weekly submission & completion rate</small>
           </div>
-          <span class="badge bg-success-subtle text-success">Live Insights</span>
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill d-inline-flex align-items-center gap-1.5 fw-semibold" style="font-size: 0.76rem;">
+            <i class="fas fa-circle text-success" style="font-size: 0.45rem;"></i> Live Insights
+          </span>
         </div>
-        <div style="height: 260px; position: relative;">
+
+        <!-- Metric Highlight Pills -->
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <div class="analytics-stat-pill">
+              <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                <i class="fas fa-tasks"></i>
+              </div>
+              <div class="text-truncate">
+                <div class="fw-bold fs-5 lh-1 text-body">{{ analytics.total_assignments if analytics else 0 }}</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Weekly Submissions</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="analytics-stat-pill">
+              <div class="rounded-3 bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; font-size: 0.95rem;">
+                <i class="fas fa-brain"></i>
+              </div>
+              <div class="text-truncate">
+                <div class="fw-bold fs-5 lh-1 text-body">{{ analytics.total_quizzes if analytics else 0 }}</div>
+                <small class="text-muted" style="font-size: 0.75rem;">Quiz Attempts</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fixed Canvas Chart Area -->
+        <div class="chart-canvas-container my-auto">
           <canvas id="facultyAnalyticsChart"></canvas>
+        </div>
+
+        <!-- Footer Note -->
+        <div class="d-flex justify-content-between align-items-center pt-2 mt-auto border-top text-muted small" style="font-size: 0.75rem;">
+          <span><i class="fas fa-sync-alt text-primary me-1"></i>Live synced with classroom activity</span>
+          <span class="badge bg-light text-muted border">Past 7 Days</span>
         </div>
       </div>
     </div>
@@ -517,59 +608,177 @@
 
 </div>
 
-<!-- ── Chart.js Initialization ────────────────────────────────────────── -->
+<!-- ── Chart.js Initialization & Dynamic Data ──────────────────────── -->
+<script id="facultyAnalyticsData" type="application/json">
+  {{ analytics | tojson if analytics else '{}' }}
+</script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const ctx = document.getElementById("facultyAnalyticsChart");
-    if (!ctx) return;
+    const canvas = document.getElementById("facultyAnalyticsChart");
+    if (!canvas) return;
 
-    const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
-    const textColor = isDark ? "#94a3b8" : "#64748b";
-    const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+    let chartData = {
+      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      assignments: [0, 0, 0, 0, 0, 0, 0],
+      quizzes: [0, 0, 0, 0, 0, 0, 0],
+      display_dates: []
+    };
 
-    new Chart(ctx, {
+    const dataElem = document.getElementById("facultyAnalyticsData");
+    if (dataElem) {
+      try {
+        const parsed = JSON.parse(dataElem.textContent);
+        if (parsed && parsed.labels && parsed.labels.length > 0) {
+          chartData = parsed;
+        }
+      } catch (e) {
+        console.error("Error parsing faculty analytics JSON:", e);
+      }
+    }
+
+    function getThemeColors() {
+      const isDark = document.documentElement.getAttribute("data-bs-theme") === "dark";
+      return {
+        textColor: isDark ? "#94a3b8" : "#64748b",
+        gridColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)",
+        tooltipBg: isDark ? "#1e293b" : "#ffffff",
+        tooltipText: isDark ? "#f8fafc" : "#0f172a",
+        tooltipBorder: isDark ? "#334155" : "#e2e8f0"
+      };
+    }
+
+    let colors = getThemeColors();
+    const ctx = canvas.getContext("2d");
+
+    // Determine scale range from data
+    const allVals = [
+      ...(chartData.assignments || []),
+      ...(chartData.quizzes || [])
+    ];
+    const maxVal = allVals.length > 0 ? Math.max(0, ...allVals) : 0;
+    let yMax = 30;
+    let yStep = 5;
+    if (maxVal > 25) {
+      yMax = Math.ceil(maxVal / 10) * 10 + 10;
+      yStep = 10;
+    } else if (maxVal > 0 && maxVal <= 10) {
+      yMax = 10;
+      yStep = 2;
+    }
+
+    const facultyChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        labels: chartData.labels,
         datasets: [
           {
             label: "Assignments Completed",
-            data: [12, 19, 15, 22, 28, 14, 20],
+            data: chartData.assignments || [0, 0, 0, 0, 0, 0, 0],
             backgroundColor: "#2563eb",
+            hoverBackgroundColor: "#1d4ed8",
             borderRadius: 6,
+            barPercentage: 0.6,
+            categoryPercentage: 0.6,
+            maxBarThickness: 18,
           },
           {
             label: "Quiz Attempts",
-            data: [8, 14, 12, 18, 24, 10, 16],
+            data: chartData.quizzes || [0, 0, 0, 0, 0, 0, 0],
             backgroundColor: "#38bdf8",
+            hoverBackgroundColor: "#0284c7",
             borderRadius: 6,
+            barPercentage: 0.6,
+            categoryPercentage: 0.6,
+            maxBarThickness: 18,
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
         plugins: {
           legend: {
             position: "top",
             labels: {
-              color: textColor,
-              font: { family: "'Inter', sans-serif", size: 12 }
+              color: colors.textColor,
+              font: { family: "'Inter', sans-serif", size: 12, weight: "500" },
+              usePointStyle: true,
+              pointStyle: "rectRounded",
+              padding: 12
+            }
+          },
+          tooltip: {
+            backgroundColor: colors.tooltipBg,
+            titleColor: colors.tooltipText,
+            bodyColor: colors.tooltipText,
+            borderColor: colors.tooltipBorder,
+            borderWidth: 1,
+            padding: 10,
+            boxPadding: 4,
+            usePointStyle: true,
+            callbacks: {
+              title: function (items) {
+                if (!items.length) return "";
+                const idx = items[0].dataIndex;
+                if (chartData.display_dates && chartData.display_dates[idx]) {
+                  return `${chartData.labels[idx]} (${chartData.display_dates[idx]})`;
+                }
+                return items[0].label;
+              },
+              label: function (context) {
+                const label = context.dataset.label || "";
+                const val = context.raw || 0;
+                return ` ${label}: ${val} ${val === 1 ? 'submission' : 'submissions'}`;
+              }
             }
           }
         },
         scales: {
           x: {
-            grid: { color: gridColor },
-            ticks: { color: textColor }
+            grid: { display: false },
+            ticks: {
+              color: colors.textColor,
+              font: { family: "'Inter', sans-serif", size: 11, weight: "500" }
+            }
           },
           y: {
             beginAtZero: true,
-            grid: { color: gridColor },
-            ticks: { color: textColor }
+            min: 0,
+            suggestedMax: yMax,
+            grid: { color: colors.gridColor },
+            ticks: {
+              color: colors.textColor,
+              precision: 0,
+              stepSize: yStep,
+              font: { family: "'Inter', sans-serif", size: 11 }
+            }
           }
         }
       }
+    });
+
+    // Sync chart theme dynamically on dark/light mode toggle
+    const themeObserver = new MutationObserver(() => {
+      const updatedColors = getThemeColors();
+      facultyChart.options.plugins.legend.labels.color = updatedColors.textColor;
+      facultyChart.options.plugins.tooltip.backgroundColor = updatedColors.tooltipBg;
+      facultyChart.options.plugins.tooltip.titleColor = updatedColors.tooltipText;
+      facultyChart.options.plugins.tooltip.bodyColor = updatedColors.tooltipText;
+      facultyChart.options.plugins.tooltip.borderColor = updatedColors.tooltipBorder;
+      facultyChart.options.scales.x.grid.color = updatedColors.gridColor;
+      facultyChart.options.scales.x.ticks.color = updatedColors.textColor;
+      facultyChart.options.scales.y.grid.color = updatedColors.gridColor;
+      facultyChart.options.scales.y.ticks.color = updatedColors.textColor;
+      facultyChart.update();
+    });
+
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-bs-theme"]
     });
   });
 </script>

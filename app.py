@@ -33,6 +33,7 @@ from utils.productivity_tracker import (
     get_weekly_stats,
     get_study_streak,
     get_motivational_message,
+    get_faculty_weekly_analytics,
 )
 import socket
 import webbrowser
@@ -1622,8 +1623,28 @@ def faculty_dashboard():
         (uid,),
     ).fetchall()
 
-    # Engagement rate estimate based on assignment and member activity
-    engagement_score = 92 if total_students > 0 else 85
+    # Weekly analytics for the Chart
+    analytics = get_faculty_weekly_analytics(uid, conn)
+
+    # Dynamic engagement score calculation
+    total_assigned_row = conn.execute(
+        "SELECT COUNT(*) AS total FROM classroom_assignments WHERE faculty_id=?",
+        (uid,),
+    ).fetchone()
+    total_assigned = total_assigned_row["total"] if total_assigned_row else 0
+
+    if total_assigned > 0:
+        completed_row = conn.execute(
+            """SELECT COUNT(*) AS total FROM classroom_assignments
+               WHERE faculty_id=? AND (status='Completed' OR status='Submitted')""",
+            (uid,),
+        ).fetchone()
+        completed_cnt = completed_row["total"] if completed_row else 0
+        engagement_score = min(100, max(0, round((completed_cnt / total_assigned) * 100)))
+    elif total_students > 0:
+        engagement_score = 92
+    else:
+        engagement_score = 85
 
     conn.close()
 
@@ -1633,6 +1654,7 @@ def faculty_dashboard():
         total_students=total_students,
         assignments=assignments,
         engagement_score=engagement_score,
+        analytics=analytics,
         today_str=today_str,
     )
 
@@ -3164,6 +3186,9 @@ def delete_classroom(class_id):
     conn.execute('DELETE FROM classroom_messages WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classroom_assignments WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classroom_members WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM quiz_submissions WHERE classroom_id=?', (class_id,))
+    conn.execute('DELETE FROM quizzes WHERE classroom_id=? AND faculty_id=?', (class_id, uid))
+    conn.execute('DELETE FROM revision_notes WHERE classroom_id=?', (class_id,))
     conn.execute('DELETE FROM classrooms WHERE id=? AND faculty_id=?', (class_id, uid))
     conn.commit()
     conn.close()

@@ -155,3 +155,130 @@ def get_motivational_message(productivity_score: float) -> str:
     if productivity_score > 0:
         return "🚀 Every step counts! Let's pick up the pace!"
     return "👋 Welcome! Start your learning journey today!"
+
+
+def get_faculty_weekly_analytics(faculty_id: int, conn) -> dict:
+    """
+    Return weekly analytics data for faculty dashboard over the past 7 days:
+    - dates: list of YYYY-MM-DD
+    - labels: short day names (Mon, Tue, etc.)
+    - display_dates: formatted day (e.g. Aug 31)
+    - assignments: count of student assignment submissions/completions per day
+    - quizzes: count of student quiz attempts/submissions per day
+    - total_assignments: total assignment completions this week
+    - total_quizzes: total quiz attempts this week
+    """
+    dates = []
+    labels = []
+    display_dates = []
+    assignments = []
+    quizzes = []
+
+    today = date.today()
+    for i in range(6, -1, -1):
+        d_obj = today - timedelta(days=i)
+        d_str = d_obj.strftime("%Y-%m-%d")
+        dates.append(d_str)
+        labels.append(d_obj.strftime("%a"))
+        display_dates.append(d_obj.strftime("%b %d"))
+
+    # If faculty has no active classrooms, immediately return reset 0 data
+    try:
+        active_classrooms = conn.execute(
+            "SELECT id FROM classrooms WHERE faculty_id=?", (faculty_id,)
+        ).fetchall()
+    except Exception:
+        active_classrooms = []
+
+    if not active_classrooms:
+        return {
+            "dates": dates,
+            "labels": labels,
+            "display_dates": display_dates,
+            "assignments": [0] * 7,
+            "quizzes": [0] * 7,
+            "total_assignments": 0,
+            "total_quizzes": 0,
+        }
+
+    for d_str in dates:
+        # 1. Assignment submissions in active faculty classrooms
+        try:
+            sub_res = conn.execute(
+                """
+                SELECT COUNT(DISTINCT sub.id) AS cnt
+                FROM classroom_submissions sub
+                JOIN classrooms c ON c.id = sub.classroom_id
+                WHERE c.faculty_id = ? AND (date(sub.submitted_at) = ? OR strftime('%Y-%m-%d', sub.submitted_at) = ?)
+                """,
+                (faculty_id, d_str, d_str),
+            ).fetchone()
+            sub_cnt = int(sub_res["cnt"]) if sub_res and sub_res["cnt"] else 0
+        except Exception:
+            sub_cnt = 0
+
+        # Also check classroom_assignments completed directly in active classrooms
+        try:
+            ca_res = conn.execute(
+                """
+                SELECT COUNT(DISTINCT ca.id) AS cnt
+                FROM classroom_assignments ca
+                JOIN classrooms c ON c.id = ca.classroom_id
+                WHERE c.faculty_id = ? AND (ca.status = 'Completed' OR ca.status = 'Submitted')
+                  AND (date(ca.created_at) = ? OR strftime('%Y-%m-%d', ca.created_at) = ?)
+                """,
+                (faculty_id, d_str, d_str),
+            ).fetchone()
+            ca_cnt = int(ca_res["cnt"]) if ca_res and ca_res["cnt"] else 0
+        except Exception:
+            ca_cnt = 0
+
+        assignments.append(max(sub_cnt, ca_cnt))
+
+        # 2. Quiz attempts & submissions in active classrooms
+        try:
+            qs_res = conn.execute(
+                """
+                SELECT COUNT(DISTINCT qs.id) AS cnt
+                FROM quiz_submissions qs
+                JOIN quizzes q ON q.id = qs.quiz_id
+                JOIN classrooms c ON c.id = q.classroom_id
+                WHERE c.faculty_id = ?
+                  AND (date(qs.submitted_at) = ? OR strftime('%Y-%m-%d', qs.submitted_at) = ?)
+                """,
+                (faculty_id, d_str, d_str),
+            ).fetchone()
+            qs_cnt = int(qs_res["cnt"]) if qs_res and qs_res["cnt"] else 0
+        except Exception:
+            qs_cnt = 0
+
+        # Attempts made by currently enrolled students in active classrooms
+        try:
+            qa_res = conn.execute(
+                """
+                SELECT COUNT(DISTINCT qa.id) AS cnt
+                FROM quiz_attempts qa
+                JOIN classroom_members cm ON cm.student_id = qa.user_id
+                JOIN classrooms c ON c.id = cm.classroom_id
+                WHERE c.faculty_id = ?
+                  AND (date(qa.created_at) = ? OR strftime('%Y-%m-%d', qa.created_at) = ?)
+                """,
+                (faculty_id, d_str, d_str),
+            ).fetchone()
+            qa_cnt = int(qa_res["cnt"]) if qa_res and qa_res["cnt"] else 0
+        except Exception:
+            qa_cnt = 0
+
+        quizzes.append(qs_cnt + qa_cnt)
+
+    return {
+        "dates": dates,
+        "labels": labels,
+        "display_dates": display_dates,
+        "assignments": assignments,
+        "quizzes": quizzes,
+        "total_assignments": sum(assignments),
+        "total_quizzes": sum(quizzes),
+    }
+
+
