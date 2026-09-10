@@ -1,201 +1,63 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="light">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — AI Classroom</title>
-  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
-    rel="stylesheet">
-  <!-- Bootstrap 5 CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
-  <!-- FontAwesome Icons -->
+  <title>{% if request.endpoint == 'signup' %}Create Account{% else %}Sign In{% endif %} | AI SmartClass</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <script>
-    (function syncThemeEarly() {
-      try {
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const raw = localStorage.getItem('theme') || localStorage.getItem('siteTheme');
-        const theme = (raw === 'dark' || raw === 'light') ? raw : (prefersDark ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-bs-theme', theme);
-      } catch (e) {
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-      }
-    })();
-  </script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
-
 </head>
-
-<body class="auth-body">
-
-  <!-- Home Button (Top-Left) -->
-  <div class="position-fixed top-0 start-0 p-3" style="z-index:999">
-    <a href="{{ url_for('index') }}" class="btn btn-sm auth-home-btn shadow-sm">
-      <i class="fas fa-arrow-left me-2"></i>Home
-    </a>
-  </div>
-
-  <!-- Dark-mode toggle (top-right) -->
-  <div class="position-fixed top-0 end-0 p-3" style="z-index:999">
-    <div class="form-check form-switch mb-0">
-      <input class="form-check-input" type="checkbox" id="darkToggle" role="switch" />
-      <label class="form-check-label text-muted" for="darkToggle">
-        <i class="fas fa-moon"></i>
-      </label>
-    </div>
-  </div>
-
-  <div class="auth-wrapper d-flex align-items-center justify-content-center min-vh-100">
-    <div class="auth-card card shadow-lg border-0" style="width:420px;max-width:95vw">
-      <div class="card-body p-5">
-
-        <!-- Brand / Header with Student/Graduate Logo -->
-        <div class="text-center mb-4">
-          <div class="auth-brand-icon mb-3 text-primary">
-            <i class="fas fa-graduation-cap fa-2x"></i>
-          </div>
-          <h3 class="fw-bold">AI Classroom</h3>
-          <p class="text-muted small">Smart classroom management for Faculty & Students</p>
-        </div>
-
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for cat, msg in messages %}
-        <div class="alert alert-{{ cat }} alert-dismissible fade show py-2" role="alert">
-          {{ msg }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
-
-        <!-- Role Selector Toggle (Student vs Faculty) -->
-
-
-        <form method="POST">
-          <input type="hidden" id="userType" name="user_type" value="student" />
-          <div class="mb-3">
-            <label for="email" class="form-label fw-semibold">Email address</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
-              <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required
-                autocomplete="email" />
-            </div>
-          </div>
-
-
-          <div class="mb-4">
-            <label for="password" class="form-label fw-semibold">Password</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
-              <input type="password" class="form-control" id="password" name="password" placeholder="Enter password"
-                required autocomplete="current-password" />
-              <button class="btn btn-outline-secondary" type="button" id="togglePwd" tabindex="-1"
-                title="Show/hide password">
-                <i class="fas fa-eye" id="eyeIcon"></i>
-              </button>
-            </div>
-          </div>
-
-
-          <div class="mb-3 text-end small">
-            <a href="{{ url_for('forgot') }}" class="fw-bold" style="color: #427ddd;">Forgot password?</a>
-          </div>
-          <!-- From Uiverse.io by gharsh11032000 -->
-          <button type="submit" class="animated-button" id="submitBtn">
-            <svg viewBox="0 0 24 24" class="arr-2" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z">
-              </path>
-            </svg>
-            <span class="text">Login As Student</span>
-            <span class="circle"></span>
-            <svg viewBox="0 0 24 24" class="arr-1" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z">
-              </path>
-            </svg>
-          </button>
-
+<body class="slider-auth-body">
+  <a class="slider-home-link" href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i><span>Home</span></a>
+  <label class="slider-theme-toggle" title="Toggle dark mode"><input type="checkbox" id="darkToggle" role="switch" /><i class="fas fa-moon"></i></label>
+  <main class="slider-auth {% if request.endpoint == 'signup' %}slider-auth--signup-active{% else %}slider-auth--signin{% endif %}" id="authSlider">
+    <section class="slider-forms" aria-label="Account forms">
+      <div class="slider-form slider-form--signin">
+        <div class="slider-brand"><span>AI</span><strong>SmartClass</strong></div>
+        <h1>Sign In</h1>
+        <p class="slider-subtitle">Login to access your dashboard</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}<div class="slider-server-message" role="alert">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
+        <form method="POST" action="{{ url_for('login') }}" class="slider-form-fields" data-auth-form="signin" novalidate>
+          <input type="hidden" name="user_type" value="student" />
+          <div class="slider-error" role="alert"></div>
+          <label class="slider-field"><span>Email address</span><i class="fas fa-envelope"></i><input type="email" name="email" placeholder="you@example.com" autocomplete="email" required /></label>
+          <label class="slider-field"><span>Password</span><i class="fas fa-lock"></i><input type="password" name="password" placeholder="At least 8 characters" autocomplete="current-password" required minlength="8" /><button class="slider-password-toggle" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button></label>
+          <div class="slider-options"><label><input type="checkbox" name="remember" /> <span>Remember me</span></label><a href="{{ url_for('forgot') }}">Forgot password?</a></div>
+          <button class="slider-primary-button" type="submit">Login Now <i class="fas fa-arrow-right"></i></button>
         </form>
-
-
-
-        <p class="text-center mb-0 small text-muted">
-          Don't have an account?
-          <a href="{{ url_for('signup') }}" class="fw-bold" data-auth-transition style="color: #6366f1;">Create one</a>
-        </p>
-
+        <div class="slider-social"><span>or continue with</span><div><button type="button" aria-label="Google"><i class="fab fa-google"></i></button><button type="button" aria-label="Facebook"><i class="fab fa-facebook-f"></i></button><button type="button" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></button></div></div>
+        <p class="slider-mobile-switch">New here? <button type="button" data-show-signup>Create Account</button></p>
       </div>
-    </div>
-  </div>
-
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+      <div class="slider-form slider-form--signup">
+        <div class="slider-brand"><span>AI</span><strong>SmartClass</strong></div>
+        <h1>Create Account</h1>
+        <p class="slider-subtitle">Sign up and begin your experience</p>
+        <form method="POST" action="{{ url_for('signup') }}" class="slider-form-fields" data-auth-form="signup" novalidate>
+          <input type="hidden" name="user_type" value="student" />
+          <input type="hidden" name="name" data-full-name />
+          <div class="slider-error" role="alert"></div>
+          <div class="slider-name-row"><label class="slider-field"><span>First name</span><i class="fas fa-user"></i><input type="text" data-first-name placeholder="First name" autocomplete="given-name" required /></label><label class="slider-field"><span>Last name</span><i class="fas fa-user"></i><input type="text" data-last-name placeholder="Last name" autocomplete="family-name" required /></label></div>
+          <label class="slider-field"><span>Email address</span><i class="fas fa-envelope"></i><input type="email" name="email" placeholder="you@example.com" autocomplete="email" required /></label>
+          <label class="slider-field"><span>Create password</span><i class="fas fa-lock"></i><input type="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8" /><button class="slider-password-toggle" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button></label>
+          <div class="slider-strength" aria-live="polite"><div class="slider-strength__track"><span></span></div><small data-strength-label>Password strength</small></div>
+          <label class="slider-field"><span>Confirm password</span><i class="fas fa-lock"></i><input type="password" data-confirm-password placeholder="Repeat your password" required minlength="8" /><button class="slider-password-toggle" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button></label>
+          <label class="slider-terms"><input type="checkbox" required /> <span>I agree to the <a href="#terms">terms &amp; conditions</a></span></label>
+          <button class="slider-primary-button" type="submit">Create Account <i class="fas fa-arrow-right"></i></button>
+        </form>
+        <div class="slider-social"><span>or sign up with</span><div><button type="button" aria-label="Google"><i class="fab fa-google"></i></button><button type="button" aria-label="Facebook"><i class="fab fa-facebook-f"></i></button><button type="button" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></button></div></div>
+        <p class="slider-mobile-switch">Already have an account? <button type="button" data-show-signin>Sign In</button></p>
+      </div>
+    </section>
+    <aside class="slider-overlay" aria-live="polite">
+      <div class="slider-overlay-panel slider-overlay-panel--signin"><span class="slider-badge">Welcome Back</span><h2>Hello, Friend!</h2><p>Enter your details and start your embossed UI journey with our modern sign up experience.</p><button class="slider-outline-button" type="button" data-show-signup>Create Account</button></div>
+      <div class="slider-overlay-panel slider-overlay-panel--signup"><span class="slider-badge">Join Us</span><h2>Already have an account?</h2><p>Sign in to continue with the smooth embossed slide animation and premium login interface.</p><button class="slider-outline-button" type="button" data-show-signin>Sign In</button></div>
+    </aside>
+  </main>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-
-  <script>
-    let currentRole = 'student';
-
-    // Switch Role Logic
-    function switchRole(role) {
-      currentRole = role;
-      const btnStudent = document.getElementById('btnStudent');
-      const btnFaculty = document.getElementById('btnFaculty');
-      const submitBtn = document.querySelector('#submitBtn .text');
-      const userTypeInput = document.getElementById('userType');
-
-      userTypeInput.value = role;
-      if (role === 'student') {
-        btnStudent.classList.add('active');
-        btnFaculty.classList.remove('active');
-        submitBtn.textContent = 'Login As Student';
-      } else {
-        btnFaculty.classList.add('active');
-        btnStudent.classList.remove('active');
-        submitBtn.textContent = 'Login As Faculty';
-      }
-    }
-
-    // Initialize password visibility toggle with proper event handling
-    function initPasswordToggle() {
-      const togglePwd = document.getElementById('togglePwd');
-      const password = document.getElementById('password');
-      const eyeIcon = document.getElementById('eyeIcon');
-
-      if (!togglePwd) return;
-
-      togglePwd.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const isPassword = password.type === 'password';
-        password.type = isPassword ? 'text' : 'password';
-        eyeIcon.classList.toggle('fa-eye');
-        eyeIcon.classList.toggle('fa-eye-slash');
-      });
-    }
-
-    // Initialize when DOM is ready to avoid autofill lag
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initPasswordToggle);
-    } else {
-      initPasswordToggle();
-    }
-
-    // Optimize autofill handling - prevent validation lag
-    document.addEventListener('input', (e) => {
-      if (e.target.id === 'email' || e.target.id === 'password') {
-        e.target.classList.remove('is-invalid');
-      }
-    }, true);
-  </script>
+  <script src="{{ url_for('static', filename='js/auth-slider.js') }}"></script>
 </body>
-
 </html>
