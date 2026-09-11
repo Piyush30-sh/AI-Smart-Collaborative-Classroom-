@@ -6,21 +6,21 @@
   <title>{% if request.endpoint == 'signup' %}Create Account{% else %}Sign In{% endif %} | AI SmartClass</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
 </head>
 <body class="slider-auth-body">
   <a class="slider-home-link" href="{{ url_for('index') }}"><i class="fas fa-arrow-left"></i><span>Home</span></a>
-  <label class="slider-theme-toggle" title="Toggle dark mode"><input type="checkbox" id="darkToggle" role="switch" /><i class="fas fa-moon"></i></label>
+  <label class="slider-theme-toggle" title="Toggle light and dark mode"><input type="checkbox" id="darkToggle" role="switch" /><span class="slider-theme-toggle__track"><i class="fas fa-sun"></i><i class="fas fa-moon"></i><b></b></span></label>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}<div class="slider-server-message" role="alert">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
   <main class="slider-auth {% if request.endpoint == 'signup' %}slider-auth--signup-active{% else %}slider-auth--signin{% endif %}" id="authSlider">
     <section class="slider-forms" aria-label="Account forms">
       <div class="slider-form slider-form--signin">
         <div class="slider-brand"><span>AI</span><strong>SmartClass</strong></div>
         <h1>Sign In</h1>
         <p class="slider-subtitle">Login to access your dashboard</p>
-        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat, msg in messages %}<div class="slider-server-message" role="alert">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
         <form method="POST" action="{{ url_for('login') }}" class="slider-form-fields" data-auth-form="signin" novalidate>
           <input type="hidden" name="user_type" value="student" />
           <div class="slider-error" role="alert"></div>
@@ -40,6 +40,7 @@
           <input type="hidden" name="user_type" value="student" />
           <input type="hidden" name="name" data-full-name />
           <div class="slider-error" role="alert"></div>
+          <div class="slider-role-switch" role="group" aria-label="Choose account type"><span class="slider-role-switch__indicator"></span><button type="button" class="is-active" data-role="student"><i class="fas fa-user-graduate"></i><span>Student</span></button><button type="button" data-role="faculty"><i class="fas fa-chalkboard-teacher"></i><span>Faculty</span></button></div>
           <div class="slider-name-row"><label class="slider-field"><span>First name</span><i class="fas fa-user"></i><input type="text" data-first-name placeholder="First name" autocomplete="given-name" required /></label><label class="slider-field"><span>Last name</span><i class="fas fa-user"></i><input type="text" data-last-name placeholder="Last name" autocomplete="family-name" required /></label></div>
           <label class="slider-field"><span>Email address</span><i class="fas fa-envelope"></i><input type="email" name="email" placeholder="you@example.com" autocomplete="email" required /></label>
           <label class="slider-field"><span>Create password</span><i class="fas fa-lock"></i><input type="password" name="password" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8" /><button class="slider-password-toggle" type="button" aria-label="Show password"><i class="fas fa-eye"></i></button></label>
@@ -53,8 +54,8 @@
       </div>
     </section>
     <aside class="slider-overlay" aria-live="polite">
-      <div class="slider-overlay-panel slider-overlay-panel--signin"><span class="slider-badge">Welcome Back</span><h2>Hello, Friend!</h2><p>Enter your details and start your embossed UI journey with our modern sign up experience.</p><button class="slider-outline-button" type="button" data-show-signup>Create Account</button></div>
-      <div class="slider-overlay-panel slider-overlay-panel--signup"><span class="slider-badge">Join Us</span><h2>Already have an account?</h2><p>Sign in to continue with the smooth embossed slide animation and premium login interface.</p><button class="slider-outline-button" type="button" data-show-signin>Sign In</button></div>
+      <div class="slider-overlay-panel slider-overlay-panel--signin"><span class="slider-badge">Welcome back</span><h2> Flow meets focus.</h2><p>Pick up where you left off with assignments, study plans, and shared learning spaces.</p><button class="slider-outline-button" type="button" data-show-signup>Create account</button></div>
+      <div class="slider-overlay-panel slider-overlay-panel--signup"><span class="slider-badge">Join SmartClass</span><h2>Learn better, together.</h2><p>Choose a student or faculty workspace and bring every classroom moment into focus.</p><button class="slider-outline-button" type="button" data-show-signin>Sign in</button></div>
     </aside>
   </main>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
