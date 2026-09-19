@@ -506,6 +506,17 @@ button:focus-visible,
   z-index: 99;
 }
 
+
+.btn-color-logout{
+  background-color: red;
+  color: #fff;
+}
+
+.btn-color-logout:hover{
+  background-color: red;
+  color: #fff;
+}
+
 .mobile-nav.is-open {
   transform: translateY(0);
   opacity: 1;

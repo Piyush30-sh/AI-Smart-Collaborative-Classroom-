@@ -1898,7 +1898,7 @@ def api_chat_send():
             """INSERT INTO classroom_messages
                (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
                 attachment_path, attachment_name, attachment_mime)
-               VALUES (?, ?, ?, ?, ?, 1, 0, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (classroom_id, faculty_id, student_id, uid, message, attachment_path, attachment_name, attachment_mime),
         )
     else:
@@ -1919,7 +1919,7 @@ def api_chat_send():
             """INSERT INTO classroom_messages
                (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
                 attachment_path, attachment_name, attachment_mime)
-               VALUES (?, ?, ?, ?, ?, 0, 1, ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (classroom_id, faculty_id, student_id, uid, message, attachment_path, attachment_name, attachment_mime),
         )
 
@@ -2058,7 +2058,7 @@ def revision_notes():
             """SELECT c.id, c.class_name, c.class_code
                FROM classrooms c
                JOIN classroom_members cm ON cm.classroom_id = c.id
-               WHERE cm.student_id = ?
+               WHERE cm.student_id=?
                ORDER BY c.class_name ASC""",
             (uid,),
         ).fetchall()
@@ -2396,7 +2396,7 @@ def delete_revision_note(note_id):
         """SELECT rn.*, c.faculty_id AS class_faculty_id
            FROM revision_notes rn
            LEFT JOIN classrooms c ON c.id = rn.classroom_id
-           WHERE rn.id = ?""",
+           WHERE rn.id=?""",
         (note_id,),
     ).fetchone()
     if not note:
@@ -2988,24 +2988,7 @@ def classroom_send_message():
 
         faculty_id = classroom["faculty_id"]
         student_id = uid
-
-        # Handle optional attachment for messages
-        attachment = request.files.get("attachment")
-        attachment_path = ''
-        attachment_name = ''
-        attachment_mime = ''
-        if attachment and attachment.filename:
-            save_dir = os.path.join(UPLOAD_FOLDER, 'classroom_messages')
-            os.makedirs(save_dir, exist_ok=True)
-            fname = secure_filename(attachment.filename)
-            unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
-            dest = os.path.join(save_dir, unique)
-            attachment.save(dest)
-            attachment_path = os.path.join('classroom_messages', unique)
-            attachment_name = attachment.filename
-            attachment_mime = attachment.mimetype or ''
-
-        conn.execute(
+        cursor = conn.execute(
             """INSERT INTO classroom_messages
                (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
                 attachment_path, attachment_name, attachment_mime)
@@ -3023,6 +3006,7 @@ def classroom_send_message():
                 attachment_mime,
             ),
         )
+
     conn.commit()
     conn.close()
 
@@ -3221,7 +3205,7 @@ def remove_student_from_classroom(class_id, student_id):
     student = conn.execute(
         """SELECT u.id, u.name, u.email
            FROM users u
-           JOIN classroom_members cm ON cm.student_id = u.id
+           JOIN classroom_members cm ON cm.classroom_id = c.id
            WHERE cm.classroom_id=? AND u.id=?""",
         (class_id, student_id),
     ).fetchone()
@@ -5222,7 +5206,8 @@ def quiz():
             try:
                 vq_id = int(view_quiz_id)
                 q_row = conn.execute(
-                    """SELECT q.*, c.class_name FROM quizzes q
+                    """SELECT q.*, c.class_name, u.name as faculty_name
+                       FROM quizzes q
                        LEFT JOIN classrooms c ON q.classroom_id = c.id
                        WHERE q.id = ? AND q.faculty_id = ?""",
                     (vq_id, uid),
@@ -5644,7 +5629,7 @@ def quiz_submit_live(quiz_id):
     if not quiz_row:
         conn.close()
         if request.is_json:
-            return jsonify({"status": "error", "message": "Quiz not found"}), 404
+            return jsonify({"status": "error", "message": "Quiz not found."}), 404
         flash("Quiz not found.", "danger")
         return redirect(url_for("quiz"))
 
@@ -5885,7 +5870,11 @@ def quiz_export_results(quiz_id):
     lines.append("-" * 90)
 
     for s in subs:
-        lines.append(f"{s['student_name']:<25} | {s['student_email']:<25} | {str(s['score']) + '%':<10} | {f'{s['correct_answers']}/{s['total_questions']}':<8} | {s['submitted_at']}")
+        correct_ratio = f"{s['correct_answers']}/{s['total_questions']}"
+        lines.append(
+            f"{s['student_name']:<25} | {s['student_email']:<25} | "
+            f"{str(s['score']) + '%':<10} | {correct_ratio:<8} | {s['submitted_at']}"
+        )
 
     content = "\n".join(lines)
     filename = f"quiz_{quiz_id}_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"

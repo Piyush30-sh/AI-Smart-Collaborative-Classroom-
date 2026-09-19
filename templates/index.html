@@ -17,8 +17,10 @@
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-
+  
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.css" />
+  
 </head>
 
 <body>
@@ -92,10 +94,6 @@
             <a href="{{ url_for('signup') }}" class="btn btn--primary btn--lg">Get Started</a>
             <a href="#features" class="btn btn--outline btn--lg">Explore Features</a>
           </div>
-          <div class="hero__trust">
-            <span class="tag tag--sample">preview</span>
-            <span class="hero__stack">HTML5 · CSS3 · JavaScript · FastAPI-ready · Groq-ready</span>
-          </div>
         </div>
 
         <div class="hero__visual" aria-hidden="true">
@@ -148,33 +146,47 @@
         <p class="eyebrow eyebrow--center">the problem</p>
         <h2 class="section__heading section__heading--center">Traditional Classroom Management Has a Problem</h2>
 
-        <div class="grid grid--5">
-          <article class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">🗂️</span>
-            <h3>Scattered Resources</h3>
-            <p>Notes, assignments, quizzes and resources are distributed across different platforms.</p>
-          </article>
-          <article class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">💬</span>
-            <h3>Communication Gaps</h3>
-            <p>Faculty and students struggle to maintain organized academic communication.</p>
-          </article>
-          <article class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">🧾</span>
-            <h3>Manual Management</h3>
-            <p>Faculty spend significant time managing students, groups, assignments and quizzes manually.</p>
-          </article>
-          <article class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">🎯</span>
-            <h3>Limited Personalization</h3>
-            <p>Students do not always receive personalized academic guidance.</p>
-          </article>
-          <article class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">📉</span>
-            <h3>Difficult Progress Tracking</h3>
-            <p>Tracking academic performance across multiple activities can be difficult.</p>
-          </article>
-        </div>
+      <div class="grid grid--5">
+  <article class="problem-card">
+    <span class="problem-card__icon" aria-hidden="true">
+      <i class="fa-solid fa-folder-tree" style="color: #f59e0b;"></i>
+    </span>
+    <h3>Scattered Resources</h3>
+    <p>Notes, assignments, quizzes and resources are distributed across different platforms.</p>
+  </article>
+
+  <article class="problem-card">
+    <span class="problem-card__icon" aria-hidden="true">
+      <i class="fa-solid fa-comments-dollar" style="color: #ef4444;"></i>
+    </span>
+    <h3>Communication Gaps</h3>
+    <p>Faculty and students struggle to maintain organized academic communication.</p>
+  </article>
+
+  <article class="problem-card">
+    <span class="problem-card__icon" aria-hidden="true">
+      <i class="fa-solid fa-clipboard-list" style="color: #8b5cf6;"></i>
+    </span>
+    <h3>Manual Management</h3>
+    <p>Faculty spend significant time managing students, groups, assignments and quizzes manually.</p>
+  </article>
+
+  <article class="problem-card">
+    <span class="problem-card__icon" aria-hidden="true">
+      <i class="fa-solid fa-bullseye" style="color: #ec4899;"></i>
+    </span>
+    <h3>Limited Personalization</h3>
+    <p>Students do not always receive personalized academic guidance.</p>
+  </article>
+
+  <article class="problem-card">
+    <span class="problem-card__icon" aria-hidden="true">
+      <i class="fa-solid fa-chart-simple" style="color: #06b6d4;"></i>
+    </span>
+    <h3>Difficult Progress Tracking</h3>
+    <p>Tracking academic performance across multiple activities can be difficult.</p>
+  </article>
+</div>
 
         <p class="section__closer">We bring everything together in one intelligent platform.</p>
       </div>
@@ -213,74 +225,104 @@
       <div class="container">
         <p class="eyebrow eyebrow--center">the platform</p>
         <h2 class="section__heading section__heading--center">Everything You Need for a Smarter Classroom</h2>
+<div class="grid grid--4 feature-grid">
+  <!-- 16 feature cards -->
+  <article class="feature-card feature-card--ai">
+    <span class="feature-card__icon"><i class="fa-solid fa-brain" style="color: #a855f7;"></i></span>
+    <h3>AI Quiz Generator</h3>
+    <p>Generate practice quizzes by subject, topic, and difficulty.</p>
+  </article>
 
-        <div class="grid grid--4 feature-grid">
-          <!-- 16 feature cards -->
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🧠</span>
-            <h3>AI Quiz Generator</h3>
-            <p>Generate practice quizzes by subject, topic, and difficulty.</p>
-          </article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🗓️</span>
-            <h3>AI Study Planner</h3>
-            <p>Build a personalized study schedule around your exams and free time.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">📝</span>
-            <h3>Assignments</h3>
-            <p>Create, assign, and track assignments for classes, groups, or individuals.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">❓</span>
-            <h3>Quizzes</h3>
-            <p>Build timed MCQ quizzes and instantly view student scores.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">🏫</span>
-            <h3>Smart Classroom Management</h3>
-            <p>Create classrooms and manage everything from one place with a unique join code.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">👥</span>
-            <h3>Student Groups</h3>
-            <p>Organize students into project groups in a few clicks.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">📚</span>
-            <h3>Notes &amp; Resources</h3>
-            <p>Share PDFs, documents, and reference materials with your class.</p>
-          </article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">🤖</span>
-            <h3>AI Chatbot</h3>
-            <p>Get instant academic help, explanations, and coding assistance.</p>
-          </article>
-          <article class="feature-card feature-card--ai"><span class="feature-card__icon">📄</span>
-            <h3>AI Note Summarizer</h3>
-            <p>Turn long notes into concise, revision-ready summaries.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">📊</span>
-            <h3>Progress Analytics</h3>
-            <p>Visualize quiz scores, submissions, and academic trends over time.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">⏰</span>
-            <h3>Timetable Generator</h3>
-            <p>Generate a personal weekly timetable around your college schedule.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">💬</span>
-            <h3>Group Discussions</h3>
-            <p>A private space for each group to coordinate project work.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">🗒️</span>
-            <h3>Personal Workspace</h3>
-            <p>Manage personal notes, to-dos, and study plans in one place.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">⏱️</span>
-            <h3>Focus Timer</h3>
-            <p>Stay on task with focus sessions, breaks, and session tracking.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">✉️</span>
-            <h3>Faculty Communication</h3>
-            <p>Reach faculty directly with academic questions and project queries.</p>
-          </article>
-          <article class="feature-card"><span class="feature-card__icon">🔔</span>
-            <h3>Notifications</h3>
-            <p>Never miss a deadline, quiz, or faculty announcement.</p>
-          </article>
-        </div>
+  <article class="feature-card feature-card--ai">
+    <span class="feature-card__icon"><i class="fa-solid fa-calendar-days" style="color: #ec4899;"></i></span>
+    <h3>AI Study Planner</h3>
+    <p>Build a personalized study schedule around your exams and free time.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i></span>
+    <h3>Assignments</h3>
+    <p>Create, assign, and track assignments for classes, groups, or individuals.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-circle-question" style="color: #eab308;"></i></span>
+    <h3>Quizzes</h3>
+    <p>Build timed MCQ quizzes and instantly view student scores.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-chalkboard-user" style="color: #06b6d4;"></i></span>
+    <h3>Smart Classroom Management</h3>
+    <p>Create classrooms and manage everything from one place with a unique join code.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-users" style="color: #3b82f6;"></i></span>
+    <h3>Student Groups</h3>
+    <p>Organize students into project groups in a few clicks.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-book-open" style="color: #10b981;"></i></span>
+    <h3>Notes &amp; Resources</h3>
+    <p>Share PDFs, documents, and reference materials with your class.</p>
+  </article>
+
+  <article class="feature-card feature-card--ai">
+    <span class="feature-card__icon"><i class="fa-solid fa-robot" style="color: #8b5cf6;"></i></span>
+    <h3>AI Chatbot</h3>
+    <p>Get instant academic help, explanations, and coding assistance.</p>
+  </article>
+
+  <article class="feature-card feature-card--ai">
+    <span class="feature-card__icon"><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i></span>
+    <h3>AI Note Summarizer</h3>
+    <p>Turn long notes into concise, revision-ready summaries.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-chart-line" style="color: #14b8a6;"></i></span>
+    <h3>Progress Analytics</h3>
+    <p>Visualize quiz scores, submissions, and academic trends over time.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-clock" style="color: #0284c7;"></i></span>
+    <h3>Timetable Generator</h3>
+    <p>Generate a personal weekly timetable around your college schedule.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-comments" style="color: #84cc16;"></i></span>
+    <h3>Group Discussions</h3>
+    <p>A private space for each group to coordinate project work.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-briefcase" style="color: #d97706;"></i></span>
+    <h3>Personal Workspace</h3>
+    <p>Manage personal notes, to-dos, and study plans in one place.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-stopwatch-20" style="color: #ef4444;"></i></span>
+    <h3>Focus Timer</h3>
+    <p>Stay on task with focus sessions, breaks, and session tracking.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-envelope" style="color: #0ea5e9;"></i></span>
+    <h3>Faculty Communication</h3>
+    <p>Reach faculty directly with academic questions and project queries.</p>
+  </article>
+
+  <article class="feature-card">
+    <span class="feature-card__icon"><i class="fa-solid fa-bell" style="color: #f97316;"></i></span>
+    <h3>Notifications</h3>
+    <p>Never miss a deadline, quiz, or faculty announcement.</p>
+  </article>
+</div>
       </div>
     </section>
 
@@ -432,32 +474,40 @@
         <p class="eyebrow eyebrow--center">why smartclass ai</p>
         <h2 class="section__heading section__heading--center">Why SmartClass AI?</h2>
 
-        <div class="grid grid--4">
-          <div class="benefit"><span class="benefit__icon">🏛️</span>
-            <p>Centralized Classroom Management</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">🪶</span>
-            <p>Reduced Faculty Workload</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">🗃️</span>
-            <p>Better Student Organization</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">🎯</span>
-            <p>Personalized AI Assistance</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">🤝</span>
-            <p>Improved Collaboration</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">⚡</span>
-            <p>Faster Academic Communication</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">📈</span>
-            <p>Better Progress Tracking</p>
-          </div>
-          <div class="benefit"><span class="benefit__icon">🚀</span>
-            <p>Increased Student Productivity</p>
-          </div>
-        </div>
+       <div class="grid grid--4">
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-landmark" style="color: #6366f1;"></i></span>
+    <p>Centralized Classroom Management</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-feather-pointed" style="color: #10b981;"></i></span>
+    <p>Reduced Faculty Workload</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-box-archive" style="color: #f59e0b;"></i></span>
+    <p>Better Student Organization</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i></span>
+    <p>Personalized AI Assistance</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-handshake" style="color: #06b6d4;"></i></span>
+    <p>Improved Collaboration</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-bolt" style="color: #eab308;"></i></span>
+    <p>Faster Academic Communication</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-arrow-trend-up" style="color: #14b8a6;"></i></span>
+    <p>Better Progress Tracking</p>
+  </div>
+  <div class="benefit">
+    <span class="benefit__icon"><i class="fa-solid fa-rocket" style="color: #ef4444;"></i></span>
+    <p>Increased Student Productivity</p>
+  </div>
+</div>
       </div>
     </section>
 

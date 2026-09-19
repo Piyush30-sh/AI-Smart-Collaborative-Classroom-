@@ -3,15 +3,55 @@
 
 {% block extra_css %}
 <style>
+  :root {
+    --theme-green: #0d9488;
+    --theme-green-dark: #0f766e;
+    --theme-green-light: #14b8a6;
+    --theme-green-subtle: rgba(13, 148, 136, 0.12);
+
+    /* Override bootstrap primary to match banner green */
+    --cls-primary: #0d9488 !important;
+    --cls-primary-light: rgba(13, 148, 136, 0.12) !important;
+  }
+
+  /* ══ TOP NAVBAR OVERRIDES (Brand Logo, Active Tab, User Profile) ══ */
+  .navbar-brand,
+  .navbar-brand i,
+  .navbar-brand span {
+    color: #0d9488 !important;
+  }
+
+  /* Active Nav Tab Pill (Resources) */
+  .navbar-nav .nav-link.active,
+  .nav-pills .nav-link.active,
+  .nav-link.active {
+    background-color: rgba(13, 148, 136, 0.14) !important;
+    color: #0d9488 !important;
+    border-radius: 8px;
+  }
+
+  /* User Profile Pill / Button (Top Right) */
+  .navbar [id*="user"],
+  .navbar [class*="user"],
+  .navbar .dropdown-toggle {
+    color: #0d9488 !important;
+  }
+  .navbar [class*="user"] i,
+  .navbar [id*="user"] i {
+    color: #0d9488 !important;
+  }
+
+  /* ══ BANNER ══ */
   .resource-header {
-    background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%);
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%) !important;
     border-radius: 16px;
     color: #ffffff;
     padding: 2rem;
     margin-bottom: 2rem;
-    box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.3);
+    box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.35);
   }
 
+  /* ══ CARDS ══ */
   .resource-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -26,7 +66,7 @@
 
   .resource-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 8px 20px rgba(13, 148, 136, 0.15);
     border-color: #0d9488;
   }
 
@@ -42,6 +82,63 @@
     color: #0d9488;
   }
 
+  /* ══ BADGES & BUTTONS ══ */
+  .badge-theme-green {
+    background: rgba(13, 148, 136, 0.12);
+    color: #0f766e;
+    border: 1px solid rgba(13, 148, 136, 0.25);
+  }
+
+  .btn-theme-green,
+  .btn-primary {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+  }
+  .btn-theme-green:hover,
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #0b5953 0%, #0f766e 100%) !important;
+    color: #ffffff !important;
+  }
+
+  .btn-outline-theme-green,
+  .btn-outline-primary {
+    color: #0d9488 !important;
+    border-color: #0d9488 !important;
+  }
+  .btn-outline-theme-green:hover,
+  .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%) !important;
+    border-color: transparent !important;
+    color: #ffffff !important;
+  }
+
+  .text-primary {
+    color: #0d9488 !important;
+  }
+  .bg-primary-subtle {
+    background-color: rgba(13, 148, 136, 0.12) !important;
+    color: #0f766e !important;
+  }
+
+  /* ══ DARK THEME SUPPORT ══ */
+  [data-bs-theme="dark"] .navbar-brand,
+  [data-bs-theme="dark"] .navbar-brand i {
+    color: #2dd4bf !important;
+  }
+
+  [data-bs-theme="dark"] .navbar-nav .nav-link.active,
+  [data-bs-theme="dark"] .nav-pills .nav-link.active {
+    background-color: rgba(45, 212, 191, 0.18) !important;
+    color: #2dd4bf !important;
+  }
+
+  [data-bs-theme="dark"] .navbar [id*="user"],
+  [data-bs-theme="dark"] .navbar [class*="user"] {
+    color: #2dd4bf !important;
+  }
+
   [data-bs-theme="dark"] .resource-card {
     background: #161f30 !important;
     border-color: #2a374d !important;
@@ -50,7 +147,7 @@
 
   [data-bs-theme="dark"] .resource-card:hover {
     border-color: #2dd4bf !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
   }
 
   [data-bs-theme="dark"] .resource-card h5 {
@@ -66,8 +163,26 @@
   }
 
   [data-bs-theme="dark"] .resource-icon-badge {
-    background: rgba(45, 212, 191, 0.18) !important;
+    background: rgba(45, 212, 191, 0.16) !important;
     color: #2dd4bf !important;
+  }
+
+  [data-bs-theme="dark"] .badge-theme-green,
+  [data-bs-theme="dark"] .bg-primary-subtle {
+    background: rgba(45, 212, 191, 0.15) !important;
+    color: #2dd4bf !important;
+    border-color: rgba(45, 212, 191, 0.3) !important;
+  }
+
+  [data-bs-theme="dark"] .btn-outline-theme-green,
+  [data-bs-theme="dark"] .btn-outline-primary {
+    color: #2dd4bf !important;
+    border-color: #2dd4bf !important;
+  }
+  [data-bs-theme="dark"] .btn-outline-theme-green:hover,
+  [data-bs-theme="dark"] .btn-outline-primary:hover {
+    background: #2dd4bf !important;
+    color: #0f172a !important;
   }
 </style>
 {% endblock %}
@@ -76,26 +191,27 @@
 <div class="container-fluid px-4 py-4">
 
   <!-- Header -->
-  <div class="resource-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-    <div>
-      <span class="badge bg-light text-primary fw-bold mb-2 px-3 py-1 rounded-pill">
-        <i class="fas fa-book-bookmark me-1"></i> Learning Repository
-      </span>
-      <h1 class="h2 mb-1">Course Resources &amp; Materials</h1>
-      <p class="mb-0 text-white-50">Upload and access lecture notes, reference PDFs, syllabus outlines, and past exam
-        questions.</p>
+<div class="resource-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+  <div>
+    <!-- Eyebrow label with optically balanced icon and text -->
+    <div class="d-inline-flex align-items-center gap-2 mb-2 fw-bold text-uppercase" 
+         style="font-size: 0.78rem; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.9); line-height: 1;">
+      <i class="fas fa-book-bookmark" style="font-size: 0.85rem; opacity: 0.95;"></i>
+      <span>Learning Repository</span>
     </div>
-    <div class="d-flex gap-2">
-      <a href="{{ url_for('quiz') }}" class="btn btn-light text-primary fw-semibold shadow-sm">
-        <i class="fas fa-file-pdf me-1 text-danger"></i> Convert PDF to Quiz
-      </a>
-    </div>
-
+    <h1 class="h2 mb-1">Course Resources &amp; Materials</h1>
+    <p class="mb-0 text-white-50">Upload and access lecture notes, reference PDFs, syllabus outlines, and past exam questions.</p>
   </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('quiz') }}" class="btn btn-light fw-semibold shadow-sm" style="color: #0f766e;">
+      <i class="fas fa-file-pdf me-1 text-danger"></i> Convert PDF to Quiz
+    </a>
+  </div>
+</div>
 
   <!-- Resource Categories & Filter -->
   <div class="row g-4 mb-4">
-    <!-- Resource Cards -->
+    <!-- Revision Notes Card -->
     <div class="col-md-4">
       <div class="resource-card p-4">
         <div>
@@ -103,51 +219,52 @@
             <div class="resource-icon-badge">
               <i class="fas fa-file-lines"></i>
             </div>
-            <span class="badge bg-teal-subtle text-teal">Study Notes</span>
+            <span class="badge badge-theme-green">Study Notes</span>
           </div>
           <h5 class="fw-bold">Subject Revision Notes</h5>
-          <p class="text-muted small">Access condensed chapter summaries, formulas, and cheat sheets generated for
-            courses.</p>
+          <p class="text-muted small">Access condensed chapter summaries, formulas, and cheat sheets generated for courses.</p>
         </div>
         <div class="pt-3 border-top d-flex justify-content-between align-items-center">
           <span class="small text-muted"><i class="fas fa-layer-group me-1"></i>Multiple chapters</span>
-          <a href="{{ url_for('revision_notes') }}" class="btn btn-sm btn-outline-teal">
+          <a href="{{ url_for('revision_notes') }}" class="btn btn-sm btn-outline-theme-green rounded-pill px-3">
             Open Notes <i class="fas fa-arrow-right ms-1"></i>
           </a>
         </div>
       </div>
     </div>
 
+    <!-- Classroom Attachments Card -->
     <div class="col-md-4">
       <div class="resource-card p-4">
         <div>
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="resource-icon-badge" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
+            <div class="resource-icon-badge">
               <i class="fas fa-paperclip"></i>
             </div>
-            <span class="badge bg-primary-subtle text-primary">Class Materials</span>
+            <span class="badge badge-theme-green">Class Materials</span>
           </div>
           <h5 class="fw-bold">Classroom Attachments</h5>
           <p class="text-muted small">Files, problem sets, and guidelines shared across your active classrooms.</p>
         </div>
         <div class="pt-3 border-top d-flex justify-content-between align-items-center">
           <span class="small text-muted"><i class="fas fa-chalkboard me-1"></i>Shared by Faculty</span>
-          <a href="{{ url_for('classrooms') }}" class="btn btn-sm btn-outline-primary">
+          <a href="{{ url_for('classrooms') }}" class="btn btn-sm btn-outline-theme-green rounded-pill px-3">
             Class Materials <i class="fas fa-arrow-right ms-1"></i>
           </a>
         </div>
       </div>
     </div>
 
+    <!-- Quizzes Card -->
     <div class="col-md-4">
       <div class="resource-card p-4">
         <div>
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="resource-icon-badge" style="background: rgba(147, 51, 234, 0.12); color: #9333ea;">
+            <div class="resource-icon-badge">
               <i class="fas fa-brain"></i>
             </div>
-            <span class="badge bg-purple-subtle text-purple">
-              {% if session.get('user_type') == 'faculty' %}Quiz Management{% else %}Live & AI Quizzes{% endif %}
+            <span class="badge badge-theme-green">
+              {% if session.get('user_type') == 'faculty' %}Quiz Management{% else %}Live &amp; AI Quizzes{% endif %}
             </span>
           </div>
           <h5 class="fw-bold">AI Practice Quizzes</h5>
@@ -162,9 +279,9 @@
         <div class="pt-3 border-top d-flex justify-content-between align-items-center">
           <span class="small text-muted">
             <i class="fas fa-bolt me-1 text-warning"></i>
-            {% if session.get('user_type') == 'faculty' %}Live Hosting & Grading{% else %}Real-time Testing{% endif %}
+            {% if session.get('user_type') == 'faculty' %}Live Hosting &amp; Grading{% else %}Real-time Testing{% endif %}
           </span>
-          <a href="{{ url_for('quiz') }}" class="btn btn-sm btn-outline-purple">
+          <a href="{{ url_for('quiz') }}" class="btn btn-sm btn-outline-theme-green rounded-pill px-3">
             {% if session.get('user_type') == 'faculty' %}Host / Manage Quizzes{% else %}Open Quiz Hub{% endif %} <i class="fas fa-arrow-right ms-1"></i>
           </a>
         </div>
@@ -177,12 +294,11 @@
     <div class="card-body p-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-          <h5 class="fw-bold mb-1"><i class="fas fa-book-open-reader text-primary me-2"></i>Classroom Study Materials
-            &amp; Notes</h5>
+          <h5 class="fw-bold mb-1"><i class="fas fa-book-open-reader me-2" style="color: #0d9488;"></i>Classroom Study Materials &amp; Notes</h5>
           <p class="text-muted small mb-0">Lecture notes, syllabus guides, reference PDFs, and external resources</p>
         </div>
         {% if study_materials %}
-        <span class="badge rounded-pill bg-primary-subtle text-primary fw-semibold px-3 py-2">
+        <span class="badge rounded-pill badge-theme-green fw-semibold px-3 py-2">
           {{ study_materials|length }} Materials
         </span>
         {% endif %}
@@ -206,29 +322,25 @@
             <tr>
               <td>
                 <div class="d-flex align-items-center gap-2">
-                  <i
-                    class="fas {% if m.resource_type == 'pdf' %}fa-file-pdf text-danger{% elif m.resource_type == 'doc' %}fa-file-word text-primary{% elif m.resource_type == 'presentation' %}fa-file-powerpoint text-warning{% elif m.resource_type == 'spreadsheet' %}fa-file-excel text-success{% elif m.resource_type == 'link' %}fa-link text-info{% else %}fa-file-lines text-secondary{% endif %} fs-5"></i>
+                  <i class="fas {% if m.resource_type == 'pdf' %}fa-file-pdf text-danger{% elif m.resource_type == 'doc' %}fa-file-word text-primary{% elif m.resource_type == 'presentation' %}fa-file-powerpoint text-warning{% elif m.resource_type == 'spreadsheet' %}fa-file-excel text-success{% elif m.resource_type == 'link' %}fa-link text-info{% else %}fa-file-lines text-secondary{% endif %} fs-5"></i>
                   <div>
                     <span class="fw-semibold">{{ m.title }}</span>
-                    {% if m.description %}<div class="small text-muted text-truncate" style="max-width:260px;">{{
-                      m.description }}</div>{% endif %}
+                    {% if m.description %}<div class="small text-muted text-truncate" style="max-width:260px;">{{ m.description }}</div>{% endif %}
                   </div>
                 </div>
               </td>
-              <td><span
-                  class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-25 text-uppercase"
-                  style="font-size:.7rem;">{{ m.resource_type }}</span></td>
-              <td><span class="badge bg-primary-subtle text-primary">{{ m.class_name }}</span></td>
+              <td>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-25 text-uppercase" style="font-size:.7rem;">{{ m.resource_type }}</span>
+              </td>
+              <td><span class="badge badge-theme-green">{{ m.class_name }}</span></td>
               <td><small class="text-muted">{{ m.uploader_name }}</small></td>
               <td><small class="text-muted">{{ m.created_at[:10] if m.created_at else 'Recent' }}</small></td>
               <td class="text-end">
                 <div class="d-flex gap-1 justify-content-end">
-                  <a href="{{ url_for('preview_classroom_resource', resource_id=m.id) }}" target="_blank"
-                    class="btn btn-sm btn-outline-secondary rounded-pill px-2.5">
+                  <a href="{{ url_for('preview_classroom_resource', resource_id=m.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5">
                     <i class="fas fa-eye me-1"></i>Preview
                   </a>
-                  <a href="{{ url_for('download_classroom_resource', resource_id=m.id) }}"
-                    class="btn btn-sm btn-primary rounded-pill px-2.5">
+                  <a href="{{ url_for('download_classroom_resource', resource_id=m.id) }}" class="btn btn-sm btn-theme-green rounded-pill px-2.5">
                     <i class="fas fa-download me-1"></i>Download
                   </a>
                 </div>
@@ -240,9 +352,8 @@
       </div>
       {% else %}
       <div class="text-center py-4 text-muted">
-        <i class="fas fa-folder-open mb-2 fs-3"></i>
-        <p class="mb-0">No study materials published in your classrooms yet. Faculty can upload notes and PDFs directly
-          in the Classroom workspace.</p>
+        <i class="fas fa-folder-open mb-2 fs-3" style="color: #0d9488;"></i>
+        <p class="mb-0">No study materials published in your classrooms yet. Faculty can upload notes and PDFs directly in the Classroom workspace.</p>
       </div>
       {% endif %}
     </div>
@@ -251,7 +362,7 @@
   <!-- Shared Class Files Table -->
   <div class="card shadow-sm border-0 rounded-4">
     <div class="card-body p-4">
-      <h5 class="fw-bold mb-1">Recent Assignment Attachments</h5>
+      <h5 class="fw-bold mb-1"><i class="fas fa-paperclip me-2" style="color: #0d9488;"></i>Recent Assignment Attachments</h5>
       <p class="text-muted small mb-3">Downloadable task guidelines and problem sets</p>
 
       {% if attachments %}
@@ -279,8 +390,7 @@
               <td>{{ f.class_name }}</td>
               <td><small class="text-muted">{{ f.created_at[:10] if f.created_at else 'Recent' }}</small></td>
               <td class="text-end">
-                <a href="{{ url_for('classroom_attachment_download', filepath=f.attachment_path) }}"
-                  class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                <a href="{{ url_for('classroom_attachment_download', filepath=f.attachment_path) }}" class="btn btn-sm btn-outline-theme-green rounded-pill px-3">
                   <i class="fas fa-download me-1"></i> Download
                 </a>
               </td>
@@ -291,7 +401,7 @@
       </div>
       {% else %}
       <div class="text-center py-4 text-muted">
-        <i class="fas fa-folder-open mb-2 fs-3"></i>
+        <i class="fas fa-folder-open mb-2 fs-3" style="color: #0d9488;"></i>
         <p class="mb-0">No assignment attachments found yet.</p>
       </div>
       {% endif %}
