@@ -1697,9 +1697,9 @@ html {
 .slider-field { position: relative; display: block; }
 .slider-field > span { display: block; margin: 0 0 .35rem .25rem; color: var(--text); font-size: .73rem; font-weight: 700; }
 .slider-field > i { position: absolute; top: 2.15rem; left: 1rem; color: #8b98aa; font-size: .82rem; pointer-events: none; }
-.slider-field input { width: 100%; height: 3.05rem; padding: 0 2.75rem; border: 0; border-radius: 16px; outline: 0; color: var(--text); background: var(--surface); box-shadow: inset 5px 5px 11px #d5dee8, inset -5px -5px 11px #fff; transition: box-shadow .2s, color .2s; }
+.slider-field input { width: 100%; height: 3.05rem; padding: 0 2.75rem; border: 0; border-radius: 16px; outline: 0; color: var(--text); background: var(--surface); transition: box-shadow .2s, color .2s; }
 .slider-field input::placeholder { color: #9aa6b7; }
-.slider-field input:focus { box-shadow: inset 2px 2px 6px #cdd8e4, inset -2px -2px 6px #fff, 0 0 0 3px rgba(74, 104, 255, .2); }
+.slider-field input:focus {  box-shadow: inset 4px 4px 9px rgba(249, 249, 249, 0.86), inset -5px -5px 11px rgba(255, 255, 255, .98), 0 0 0 3px rgba(74, 104, 255, .2);}
 .slider-field input:invalid:not(:placeholder-shown) { box-shadow: inset 2px 2px 6px #e0bcc0, inset -2px -2px 6px #fff, 0 0 0 2px rgba(194, 54, 70, .2); }
 .slider-strength { display: flex; align-items: center; gap: .55rem; margin-top: -.35rem; color: var(--muted); font-size: .65rem; }
 .slider-strength__track { flex: 1; height: 5px; overflow: hidden; border-radius: 999px; background: #d8e1eb; box-shadow: inset 2px 2px 4px #c8d2dd, inset -2px -2px 4px #fff; }
@@ -1773,7 +1773,7 @@ html {
   .slider-form-fields { gap: .38rem; }
   .slider-field > span { display: none; }
   .slider-field > i { display: none; }
-  .slider-field input { height: 1.65rem; padding: 0 .65rem; border-radius: 9px; font-size: .5rem; box-shadow: inset 3px 3px 7px #d5dee8, inset -3px -3px 7px #fff; }
+  .slider-field input { height: 1.65rem; padding: 0 .65rem; border-radius: 9px; font-size: .5rem;}
   .slider-strength { gap: .25rem; margin-top: -.15rem; font-size: .38rem; }
   .slider-strength__track { height: 3px; }
   .slider-strength small { min-width: 3.3rem; font-size: .38rem; }
@@ -1857,17 +1857,23 @@ html {
 .slider-auth-body .slider-primary-button {
   border: 1px solid rgba(255, 255, 255, .3);
   background: linear-gradient(145deg, #5875ff, #3d5cf0);
-  box-shadow: 12px 14px 22px rgba(44, 67, 188, .42), -8px -8px 16px var(--auth-shadow-soft), inset 2px 2px 2px rgba(255, 255, 255, .34), inset -2px -2px 3px rgba(21, 43, 161, .18);
+  box-shadow: 12px 14px 22px rgba(211, 211, 217, 0.821);
 }
 
 .slider-auth-body .slider-primary-button:hover {
   background: linear-gradient(145deg, #6380ff, #4160f4);
-  box-shadow: 15px 17px 27px rgba(44, 67, 188, .46), -8px -8px 17px var(--auth-shadow-soft), inset 2px 2px 2px rgba(255, 255, 255, .4);
+  box-shadow: 15px 17px 27px rgba(211, 211, 217, 0.821);
 }
 
 .slider-auth-body .slider-primary-button:active {
   box-shadow: inset 7px 7px 14px rgba(30, 52, 165, .5), inset -4px -4px 8px rgba(255, 255, 255, .28);
 }
+
+
+
+
+
+
 
 .slider-auth-body .slider-outline-button {
   box-shadow: 9px 11px 20px rgba(29, 52, 171, .3), -6px -6px 13px rgba(255, 255, 255, .22), inset 2px 2px 2px rgba(255, 255, 255, .32);
@@ -1930,40 +1936,35 @@ html {
 
 /* Keep the carved fields soft; avoid a harsh black inner edge in dark mode. */
 .slider-auth-body .slider-form input {
-  box-shadow: inset 6px 6px 12px rgba(139, 156, 180, .38), inset -7px -7px 14px rgba(255, 255, 255, .96), 1px 1px 0 rgba(255, 255, 255, .7);
+ border: 1px solid rgba(146, 154, 218, 0.619);
+  box-shadow: inset 6px 6px 12px rgba(240, 241, 242, 0.805), inset -7px -7px 14px rgba(255, 255, 255, .96), 1px 1px 0 rgba(255, 255, 255, .7);
 }
 
 .slider-auth-body .slider-form input:focus {
-  box-shadow: inset 4px 4px 9px rgba(139, 156, 180, .32), inset -5px -5px 11px rgba(255, 255, 255, .98), 0 0 0 3px rgba(74, 104, 255, .2);
+  box-shadow: inset 4px 4px 9px rgba(249, 249, 249, 0.86), inset -5px -5px 11px rgba(255, 255, 255, .98), 0 0 0 3px rgba(74, 104, 255, .2);
 }
 
 /* Calm, tactile error state instead of a harsh browser-red outline. */
 .slider-auth-body .slider-field input:invalid:not(:placeholder-shown),
 .slider-auth-body .slider-field input.is-invalid {
-  border-color: rgba(190, 72, 91, .58);
-  background: linear-gradient(145deg, #f4e9ec, #fff7f8);
-  box-shadow: inset 5px 5px 11px rgba(190, 72, 91, .18), inset -6px -6px 12px rgba(255, 255, 255, .98), 0 0 0 3px rgba(190, 72, 91, .12), 4px 5px 10px rgba(125, 55, 69, .1);
+background: linear-gradient(145deg, #e6dcdc, #f4ecec);
+ box-shadow: inset 4px 4px 9px rgba(226, 228, 231, 0.864), inset -5px -5px 11px rgba(255, 255, 255, .94), 0 0 0 3px rgba(255, 104, 74, 0.22);
 }
 
-.slider-auth-body .slider-field input:invalid:not(:placeholder-shown):focus,
-.slider-auth-body .slider-field input.is-invalid:focus {
-  border-color: #be485b;
-  box-shadow: inset 4px 4px 9px rgba(190, 72, 91, .2), inset -5px -5px 11px rgba(255, 255, 255, .98), 0 0 0 3px rgba(190, 72, 91, .2);
-}
 
 [data-bs-theme="dark"] .slider-auth-body .slider-field input:invalid:not(:placeholder-shown),
 [data-bs-theme="dark"] .slider-auth-body .slider-field input.is-invalid {
-  border-color: rgba(190, 72, 91, .65);
-  background: linear-gradient(145deg, #e6dce0, #f4ecef);
-  box-shadow: inset 5px 5px 11px rgba(145, 57, 76, .2), inset -6px -6px 12px rgba(255, 255, 255, .82), 0 0 0 3px rgba(190, 72, 91, .16), 4px 5px 10px rgba(2, 8, 20, .16);
+  background: linear-gradient(145deg, #e6dcdc, #f4ecec);
+ box-shadow: inset 4px 4px 9px rgba(226, 228, 231, 0.864), inset -5px -5px 11px rgba(255, 255, 255, .94), 0 0 0 3px rgba(255, 104, 74, 0.24);
 }
 
 [data-bs-theme="dark"] .slider-auth-body .slider-form input {
-  box-shadow: inset 6px 6px 12px rgba(111, 129, 153, .38), inset -7px -7px 14px rgba(255, 255, 255, .9), 1px 1px 0 rgba(255, 255, 255, .64);
+ border: 1px solid rgba(146, 154, 218, 0.619);
+  box-shadow: inset 4px 4px 9px rgba(226, 228, 231, 0.724), inset -5px -5px 11px rgba(255, 255, 255, 0.876), 1px 1px 0 rgba(255, 255, 255, .7);
 }
 
 [data-bs-theme="dark"] .slider-auth-body .slider-form input:focus {
-  box-shadow: inset 4px 4px 9px rgba(111, 129, 153, .32), inset -5px -5px 11px rgba(255, 255, 255, .94), 0 0 0 3px rgba(74, 104, 255, .2);
+  box-shadow: inset 4px 4px 9px rgba(226, 228, 231, 0.864), inset -5px -5px 11px rgba(255, 255, 255, .94), 0 0 0 3px rgba(74, 104, 255, .2);
 }
 
 /* Keep the agreement text directly beside its checkbox. */
@@ -2120,24 +2121,17 @@ html {
 
 .slider-primary-button {
   border: 1px solid rgba(255, 255, 255, .2);
-  box-shadow: 8px 9px 16px rgba(48, 75, 214, .34), -6px -6px 14px rgba(255, 255, 255, .9), inset 1px 1px 1px rgba(255, 255, 255, .3);
+  box-shadow: 8px 9px 16px rgba(48, 75, 214, .34), -6px -6px 14px rgba(255, 255, 255, .9), inset 1px 1px 1px rgba(232, 230, 230, 0.3);
   transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
 }
 
-.slider-primary-button:hover {
-  transform: translateY(-3px);
-  box-shadow: 10px 12px 20px rgba(48, 75, 214, .38), -5px -5px 12px rgba(255, 255, 255, .95), inset 1px 1px 1px rgba(255, 255, 255, .35);
-}
 
-.slider-primary-button:active {
-  transform: translateY(1px);
-  box-shadow: inset 5px 5px 10px rgba(35, 58, 180, .4), inset -3px -3px 7px rgba(255, 255, 255, .18);
-}
+
 
 .slider-primary-button.is-pressed,
 .slider-outline-button.is-pressed {
   transform: translateY(1px) scale(.98);
-  box-shadow: inset 6px 6px 12px rgba(35, 58, 180, .42), inset -3px -3px 7px rgba(255, 255, 255, .22);
+  box-shadow: inset 6px 6px 12px rgba(35, 58, 180, .42), inset -3px -3px 7px rgba(228, 226, 226, 0.22);
 }
 
 [data-bs-theme="dark"] .slider-primary-button.is-pressed,
@@ -2146,7 +2140,7 @@ html {
 }
 
 .slider-outline-button {
-  box-shadow: 6px 7px 14px rgba(29, 52, 171, .25), -4px -4px 10px rgba(255, 255, 255, .18), inset 1px 1px 1px rgba(255, 255, 255, .3);
+  box-shadow: 6px 7px 14px rgba(29, 52, 171, .25), -4px -4px 10px rgb(252, 251, 251), inset 1px 1px 1px rgba(255, 255, 255, .3);
   transition: transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
 }
 
