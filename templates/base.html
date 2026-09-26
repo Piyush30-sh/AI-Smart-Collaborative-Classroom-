@@ -37,14 +37,14 @@
   {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body class="dashboard-nav-motion">
 
   <!-- ══ Navbar ═════════════════════════════════════════════════════════════ -->
-  <nav class="navbar navbar-expand-lg fixed-top shadow-sm" id="mainNav">
+  <nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
     <div class="container-fluid px-4">
 
       <!-- Brand -->
-      <a class="navbar-brand fw-bold text-primary"
+      <a class="navbar-brand fw-bold"
         href="{{ url_for('faculty_dashboard') if session.get('user_type') == 'faculty' else url_for('dashboard') }}">
         <i class="fas fa-graduation-cap me-2"></i>AI SmartClass
       </a>
@@ -58,84 +58,80 @@
       <div class="collapse navbar-collapse" id="navMenu">
 
         <!-- Links -->
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
           {% if session.get('user_type') == 'faculty' %}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"
               href="{{ url_for('faculty_dashboard') }}">
-              <i class="fas fa-home me-1"></i>Dashboard
+              <span class="nav-icon-wrap"><i class="fas fa-home"></i></span><span class="nav-label">Dashboard</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
               href="{{ url_for('classrooms') }}">
-              <i class="fas fa-chalkboard me-1"></i>Classrooms
+              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span class="nav-label">Classrooms</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'students' %}active{% endif %}"
               href="{{ url_for('students') }}">
-              <i class="fas fa-user-graduate me-1"></i>Students
+              <span class="nav-icon-wrap"><i class="fas fa-user-graduate"></i></span><span class="nav-label">Students</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks') }}">
-              <i class="fas fa-tasks me-1"></i>Tasks
+              <span class="nav-icon-wrap"><i class="fas fa-tasks"></i></span><span class="nav-label">Tasks</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
               href="{{ url_for('resources') }}">
-              <i class="fas fa-folder-open me-1"></i>Resources
+              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span class="nav-label">Resources</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
-              <i class="fas fa-circle-question me-1"></i>Quiz Management
+              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span class="nav-label">Quiz Management</span>
             </a>
           </li>
           {% else %}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
               href="{{ url_for('dashboard') }}">
-              <i class="fas fa-home me-1"></i>Dashboard
+              <span class="nav-icon-wrap"><i class="fas fa-home"></i></span><span class="nav-label">Dashboard</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
               href="{{ url_for('classrooms') }}">
-              <i class="fas fa-chalkboard me-1"></i>Classrooms
+              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span class="nav-label">Classrooms</span>
             </a>
-
+          </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
               href="{{ url_for('resources') }}">
-              <i class="fas fa-folder-open me-1"></i>Resources
+              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span class="nav-label">Resources</span>
             </a>
-
+          </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'subjects' %}active{% endif %}"
               href="{{ url_for('subjects') }}">
-              <i class="fas fa-book-open me-1"></i>Subjects
+              <span class="nav-icon-wrap"><i class="fas fa-book-open"></i></span><span class="nav-label">Subjects</span>
             </a>
-          </li>
-
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'planner' %}active{% endif %}" href="{{ url_for('planner') }}">
-              <i class="fas fa-calendar-alt me-1"></i>Planner
+              <span class="nav-icon-wrap"><i class="fas fa-calendar-alt"></i></span><span class="nav-label">Planner</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks') }}">
-              <i class="fas fa-tasks me-1"></i>Tasks
+              <span class="nav-icon-wrap"><i class="fas fa-tasks"></i></span><span class="nav-label">Tasks</span>
             </a>
-          </li>
-
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
-              <i class="fas fa-circle-question me-1"></i>Quiz
+              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span class="nav-label">Quiz</span>
             </a>
           </li>
           {% endif %}
@@ -163,10 +159,11 @@
 
           <!-- Notification Bell Dropdown -->
           <div class="dropdown notification-dropdown" id="notificationDropdownContainer">
-            <button class="btn btn-outline-secondary btn-sm position-relative rounded-pill px-3 py-1"
+            <button class="btn btn-sm position-relative rounded-pill px-3 py-1"
+              style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;"
               id="notificationBellBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
               title="Notifications">
-              <i class="fas fa-bell text-warning"></i>
+              <i class="fas fa-bell" style="color:#fbbf24;"></i>
               <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none"
                 id="notifBadgeCount">
                 0
@@ -203,8 +200,9 @@
 
           <!-- User dropdown -->
           <div class="dropdown user-menu">
-            <button class="user-menu__toggle btn btn-outline-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
-              aria-expanded="false">
+            <button class="user-menu__toggle btn btn-sm dropdown-toggle"
+              style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.22);color:#fff;"
+              data-bs-toggle="dropdown" aria-expanded="false">
               {% if session.user_avatar %}
               <img src="{{ url_for('static', filename='uploads/avatars/' ~ session.user_avatar) }}" alt="avatar"
                 style="width:20px;height:20px;border-radius:50%;object-fit:cover;margin-right:6px;">
@@ -250,6 +248,7 @@
       </div>
     </div>
   </nav>
+
 
   <!-- ══ Flash messages ═════════════════════════════════════════════════════ -->
   <div class="flash-container" id="flashContainer">

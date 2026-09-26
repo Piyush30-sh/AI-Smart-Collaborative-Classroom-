@@ -96,15 +96,9 @@ body.theme-light {
   color: #14171f;
 }
 
-body.theme-dark .navbar {
-  background: rgba(10, 17, 32, 0.94);
-  border-color: rgba(255, 255, 255, 0.08);
-}
 
-body.theme-light .navbar {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: var(--line);
-}
+/* Navbar background overrides removed — handled by style.css pill design */
+
 
 h1,
 h2,
@@ -4624,14 +4618,7 @@ body {
 
 /* ── Navbar ──────────────────────────────────────────────────────────────── */
 #mainNav {
-  background-color: var(--bs-body-bg);
-  border-bottom: 1px solid var(--bs-border-color);
-  transition: background-color 0.3s;
-}
-
-[data-bs-theme="dark"] #mainNav {
-  background-color: #1a1d23;
-  border-bottom-color: #2d3748;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 /* ── Flash messages ──────────────────────────────────────────────────────── */
@@ -5563,6 +5550,15 @@ html {
 [data-bs-theme="dark"] .navbar {
   background: rgba(5, 16, 46, 0.5) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="light"] #mainNav.navbar,
+[data-bs-theme="dark"] #mainNav.navbar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 [data-bs-theme="dark"] .navbar__logo-text,
