@@ -124,8 +124,8 @@
           </span>
         </div>
         <div class="progress" style="height: 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
-          <div class="progress-bar bg-primary" role="progressbar"
-            style="width: {{ productivity }}%; border-radius: 10px;"></div>
+          <div class="progress-bar bg-primary" role="progressbar" data-progress-width="{{ productivity }}"
+            style="border-radius: 10px;"></div>
         </div>
       </div>
 
@@ -172,8 +172,8 @@
           </span>
         </div>
         <div class="progress" style="height: 6px; border-radius: 10px; background: rgba(0,0,0,0.05);">
-          <div class="progress-bar bg-purple" role="progressbar"
-            style="width: {{ task_pct }}%; background: #9333ea; border-radius: 10px;">
+          <div class="progress-bar bg-purple" role="progressbar" data-progress-width="{{ task_pct }}"
+            style="background: #9333ea; border-radius: 10px;">
           </div>
         </div>
       </div>
@@ -480,6 +480,11 @@
 {% block extra_js %}
 <script id="weeklyData" type="application/json">{{ weekly_data | tojson }}</script>
 <script>
+  document.querySelectorAll('[data-progress-width]').forEach((bar) => {
+    const value = Number(bar.dataset.progressWidth);
+    bar.style.width = `${Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 0}%`;
+  });
+
   // ── Weekly study chart initialization ─────────────────────────────────────
   const rawData = document.getElementById('weeklyData');
   if (rawData) {
