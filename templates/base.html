@@ -58,7 +58,7 @@
       <div class="collapse navbar-collapse" id="navMenu">
 
         <!-- Links -->
-        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0{% if session.get('user_type') == 'faculty' %} navbar-nav--faculty{% endif %}">
           {% if session.get('user_type') == 'faculty' %}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"

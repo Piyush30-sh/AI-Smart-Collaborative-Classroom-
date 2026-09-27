@@ -11,6 +11,14 @@
   --ui-glow-soft: 0 12px 30px rgba(2, 6, 23, 0.08);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+html[data-bs-theme="dark"] {
+       background:rgba(12, 49, 83, 0.137)
+}
+
 body {
   min-height: 100vh;
   background:
@@ -87,6 +95,10 @@ body::after,
 /* ── Desktop: Floating dark pill navbar with raised-circle active icon ── */
 @media (min-width: 992px) {
 
+  #mainNav > .container-fluid {
+    position: relative;
+  }
+
   #mainNav .navbar-brand {
     display: inline-flex;
     align-items: center;
@@ -101,6 +113,7 @@ body::after,
 
   #mainNav .navbar-collapse > .d-flex {
     min-height: 54px;
+    margin-left: auto;
     gap: 0.75rem !important;
     padding: 0.35rem 0.6rem;
     border: 1px solid rgba(27, 42, 74, 0.12);
@@ -120,9 +133,11 @@ body::after,
   #mainNav .navbar-nav {
     align-items: center;
     gap: 0;
-    height: 54px;
-    position: relative;
-    left: -36px;
+    height: 56px;
+    position: absolute;
+    top: 50%;
+    left: calc(50% - 226px);
+    transform: translate(-50%, -50%);
     background: transparent;
     border: 1px solid rgba(27, 42, 74, 0.12);
     border-radius: 50px;
@@ -135,8 +150,15 @@ body::after,
     position: relative;
     display: flex;
     align-items: center;
+    flex: 0 0 78px;
+    width: 78px;
     height: 54px;
     overflow: visible;
+  }
+
+  #mainNav .navbar-nav--faculty > .nav-item:last-child {
+    flex-basis: 120px;
+    width: 120px;
   }
 
   /* Base nav link inside the dark pill */
@@ -146,7 +168,8 @@ body::after,
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0 0.75rem;
+    width: 100%;
+    padding: 0 0.4rem;
     height: 54px;
     color: #5b6270;
     text-decoration: none;
@@ -216,7 +239,7 @@ body::after,
   /* Active label */
   #mainNav .navbar-nav > .nav-item > .nav-link.active .nav-label {
     color: #1b2a4a;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 0.68rem;
     z-index: 5;
   }
