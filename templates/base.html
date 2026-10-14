@@ -58,7 +58,8 @@
       <div class="collapse navbar-collapse" id="navMenu">
 
         <!-- Links -->
-        <ul class="navbar-nav mx-auto mb-2 mb-lg-0{% if session.get('user_type') == 'faculty' %} navbar-nav--faculty{% endif %}">
+        <ul
+          class="navbar-nav mx-auto mb-2 mb-lg-0{% if session.get('user_type') == 'faculty' %} navbar-nav--faculty{% endif %}">
           {% if session.get('user_type') == 'faculty' %}
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'faculty_dashboard' %}active{% endif %}"
@@ -69,13 +70,15 @@
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
               href="{{ url_for('classrooms') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span class="nav-label">Classrooms</span>
+              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span
+                class="nav-label">Classrooms</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'students' %}active{% endif %}"
               href="{{ url_for('students') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-user-graduate"></i></span><span class="nav-label">Students</span>
+              <span class="nav-icon-wrap"><i class="fas fa-user-graduate"></i></span><span
+                class="nav-label">Students</span>
             </a>
           </li>
           <li class="nav-item">
@@ -86,12 +89,14 @@
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
               href="{{ url_for('resources') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span class="nav-label">Resources</span>
+              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span
+                class="nav-label">Resources</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span class="nav-label">Quiz Management</span>
+              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span class="nav-label">Quiz
+                Management</span>
             </a>
           </li>
           {% else %}
@@ -104,13 +109,15 @@
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'classrooms' %}active{% endif %}"
               href="{{ url_for('classrooms') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span class="nav-label">Classrooms</span>
+              <span class="nav-icon-wrap"><i class="fas fa-chalkboard"></i></span><span
+                class="nav-label">Classrooms</span>
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
               href="{{ url_for('resources') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span class="nav-label">Resources</span>
+              <span class="nav-icon-wrap"><i class="fas fa-folder-open"></i></span><span
+                class="nav-label">Resources</span>
             </a>
           </li>
           <li class="nav-item">
@@ -121,7 +128,8 @@
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'planner' %}active{% endif %}" href="{{ url_for('planner') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-calendar-alt"></i></span><span class="nav-label">Planner</span>
+              <span class="nav-icon-wrap"><i class="fas fa-calendar-alt"></i></span><span
+                class="nav-label">Planner</span>
             </a>
           </li>
           <li class="nav-item">
@@ -131,7 +139,8 @@
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'quiz' %}active{% endif %}" href="{{ url_for('quiz') }}">
-              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span class="nav-label">Quiz</span>
+              <span class="nav-icon-wrap"><i class="fas fa-circle-question"></i></span><span
+                class="nav-label">Quiz</span>
             </a>
           </li>
           {% endif %}
