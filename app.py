@@ -1392,18 +1392,88 @@ def _build_dashboard_context(uid, user_type=None):
         (uid, today),
     ).fetchall()
 
-    pending_tasks = conn.execute(
-        "SELECT * FROM tasks WHERE user_id=? AND status='Pending' ORDER BY deadline LIMIT 5",
+    # Personal pending tasks
+    personal_pending = conn.execute(
+        "SELECT id, task_name, subject, deadline, status FROM tasks WHERE user_id=? AND status='Pending' ORDER BY deadline LIMIT 5",
         (uid,),
     ).fetchall()
 
-    total_tasks = conn.execute(
+    # Classroom assignments from faculty (pending/in-progress — not completed)
+    classroom_pending = []
+    if user_type != "faculty":
+        try:
+            ca_rows = conn.execute(
+                """SELECT ca.id, ca.task_name, ca.subject, ca.deadline, ca.status, ca.classroom_id, c.class_name
+                   FROM classroom_assignments ca
+                   JOIN classrooms c ON c.id = ca.classroom_id
+                   WHERE ca.student_id=? AND ca.status NOT IN ('Completed','Submitted')
+                   ORDER BY ca.deadline ASC LIMIT 5""",
+                (uid,),
+            ).fetchall()
+            classroom_pending = [dict(r) for r in ca_rows]
+        except Exception:
+            classroom_pending = []
+
+    # Merge: convert personal tasks to dicts and tag type
+    pending_tasks = [
+        {
+            "id": t["id"],
+            "task_name": t["task_name"],
+            "subject": t["subject"],
+            "deadline": t["deadline"],
+            "status": t["status"],
+            "item_type": "task",
+            "classroom_id": None,
+            "class_name": None,
+        }
+        for t in personal_pending
+    ]
+    for ca in classroom_pending:
+        pending_tasks.append({
+            "id": ca["id"],
+            "task_name": ca["task_name"],
+            "subject": f"{ca['class_name']}: {ca['subject']}" if ca.get("class_name") else ca["subject"],
+            "deadline": ca["deadline"],
+            "status": ca["status"],
+            "item_type": "classroom_assignment",
+            "classroom_id": ca["classroom_id"],
+            "class_name": ca.get("class_name"),
+        })
+
+    # Sort merged list by deadline
+    def _dl(x):
+        try:
+            return date.fromisoformat(str(x.get("deadline", "")).strip()[:10])
+        except Exception:
+            return date.max
+
+    pending_tasks.sort(key=_dl)
+    pending_tasks = pending_tasks[:8]  # cap at 8 items
+
+    # Counts — include both personal tasks AND classroom assignments
+    personal_total = conn.execute(
         "SELECT COUNT(*) AS c FROM tasks WHERE user_id=?", (uid,)
     ).fetchone()["c"]
-
-    completed_count = conn.execute(
+    personal_completed = conn.execute(
         "SELECT COUNT(*) AS c FROM tasks WHERE user_id=? AND status='Completed'", (uid,)
     ).fetchone()["c"]
+
+    if user_type != "faculty":
+        try:
+            ca_total = conn.execute(
+                "SELECT COUNT(*) AS c FROM classroom_assignments WHERE student_id=?", (uid,)
+            ).fetchone()["c"]
+            ca_completed = conn.execute(
+                "SELECT COUNT(*) AS c FROM classroom_assignments WHERE student_id=? AND status IN ('Completed','Submitted')",
+                (uid,),
+            ).fetchone()["c"]
+        except Exception:
+            ca_total, ca_completed = 0, 0
+    else:
+        ca_total, ca_completed = 0, 0
+
+    total_tasks = personal_total + ca_total
+    completed_count = personal_completed + ca_completed
 
     today_hours = conn.execute(
         "SELECT COALESCE(SUM(hours),0) AS t FROM study_sessions WHERE user_id=? AND date=?",
@@ -1626,13 +1696,18 @@ def faculty_dashboard():
     # Weekly analytics for the Chart
     analytics = get_faculty_weekly_analytics(uid, conn)
 
-    # Dynamic engagement score calculation
+    # Real engagement score — weighted average of 3 live signals from DB:
+    #   40%  Assignment completion rate  (tasks marked Completed/Submitted)
+    #   30%  Classroom submission rate   (students who uploaded submissions)
+    #   30%  Quiz participation rate     (students who took faculty quizzes)
+
     total_assigned_row = conn.execute(
         "SELECT COUNT(*) AS total FROM classroom_assignments WHERE faculty_id=?",
         (uid,),
     ).fetchone()
     total_assigned = total_assigned_row["total"] if total_assigned_row else 0
 
+    # Signal 1: Assignment completion rate (40%)
     if total_assigned > 0:
         completed_row = conn.execute(
             """SELECT COUNT(*) AS total FROM classroom_assignments
@@ -1640,11 +1715,38 @@ def faculty_dashboard():
             (uid,),
         ).fetchone()
         completed_cnt = completed_row["total"] if completed_row else 0
-        engagement_score = min(100, max(0, round((completed_cnt / total_assigned) * 100)))
-    elif total_students > 0:
-        engagement_score = 92
+        assign_rate = completed_cnt / total_assigned
     else:
-        engagement_score = 85
+        assign_rate = 0.0
+
+    # Signal 2: Submission rate — distinct students who uploaded a file/text (30%)
+    submissions_row = conn.execute(
+        """SELECT COUNT(DISTINCT cs.student_id) AS submitted
+           FROM classroom_submissions cs
+           JOIN classroom_assignments ca ON ca.id = cs.assignment_id
+           WHERE ca.faculty_id = ?""",
+        (uid,),
+    ).fetchone()
+    submitted_students = submissions_row["submitted"] if submissions_row else 0
+    submit_rate = min(1.0, submitted_students / total_students) if total_students > 0 else 0.0
+
+    # Signal 3: Quiz participation rate — distinct students who attempted a quiz (30%)
+    quiz_participants_row = conn.execute(
+        """SELECT COUNT(DISTINCT qs.student_id) AS participants
+           FROM quiz_submissions qs
+           JOIN quizzes q ON q.id = qs.quiz_id
+           WHERE q.faculty_id = ?""",
+        (uid,),
+    ).fetchone()
+    quiz_participants = quiz_participants_row["participants"] if quiz_participants_row else 0
+    quiz_rate = min(1.0, quiz_participants / total_students) if total_students > 0 else 0.0
+
+    # Weighted final score
+    if total_assigned > 0 or total_students > 0:
+        raw_score = (assign_rate * 0.40) + (submit_rate * 0.30) + (quiz_rate * 0.30)
+        engagement_score = min(100, max(0, round(raw_score * 100)))
+    else:
+        engagement_score = 0
 
     conn.close()
 
@@ -5209,6 +5311,7 @@ def quiz():
                     """SELECT q.*, c.class_name, u.name as faculty_name
                        FROM quizzes q
                        LEFT JOIN classrooms c ON q.classroom_id = c.id
+                       LEFT JOIN users u ON u.id = q.faculty_id
                        WHERE q.id = ? AND q.faculty_id = ?""",
                     (vq_id, uid),
                 ).fetchone()
@@ -5220,9 +5323,14 @@ def quiz():
                         selected_quiz["parsed_data"] = []
 
                     subs = conn.execute(
-                        """SELECT qs.*, u.name as student_name, u.email as student_email, u.avatar
+                        """SELECT qs.id, qs.quiz_id, qs.student_id, qs.classroom_id,
+                                  qs.score, qs.correct_answers, qs.total_questions,
+                                  qs.answers_json, qs.results_json, qs.submitted_at,
+                                  COALESCE(u.name,  qs.student_name)  AS student_name,
+                                  COALESCE(u.email, qs.student_email) AS student_email,
+                                  u.avatar
                            FROM quiz_submissions qs
-                           JOIN users u ON qs.student_id = u.id
+                           LEFT JOIN users u ON qs.student_id = u.id
                            WHERE qs.quiz_id = ?
                            ORDER BY qs.score DESC, qs.submitted_at ASC""",
                         (vq_id,),
@@ -5267,7 +5375,8 @@ def quiz():
                             if not r_item.get("options") and r_idx in quiz_questions_map:
                                 r_item["options"] = quiz_questions_map[r_idx].get("options", [])
             except Exception as e:
-                pass
+                import traceback
+                app.logger.error(f"[quiz view_results] Error loading results for quiz {view_quiz_id}: {e}\n{traceback.format_exc()}")
 
     else:
         # Student View: active live quizzes & completed results

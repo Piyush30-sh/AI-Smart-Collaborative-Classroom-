@@ -439,23 +439,45 @@
           {% for t in pending_tasks %}
           <div class="student-roster-row d-flex align-items-center justify-content-between p-3 mb-2 rounded-3 border">
             <div class="d-flex align-items-center gap-3 overflow-hidden">
-              <div class="stat-icon-badge icon-amber"
+              <div class="stat-icon-badge {% if t.item_type == 'classroom_assignment' %}icon-blue{% else %}icon-amber{% endif %}"
                 style="width: 36px; height: 36px; font-size: 0.9rem; flex-shrink: 0;">
-                <i class="fas fa-clipboard-list"></i>
+                <i class="fas {% if t.item_type == 'classroom_assignment' %}fa-file-lines{% else %}fa-clipboard-list{% endif %}"></i>
               </div>
               <div class="overflow-hidden">
-                <strong class="d-block text-truncate" style="font-size: 0.88rem;">{{ t.task_name }}</strong>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <strong class="d-block text-truncate" style="font-size: 0.88rem;">{{ t.task_name }}</strong>
+                  {% if t.item_type == 'classroom_assignment' %}
+                  <span class="badge rounded-pill bg-info-subtle text-info border border-info border-opacity-25 fw-semibold" style="font-size: 0.65rem; white-space:nowrap;">
+                    <i class="fas fa-chalkboard me-1"></i>Faculty
+                  </span>
+                  {% endif %}
+                </div>
                 <div class="small text-muted d-flex align-items-center gap-2">
                   <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">{{ t.subject }}</span>
                   <span><i class="far fa-calendar-alt me-1"></i>Due {{ t.deadline }}</span>
                 </div>
               </div>
             </div>
+            {% if t.item_type == 'classroom_assignment' %}
+            {# POST form for classroom assignment — routes to the correct handler #}
+            <form method="POST"
+              action="{{ url_for('complete_classroom_assignment', assignment_id=t.id) }}"
+              style="display:inline;">
+              <button type="submit"
+                class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 flex-shrink-0 d-flex align-items-center gap-1"
+                title="Mark Complete">
+                <i class="fas fa-check"></i>
+                <span class="d-none d-sm-inline" style="font-size: 0.78rem;">Done</span>
+              </button>
+            </form>
+            {% else %}
             <a href="{{ url_for('complete_task', tid=t.id) }}"
               class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 flex-shrink-0 d-flex align-items-center gap-1"
               title="Mark Complete">
-              <i class="fas fa-check"></i> <span class="d-none d-sm-inline" style="font-size: 0.78rem;">Done</span>
+              <i class="fas fa-check"></i>
+              <span class="d-none d-sm-inline" style="font-size: 0.78rem;">Done</span>
             </a>
+            {% endif %}
           </div>
           {% endfor %}
         </div>
