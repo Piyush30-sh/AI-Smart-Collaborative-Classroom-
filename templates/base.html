@@ -496,13 +496,32 @@
       }
       fetchNotifications();
     }
-
     async function markAllNotificationsRead(event) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
       const allIds = currentNotifications.map(n => n.id);
+      if (allIds.length === 0) return;
+
+      // Immediately clear badge and dropdown UI
+      const badge = document.getElementById('notifBadgeCount');
+      const headerCount = document.getElementById('notifHeaderCount');
+      const listContainer = document.getElementById('notifList');
+      if (badge) {
+        badge.classList.add('d-none');
+        badge.textContent = '0';
+      }
+      if (headerCount) headerCount.textContent = '0 New';
+      if (listContainer) {
+        listContainer.innerHTML = `
+          <div class="text-center py-4 text-muted small" id="notifEmptyState">
+            <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
+            <p class="mb-0">No new notifications</p>
+          </div>`;
+      }
+      currentNotifications = [];
+
       try {
         await fetch('/api/notifications/read', {
           method: 'POST',
@@ -518,11 +537,6 @@
       fetchNotifications();
       // Poll every 6 seconds for real-time responsiveness
       setInterval(fetchNotifications, 6000);
-
-      const bellBtn = document.getElementById('notificationBellBtn');
-      if (bellBtn) {
-        bellBtn.addEventListener('show.bs.dropdown', markAllSeenOnOpen);
-      }
     });
   </script>
   {% block extra_js %}{% endblock %}
