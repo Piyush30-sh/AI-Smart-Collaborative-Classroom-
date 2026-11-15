@@ -294,12 +294,14 @@
       const toastArea = document.getElementById('toastArea');
       if (!toastArea) return;
 
-      const toastId = `toast-popup-${n.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+      const safeDomId = String(n.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const toastId = `toast-popup-${safeDomId}`;
       if (document.getElementById(toastId)) return;
 
       const toastEl = document.createElement('div');
       toastEl.id = toastId;
-      toastEl.className = `realtime-notif-toast toast-${n.type || 'info'} mb-2 p-3`;
+      toastEl.className = `realtime-notif-toast toast-${n.type || 'info'} mb-2 p-3 shadow-lg bg-body border rounded-4`;
+      toastEl.style.pointerEvents = 'auto'; // Fixes Bootstrap .toast-container blocking clicks
       toastEl.setAttribute('role', 'alert');
       toastEl.setAttribute('aria-live', 'assertive');
 
@@ -315,29 +317,27 @@
             </div>
             <p class="mb-2 text-secondary" style="font-size:0.78rem;line-height:1.35;word-break:break-word;">${n.text}</p>
             <div class="d-flex align-items-center gap-2">
-              <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 py-0.5 fw-semibold" style="font-size:0.72rem;"
-                      onclick="handleNotificationClick(event, '${n.id}', '${n.url || ''}')">
+              <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 py-0.5 fw-semibold js-notif-view"
+                      data-notif-id="${n.id}" data-notif-url="${n.url || ''}" style="font-size:0.72rem;">
                 <i class="fas fa-arrow-up-right-from-square me-1"></i>View
               </button>
-              <button type="button" class="btn btn-light border btn-sm rounded-pill px-2 py-0.5 text-muted" style="font-size:0.72rem;"
-                      onclick="dismissToastPopup(event, '${toastId}', '${n.id}')">
+              <button type="button" class="btn btn-light border btn-sm rounded-pill px-2 py-0.5 text-muted js-notif-dismiss"
+                      data-toast-id="${toastId}" data-notif-id="${n.id}" style="font-size:0.72rem;">
                 Dismiss
               </button>
             </div>
           </div>
-          <button type="button" class="btn-close" style="font-size:0.65rem;" 
-                  onclick="dismissToastPopup(event, '${toastId}', '${n.id}')" aria-label="Close"></button>
+          <button type="button" class="btn-close js-notif-dismiss" data-toast-id="${toastId}" data-notif-id="${n.id}"
+                  style="font-size:0.65rem;" aria-label="Close"></button>
         </div>
       `;
 
       toastArea.appendChild(toastEl);
 
-      // Trigger browser notification if allowed
-      if (typeof showBrowserNotification === 'function') {
-        showBrowserNotification(n.title, n.text);
+      if (typeof sendBrowserNotif === 'function') {
+        sendBrowserNotif(n.title, n.text);
       }
 
-      // Auto-dismiss popup after 8 seconds (still remains in dropdown until opened)
       setTimeout(() => {
         const el = document.getElementById(toastId);
         if (el) {
@@ -348,21 +348,107 @@
       }, 8000);
     }
 
-    function dismissToastPopup(event, toastDomId, notifId) {
+    function openNotificationTarget(targetUrl) {
+      if (!targetUrl || targetUrl === '#') return;
+
+      const parsedUrl = new URL(targetUrl, window.location.origin);
+      const tabParam = parsedUrl.searchParams.get('tab');
+
+      // If already on the same classroom page, activate the tab or chat modal directly
+      if (window.location.pathname === parsedUrl.pathname &&
+          window.location.search.includes(`class_id=${parsedUrl.searchParams.get('class_id')}`)) {
+        if (tabParam) {
+          const tabTrigger = document.querySelector(`[data-bs-target="#${tabParam}"], #${tabParam}-tab`);
+          if (tabTrigger) {
+            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+            return;
+          }
+          if (tabParam.includes('comms')) {
+            const chatBtn = document.querySelector('[data-bs-target*="chatModal"], [data-bs-target*="messageModal"]');
+            if (chatBtn) {
+              chatBtn.click();
+              return;
+            }
+          }
+        }
+      }
+
+      window.location.href = targetUrl;
+    }
+
+    async function handleNotificationClick(notifId, targetUrl) {
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: notifId, action: 'read' })
+        });
+      } catch (e) { }
+
+      const elem = document.getElementById(`notif-elem-${notifId}`);
+      if (elem) {
+        elem.classList.add('opacity-75');
+        elem.classList.remove('bg-primary-subtle', 'bg-opacity-10');
+      }
+      await fetchNotifications(true);
+      openNotificationTarget(targetUrl);
+    }
+
+    async function dismissSingleNotification(notifId, toastDomId = null) {
+      if (toastDomId) {
+        const toastEl = document.getElementById(toastDomId);
+        if (toastEl) toastEl.remove();
+      }
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: notifId, action: 'dismiss' })
+        });
+      } catch (e) { }
+
+      const elem = document.getElementById(`notif-elem-${notifId}`);
+      if (elem) elem.remove();
+      fetchNotifications(true);
+    }
+
+    async function markAllNotificationsRead(event) {
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
-      const el = document.getElementById(toastDomId);
-      if (el) {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(10px)';
-        setTimeout(() => el.remove(), 300);
+      const allIds = currentNotifications.map(n => n.id);
+      if (allIds.length === 0) return;
+
+      const badge = document.getElementById('notifBadgeCount');
+      const headerCount = document.getElementById('notifHeaderCount');
+      const listContainer = document.getElementById('notifList');
+      if (badge) {
+        badge.classList.add('d-none');
+        badge.textContent = '0';
       }
-      dismissSingleNotification(event, notifId);
+      if (headerCount) headerCount.textContent = '0 New';
+      if (listContainer) {
+        listContainer.innerHTML = `
+          <div class="text-center py-4 text-muted small" id="notifEmptyState">
+            <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
+            <p class="mb-0">No notifications</p>
+          </div>`;
+      }
+      currentNotifications = [];
+
+      try {
+        await fetch('/api/notifications/read', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ all: true, ids: allIds, action: 'dismiss' })
+        });
+      } catch (e) { }
+
+      fetchNotifications(true);
     }
 
-    async function fetchNotifications() {
+    async function fetchNotifications(forceRender = false) {
       try {
         const res = await fetch('/api/notifications');
         if (!res.ok) return;
@@ -374,16 +460,14 @@
         const headerCount = document.getElementById('notifHeaderCount');
         const listContainer = document.getElementById('notifList');
 
-        // Check for new arrivals to show toast popups
         if (!isInitialFetch) {
           currentNotifications.forEach(n => {
-            if (!knownNotifIds.has(n.id)) {
+            if (!n.is_read && !knownNotifIds.has(n.id)) {
               triggerRealtimeNotificationToast(n);
             }
           });
         }
 
-        // Update known IDs
         currentNotifications.forEach(n => knownNotifIds.add(n.id));
         isInitialFetch = false;
 
@@ -398,33 +482,37 @@
           }
         }
 
-        if (listContainer) {
+        // Avoid replacing dropdown HTML mid-click while the user is interacting with it
+        const bellBtn = document.getElementById('notificationBellBtn');
+        const isDropdownOpen = bellBtn && bellBtn.getAttribute('aria-expanded') === 'true';
+        if (listContainer && (!isDropdownOpen || forceRender)) {
           if (currentNotifications.length === 0) {
             listContainer.innerHTML = `
               <div class="text-center py-4 text-muted small" id="notifEmptyState">
                 <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
-                <p class="mb-0">No new notifications</p>
+                <p class="mb-0">No notifications</p>
               </div>`;
           } else {
             listContainer.innerHTML = currentNotifications.map(n => `
-              <div class="dropdown-item p-2 rounded-3 mb-1 text-wrap d-flex align-items-start gap-2 border-bottom position-relative notif-item" 
+              <div class="dropdown-item p-2 rounded-3 mb-1 text-wrap d-flex align-items-start gap-2 border-bottom position-relative notif-item ${n.is_read ? 'opacity-75' : 'bg-primary-subtle bg-opacity-10'}" 
                    id="notif-elem-${n.id}"
-                   style="cursor: pointer; transition: background 0.2s;"
-                   onclick="handleNotificationClick(event, '${n.id}', '${n.url || ''}')">
+                   data-notif-id="${n.id}"
+                   data-notif-url="${n.url || ''}"
+                   style="cursor: pointer; transition: background 0.2s;">
                 <div class="p-2 rounded-circle bg-light-subtle border d-flex align-items-center justify-content-center mt-1" style="width: 32px; height: 32px; flex-shrink:0;">
                   <i class="${n.icon || 'fas fa-info-circle text-primary'}"></i>
                 </div>
                 <div class="flex-grow-1 overflow-hidden">
                   <div class="d-flex justify-content-between align-items-center">
-                    <strong style="font-size: 0.85rem;">${n.title}</strong>
+                    <strong style="font-size: 0.85rem; font-weight: ${n.is_read ? '500' : '700'};">${n.title}</strong>
                     <small class="text-muted" style="font-size: 0.68rem;">${n.time || ''}</small>
                   </div>
                   <p class="mb-0 text-secondary text-truncate" style="font-size: 0.78rem;">${n.text}</p>
                 </div>
-                <button type="button" class="btn btn-sm text-muted p-0 ms-1" 
-                        title="Dismiss" 
-                        style="font-size: 0.75rem; line-height: 1;"
-                        onclick="dismissSingleNotification(event, '${n.id}')">
+                <button type="button" class="btn btn-sm text-muted p-0 ms-1 js-notif-item-close" 
+                        title="Remove" 
+                        data-notif-id="${n.id}"
+                        style="font-size: 0.75rem; line-height: 1;">
                   <i class="fas fa-times"></i>
                 </button>
               </div>
@@ -436,107 +524,51 @@
       }
     }
 
-    async function markAllSeenOnOpen() {
-      const badge = document.getElementById('notifBadgeCount');
-      if (badge) {
-        badge.classList.add('d-none');
-        badge.textContent = '0';
-      }
-      if (currentNotifications && currentNotifications.length > 0) {
-        const unreadIds = currentNotifications.map(n => n.id);
-        try {
-          await fetch('/api/notifications/read', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ all: true, ids: unreadIds })
-          });
-          const headerCount = document.getElementById('notifHeaderCount');
-          if (headerCount) headerCount.textContent = '0 New';
-        } catch (e) { }
-      }
-    }
-
-    async function handleNotificationClick(event, notifId, targetUrl) {
-      if (event) event.stopPropagation();
-      try {
-        await fetch('/api/notifications/read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: notifId })
-        });
-      } catch (e) { }
-
-      const elem = document.getElementById(`notif-elem-${notifId}`);
-      if (elem) {
-        elem.remove();
-      }
-      fetchNotifications();
-
-      if (targetUrl && targetUrl !== '#' && targetUrl !== '') {
-        window.location.href = targetUrl;
-      }
-    }
-
-    async function dismissSingleNotification(event, notifId) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      try {
-        await fetch('/api/notifications/read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: notifId })
-        });
-      } catch (e) { }
-
-      const elem = document.getElementById(`notif-elem-${notifId}`);
-      if (elem) {
-        elem.remove();
-      }
-      fetchNotifications();
-    }
-    async function markAllNotificationsRead(event) {
-      if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      const allIds = currentNotifications.map(n => n.id);
-      if (allIds.length === 0) return;
-
-      // Immediately clear badge and dropdown UI
-      const badge = document.getElementById('notifBadgeCount');
-      const headerCount = document.getElementById('notifHeaderCount');
-      const listContainer = document.getElementById('notifList');
-      if (badge) {
-        badge.classList.add('d-none');
-        badge.textContent = '0';
-      }
-      if (headerCount) headerCount.textContent = '0 New';
-      if (listContainer) {
-        listContainer.innerHTML = `
-          <div class="text-center py-4 text-muted small" id="notifEmptyState">
-            <i class="fas fa-bell-slash fa-2x mb-2 opacity-50"></i>
-            <p class="mb-0">No new notifications</p>
-          </div>`;
-      }
-      currentNotifications = [];
-
-      try {
-        await fetch('/api/notifications/read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ all: true, ids: allIds })
-        });
-      } catch (e) { }
-
-      fetchNotifications();
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-      fetchNotifications();
-      // Poll every 6 seconds for real-time responsiveness
-      setInterval(fetchNotifications, 6000);
+      fetchNotifications(true);
+      setInterval(() => fetchNotifications(false), 6000);
+
+      // Event delegation for top dropdown list
+      const listContainer = document.getElementById('notifList');
+      if (listContainer) {
+        listContainer.addEventListener('click', (e) => {
+          const closeBtn = e.target.closest('.js-notif-item-close');
+          if (closeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            dismissSingleNotification(closeBtn.dataset.notifId);
+            return;
+          }
+          const item = e.target.closest('.notif-item');
+          if (item) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleNotificationClick(item.dataset.notifId, item.dataset.notifUrl);
+          }
+        });
+      }
+
+      // Event delegation for bottom-right toast popups
+      const toastArea = document.getElementById('toastArea');
+      if (toastArea) {
+        toastArea.addEventListener('click', (e) => {
+          const dismissBtn = e.target.closest('.js-notif-dismiss');
+          if (dismissBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            dismissSingleNotification(dismissBtn.dataset.notifId, dismissBtn.dataset.toastId);
+            return;
+          }
+          const viewBtn = e.target.closest('.js-notif-view');
+          if (viewBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const toastParent = viewBtn.closest('.realtime-notif-toast');
+            if (toastParent) toastParent.remove();
+            handleNotificationClick(viewBtn.dataset.notifId, viewBtn.dataset.notifUrl);
+          }
+        });
+      }
     });
   </script>
   {% block extra_js %}{% endblock %}
