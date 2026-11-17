@@ -1086,6 +1086,8 @@ def init_db():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(classroom_messages)").fetchall()]
+    if 'is_announcement' not in msg_cols:
+        conn.execute("ALTER TABLE classroom_messages ADD COLUMN is_announcement INTEGER DEFAULT 0")
     if 'read_by_faculty' not in msg_cols:
         conn.execute("ALTER TABLE classroom_messages ADD COLUMN read_by_faculty INTEGER DEFAULT 0")
     if 'read_by_student' not in msg_cols:
@@ -1875,80 +1877,91 @@ def api_chat_history():
     classroom_id = int(classroom_id_raw)
     conn = get_db()
 
-    if user_type == "faculty":
-        classroom = conn.execute(
-            "SELECT id, faculty_id FROM classrooms WHERE id=? AND faculty_id=?",
-            (classroom_id, uid),
-        ).fetchone()
-        if not classroom:
-            conn.close()
-            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+    try:
+        # Ensure is_announcement column exists in the active DB
+        msg_cols = [r[1] for r in conn.execute("PRAGMA table_info(classroom_messages)").fetchall()]
+        if "is_announcement" not in msg_cols:
+            conn.execute("ALTER TABLE classroom_messages ADD COLUMN is_announcement INTEGER DEFAULT 0")
+            conn.commit()
 
-        if not student_id_raw.isdigit():
-            conn.close()
-            return jsonify({"status": "error", "message": "Student ID required."}), 400
+        if user_type == "faculty":
+            classroom = conn.execute(
+                "SELECT id, faculty_id FROM classrooms WHERE id=? AND faculty_id=?",
+                (classroom_id, uid),
+            ).fetchone()
+            if not classroom:
+                return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
 
-        faculty_id = uid
-        student_id = int(student_id_raw)
+            if not student_id_raw.isdigit():
+                return jsonify({"status": "error", "message": "Student ID required."}), 400
 
-        conn.execute(
-            """UPDATE classroom_messages
-               SET read_by_faculty = 1
-               WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?""",
-            (classroom_id, faculty_id, student_id, uid),
-        )
-        conn.commit()
-    else:
-        classroom = conn.execute(
-            """SELECT c.id, c.faculty_id
-               FROM classrooms c
-               JOIN classroom_members cm ON cm.classroom_id = c.id
-               WHERE c.id=? AND cm.student_id=?""",
-            (classroom_id, uid),
-        ).fetchone()
-        if not classroom:
-            conn.close()
-            return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
+            faculty_id = uid
+            student_id = int(student_id_raw)
 
-        faculty_id = classroom["faculty_id"]
-        student_id = uid
+            conn.execute(
+                """UPDATE classroom_messages
+                   SET read_by_faculty = 1
+                   WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?
+                     AND COALESCE(is_announcement, 0) = 0""",
+                (classroom_id, faculty_id, student_id, uid),
+            )
+            conn.commit()
+        else:
+            classroom = conn.execute(
+                """SELECT c.id, c.faculty_id
+                   FROM classrooms c
+                   JOIN classroom_members cm ON cm.classroom_id = c.id
+                   WHERE c.id=? AND cm.student_id=?""",
+                (classroom_id, uid),
+            ).fetchone()
+            if not classroom:
+                return jsonify({"status": "error", "message": "Classroom not found or unauthorized."}), 403
 
-        conn.execute(
-            """UPDATE classroom_messages
-               SET read_by_student = 1
-               WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?""",
-            (classroom_id, faculty_id, student_id, uid),
-        )
-        conn.commit()
+            faculty_id = classroom["faculty_id"]
+            student_id = uid
 
-    messages = conn.execute(
-        """SELECT m.id, m.sender_id, m.message, m.created_at,
-                  COALESCE(m.attachment_path, '') AS attachment_path,
-                  COALESCE(m.attachment_name, '') AS attachment_name,
-                  u.name AS sender_name
-           FROM classroom_messages m
-           JOIN users u ON u.id = m.sender_id
-           WHERE m.classroom_id = ? AND m.faculty_id = ? AND m.student_id = ?
-           ORDER BY m.created_at ASC""",
-        (classroom_id, faculty_id, student_id),
-    ).fetchall()
+            conn.execute(
+                """UPDATE classroom_messages
+                   SET read_by_student = 1
+                   WHERE classroom_id = ? AND faculty_id = ? AND student_id = ? AND sender_id != ?
+                     AND COALESCE(is_announcement, 0) = 0""",
+                (classroom_id, faculty_id, student_id, uid),
+            )
+            conn.commit()
 
-    result = []
-    for m in messages:
-        result.append({
-            "id": m["id"],
-            "sender_id": m["sender_id"],
-            "sender_name": m["sender_name"],
-            "message": m["message"],
-            "created_at": m["created_at"],
-            "attachment_path": m["attachment_path"],
-            "attachment_name": m["attachment_name"],
-            "is_mine": (m["sender_id"] == uid),
-        })
+        messages = conn.execute(
+            """SELECT m.id, m.sender_id, m.message, m.created_at,
+                      COALESCE(m.attachment_path, '') AS attachment_path,
+                      COALESCE(m.attachment_name, '') AS attachment_name,
+                      u.name AS sender_name
+               FROM classroom_messages m
+               JOIN users u ON u.id = m.sender_id
+               WHERE m.classroom_id = ? AND m.faculty_id = ? AND m.student_id = ?
+                 AND COALESCE(m.is_announcement, 0) = 0
+               ORDER BY m.created_at ASC""",
+            (classroom_id, faculty_id, student_id),
+        ).fetchall()
 
-    conn.close()
-    return jsonify({"status": "ok", "messages": result})
+        result = [
+            {
+                "id": m["id"],
+                "sender_id": m["sender_id"],
+                "sender_name": m["sender_name"],
+                "message": m["message"],
+                "created_at": m["created_at"],
+                "attachment_path": m["attachment_path"],
+                "attachment_name": m["attachment_name"],
+                "is_mine": (m["sender_id"] == uid),
+            }
+            for m in messages
+        ]
+        return jsonify({"status": "ok", "messages": result})
 
+    except Exception as exc:
+        app.logger.exception("Error in /api/chat/history")
+        return jsonify({"status": "error", "message": f"Server error: {exc}"}), 500
+    finally:
+        conn.close()
 
 @app.route("/api/chat/send", methods=["POST"])
 @login_required
@@ -2697,6 +2710,7 @@ def classrooms():
                 conn.commit()
                 classroom_messages = conn.execute(
                     """SELECT m.id, m.sender_id, m.message, m.created_at, u.name AS sender_name,
+                                 COALESCE(m.is_announcement, 0) AS is_announcement,
                                  COALESCE(m.attachment_path,'') AS attachment_path,
                                  COALESCE(m.attachment_name,'') AS attachment_name,
                                  COALESCE(m.attachment_mime,'') AS attachment_mime
@@ -2791,6 +2805,7 @@ def classrooms():
 
             classroom_messages = conn.execute(
                 """SELECT m.id, m.sender_id, m.message, m.created_at, u.name AS sender_name,
+                             COALESCE(m.is_announcement, 0) AS is_announcement,
                              COALESCE(m.attachment_path,'') AS attachment_path,
                              COALESCE(m.attachment_name,'') AS attachment_name,
                              COALESCE(m.attachment_mime,'') AS attachment_mime
@@ -2991,13 +3006,28 @@ def classroom_send_message():
     classroom_id_raw = request.form.get("classroom_id", "").strip()
     message = request.form.get("message", "").strip()
     recipient_raw = request.form.get("recipient_student_id", "").strip()
+    attachment = request.files.get("attachment")
 
-    if not classroom_id_raw.isdigit() or not message:
-        flash("Please choose a classroom and enter a message.", "warning")
+    if not classroom_id_raw.isdigit() or (not message and not (attachment and attachment.filename)):
+        flash("Please choose a classroom and enter a message or attachment.", "warning")
         return redirect(url_for("classrooms"))
 
     classroom_id = int(classroom_id_raw)
     conn = get_db()
+
+    attachment_path = ""
+    attachment_name = ""
+    attachment_mime = ""
+    if attachment and attachment.filename:
+        save_dir = os.path.join(UPLOAD_FOLDER, "classroom_messages")
+        os.makedirs(save_dir, exist_ok=True)
+        fname = secure_filename(attachment.filename)
+        unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
+        dest = os.path.join(save_dir, unique)
+        attachment.save(dest)
+        attachment_path = os.path.join("classroom_messages", unique)
+        attachment_name = attachment.filename
+        attachment_mime = attachment.mimetype or ""
 
     if user_type == "faculty":
         classroom = conn.execute(
@@ -3008,24 +3038,7 @@ def classroom_send_message():
             conn.close()
             flash("Classroom not found.", "danger")
             return redirect(url_for("classrooms"))
-        # Allow faculty to send to a single student by id or broadcast to all students using 'all'
-        # Handle optional attachment for faculty messages
-        attachment = request.files.get("attachment")
-        attachment_path = ""
-        attachment_name = ""
-        attachment_mime = ""
-        if attachment and attachment.filename:
-            save_dir = os.path.join(UPLOAD_FOLDER, "classroom_messages")
-            os.makedirs(save_dir, exist_ok=True)
-            fname = secure_filename(attachment.filename)
-            unique = f"{int(datetime.utcnow().timestamp())}_{secrets.token_hex(6)}_{fname}"
-            dest = os.path.join(save_dir, unique)
-            attachment.save(dest)
-            attachment_path = os.path.join("classroom_messages", unique)
-            attachment_name = attachment.filename
-            attachment_mime = attachment.mimetype or ""
 
-        # gather target student ids
         if recipient_raw == "all":
             member_rows = conn.execute(
                 "SELECT student_id FROM classroom_members WHERE classroom_id=?",
@@ -3037,30 +3050,30 @@ def classroom_send_message():
                 flash("No enrolled students to send message.", "warning")
                 return redirect(url_for("classrooms", class_id=classroom_id))
         elif recipient_raw.isdigit():
-            student_id = int(recipient_raw)
+            target_sid = int(recipient_raw)
             member = conn.execute(
                 "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
-                (classroom_id, student_id),
+                (classroom_id, target_sid),
             ).fetchone()
             if not member:
                 conn.close()
                 flash("Student is not part of this classroom.", "danger")
                 return redirect(url_for("classrooms", class_id=classroom_id))
-            targets = [student_id]
+            targets = [target_sid]
         else:
             conn.close()
             flash("Select a student or choose 'All' to broadcast.", "warning")
             return redirect(url_for("classrooms", class_id=classroom_id))
 
         faculty_id = uid
+        is_ann = 1 if recipient_raw == "all" else 0
 
-        # insert a message row for each target student
         for sid in targets:
             conn.execute(
                 """INSERT INTO classroom_messages
                    (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
-                    attachment_path, attachment_name, attachment_mime)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    attachment_path, attachment_name, attachment_mime, is_announcement)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     classroom_id,
                     faculty_id,
@@ -3072,6 +3085,7 @@ def classroom_send_message():
                     attachment_path,
                     attachment_name,
                     attachment_mime,
+                    is_ann,
                 ),
             )
     else:
@@ -3088,20 +3102,19 @@ def classroom_send_message():
             return redirect(url_for("classrooms"))
 
         faculty_id = classroom["faculty_id"]
-        student_id = uid
-        cursor = conn.execute(
+        conn.execute(
             """INSERT INTO classroom_messages
                (classroom_id, faculty_id, student_id, sender_id, message, read_by_faculty, read_by_student,
-                attachment_path, attachment_name, attachment_mime)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                attachment_path, attachment_name, attachment_mime, is_announcement)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)""",
             (
                 classroom_id,
                 faculty_id,
-                student_id,
+                uid,
                 uid,
                 message,
-                1 if user_type == "faculty" else 0,
-                1 if user_type == "student" else 0,
+                0,
+                1,
                 attachment_path,
                 attachment_name,
                 attachment_mime,
@@ -3111,21 +3124,15 @@ def classroom_send_message():
     conn.commit()
     conn.close()
 
-    # If faculty sent the message, only include `student_id` in the redirect
-    # when a single student was targeted. Broadcasting to all students should
-    # redirect to the classroom view without a specific student selected.
     if user_type == "faculty":
-        try:
-            # If a single student was targeted, `recipient_raw` will be a digit
-            # and `student_id` will have been set earlier. Otherwise omit it.
-            if recipient_raw.isdigit():
-                return redirect(url_for("classrooms", class_id=classroom_id, student_id=int(recipient_raw)))
-        except Exception:
-            pass
+        if recipient_raw == "all":
+            flash("Announcement published to all enrolled students.", "success")
+            return redirect(url_for("classrooms", class_id=classroom_id, tab="tab-comms"))
+        if recipient_raw.isdigit():
+            return redirect(url_for("classrooms", class_id=classroom_id, student_id=int(recipient_raw)))
         return redirect(url_for("classrooms", class_id=classroom_id))
 
     return redirect(url_for("classrooms", class_id=classroom_id))
-
 
 @app.route("/classrooms/assignments/<int:assignment_id>/borrow", methods=["POST"])
 @login_required
@@ -6246,23 +6253,24 @@ def api_notifications():
                     "url": url_for("quiz_take", quiz_id=aq["id"])
                 })
 
-            # 1. Faculty messages & announcements in joined classrooms
+            # 1. Faculty announcements & private messages in joined classrooms
             announcements = conn.execute(
-                """SELECT m.id, m.message, m.created_at, u.name as faculty_name, c.class_name, c.id as class_id
+                """SELECT m.id, m.message, m.created_at, COALESCE(m.is_announcement, 0) AS is_announcement,
+                          u.name as faculty_name, c.class_name, c.id as class_id
                    FROM classroom_messages m
                    JOIN users u ON m.sender_id = u.id
                    JOIN classrooms c ON m.classroom_id = c.id
-                   JOIN classroom_members cm ON cm.classroom_id = c.id
-                   WHERE cm.student_id = ? AND m.sender_id != ?
+                   WHERE m.student_id = ? AND m.sender_id != ?
                    ORDER BY m.id DESC LIMIT 6""",
                 (uid, uid),
             ).fetchall()
             for a in announcements:
+                is_ann = int(a["is_announcement"] or 0) == 1
                 notifications.append({
-                    "id": f"ann-{a['id']}",
-                    "type": "announcement",
-                    "icon": "fas fa-bullhorn text-warning",
-                    "title": f"Message from {a['faculty_name']} • {a['class_name']}",
+                    "id": f"{'ann' if is_ann else 'msg'}-{a['id']}",
+                    "type": "announcement" if is_ann else "message",
+                    "icon": "fas fa-bullhorn text-warning" if is_ann else "fas fa-comment-dots text-primary",
+                    "title": f"{'Announcement' if is_ann else 'Message'} from {a['faculty_name']} • {a['class_name']}",
                     "text": a["message"][:80] + ("..." if len(a["message"]) > 80 else ""),
                     "time": a["created_at"],
                     "url": url_for("classrooms", class_id=a["class_id"], tab="tab-student-comms")

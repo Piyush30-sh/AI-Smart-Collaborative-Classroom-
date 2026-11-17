@@ -1419,7 +1419,7 @@
 
             {% if classroom_messages %} 
             {% for msg in classroom_messages|reverse %} 
-            {% if msg.recipient_id == 'all' or not msg.recipient_id %}
+            {% if msg.is_announcement == 1 %}
             <div
               class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}"
             >
@@ -1867,7 +1867,7 @@
               <div class="overflow-auto pe-1" style="max-height: 360px">
                 {% if classroom_messages %} 
                 {% for msg in classroom_messages|reverse %} 
-                {% if msg.recipient_id == 'all' or not msg.recipient_id %}
+                {% if msg.is_announcement == 1 %}
                 <div
                   class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}"
                 >
@@ -1982,7 +1982,7 @@
               >
                 {% if classroom_messages %} 
                 {% for msg in classroom_messages %}
-                {% if msg.recipient_id != 'all' %}
+                {% if msg.is_announcement != 1 %}
                 <div
                   class="bubble-wrap {% if msg.sender_id == session.user_id %}mine{% endif %}"
                 >

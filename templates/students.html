@@ -515,13 +515,23 @@ function openDirectChat(studentId, studentName, classroomId, className) {
   document.getElementById('chatStudentId').value = studentId;
   document.getElementById('chatClassroomId').value = classroomId;
   document.getElementById('privateChatModalLabel').textContent = `Private Chat: ${studentName}`;
-  document.getElementById('modalTargetAvatar').textContent = studentName.charAt(0).toUpperCase();
+  document.getElementById('modalTargetAvatar').textContent = (studentName.replace(/^Prof\.\s*/i, '') || 'S').charAt(0).toUpperCase();
   document.getElementById('modalClassBadge').innerHTML = `<i class="fas fa-chalkboard me-1"></i>${className}`;
-  
+
+  const chatBox = document.getElementById('chatBox');
+  if (chatBox) {
+    chatBox.innerHTML = `
+      <div class="text-center py-4 text-muted" id="chatLoadingSpinner">
+        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+        <div>Loading chat history...</div>
+      </div>`;
+  }
+
   clearAttachment();
   document.getElementById('chatMessageInput').value = '';
 
-  const modal = new bootstrap.Modal(document.getElementById('privateChatModal'));
+  const modalEl = document.getElementById('privateChatModal');
+  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
   modal.show();
 
   loadChatHistory();
@@ -543,53 +553,65 @@ async function loadChatHistory() {
 
   const chatBox = document.getElementById('chatBox');
   try {
-    const res = await fetch(`/api/chat/history?classroom_id=${activeClassroomId}&student_id=${activeStudentId}`);
-    const data = await res.json();
+    const res = await fetch(`/api/chat/history?classroom_id=${encodeURIComponent(activeClassroomId)}&student_id=${encodeURIComponent(activeStudentId)}`);
 
-    if (data.status === 'ok') {
-      const messages = data.messages || [];
-      if (messages.length === 0) {
-        chatBox.innerHTML = `
-          <div class="text-center py-5 text-muted">
-            <i class="fas fa-comments fs-2 mb-2 text-primary opacity-50"></i>
-            <div>No previous messages.</div>
-            <small>Send a direct message below to start the conversation.</small>
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (parseErr) {
+      console.error('Chat history non-JSON error:', res.status, parseErr);
+      chatBox.innerHTML = `<div class="text-center py-4 text-danger small">Failed to load chat (${res.status}). Check Flask console.</div>`;
+      return;
+    }
+
+    if (!res.ok || data.status !== 'ok') {
+      console.error('Chat history error:', res.status, data);
+      chatBox.innerHTML = `<div class="text-center py-4 text-danger small">${escapeHtml(data.message || `Failed to load chat (${res.status}).`)}</div>`;
+      return;
+    }
+
+    const messages = data.messages || [];
+    if (messages.length === 0) {
+      chatBox.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-comments fs-2 mb-2 text-primary opacity-50"></i>
+          <div>No previous messages.</div>
+          <small>Send a direct message below to start the conversation.</small>
+        </div>`;
+      return;
+    }
+
+    let html = '';
+    messages.forEach(m => {
+      const bubbleClass = m.is_mine ? 'chat-bubble-mine' : 'chat-bubble-theirs';
+      const senderLabel = m.is_mine ? 'You' : escapeHtml(m.sender_name || 'User');
+
+      let attachmentHtml = '';
+      if (m.attachment_path && m.attachment_name) {
+        attachmentHtml = `
+          <div>
+            <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" target="_blank" class="chat-attachment-pill">
+              <i class="fas fa-file-arrow-down"></i> ${escapeHtml(m.attachment_name)}
+            </a>
           </div>`;
-        return;
       }
 
-      let html = '';
-      messages.forEach(m => {
-        const bubbleClass = m.is_mine ? 'chat-bubble-mine' : 'chat-bubble-theirs';
-        const senderLabel = m.is_mine ? 'You' : m.sender_name;
-        
-        let attachmentHtml = '';
-        if (m.attachment_path && m.attachment_name) {
-          attachmentHtml = `
-            <div>
-              <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" target="_blank" class="chat-attachment-pill">
-                <i class="fas fa-file-arrow-down"></i> ${m.attachment_name}
-              </a>
-            </div>`;
-        }
+      html += `
+        <div class="chat-bubble ${bubbleClass}">
+          <div class="small fw-bold opacity-75 mb-1" style="font-size:0.75rem;">${senderLabel}</div>
+          <div>${escapeHtml(m.message)}</div>
+          ${attachmentHtml}
+          <span class="chat-time">${m.created_at ? m.created_at.substring(11, 16) : ''}</span>
+        </div>`;
+    });
 
-        html += `
-          <div class="chat-bubble ${bubbleClass}">
-            <div class="small fw-bold opacity-75 mb-1" style="font-size:0.75rem;">${senderLabel}</div>
-            <div>${escapeHtml(m.message)}</div>
-            ${attachmentHtml}
-            <span class="chat-time">${m.created_at ? m.created_at.substring(11, 16) : ''}</span>
-          </div>`;
-      });
-
-      chatBox.innerHTML = html;
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+    chatBox.innerHTML = html;
+    chatBox.scrollTop = chatBox.scrollHeight;
   } catch (err) {
     console.error('Error loading chat:', err);
+    chatBox.innerHTML = `<div class="text-center py-4 text-danger small">Network error while loading chat history.</div>`;
   }
 }
-
 async function sendMessage(event) {
   event.preventDefault();
   const input = document.getElementById('chatMessageInput');
