@@ -354,6 +354,18 @@
       const parsedUrl = new URL(targetUrl, window.location.origin);
       const tabParam = parsedUrl.searchParams.get('tab');
 
+      // If target is students chat and user is already on the students page, trigger chat modal directly
+      if (window.location.pathname.startsWith('/students') && parsedUrl.pathname.startsWith('/students')) {
+        const studentId = parsedUrl.searchParams.get('student_id');
+        const classroomId = parsedUrl.searchParams.get('classroom_id');
+        const studentName = parsedUrl.searchParams.get('student_name') || 'Student';
+        const className = parsedUrl.searchParams.get('class_name') || 'Classroom';
+        if (studentId && typeof openDirectChat === 'function') {
+          openDirectChat(studentId, studentName, classroomId || '', className);
+          return;
+        }
+      }
+
       // If already on the same classroom page, activate the tab or chat modal directly
       if (window.location.pathname === parsedUrl.pathname &&
           window.location.search.includes(`class_id=${parsedUrl.searchParams.get('class_id')}`)) {

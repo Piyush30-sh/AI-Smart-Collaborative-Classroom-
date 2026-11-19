@@ -664,5 +664,29 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+// Auto-open chat modal if target parameters exist in URL (e.g. from notification pop-up View button)
+document.addEventListener('DOMContentLoaded', function () {
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetStudentId = urlParams.get('student_id');
+  const targetClassroomId = urlParams.get('classroom_id');
+  const targetStudentName = urlParams.get('student_name') || 'Student';
+  const targetClassName = urlParams.get('class_name') || 'Classroom';
+
+  if (targetStudentId) {
+    if (!targetClassroomId) {
+      const matchBtn = document.querySelector(`button[onclick*="openDirectChat('${targetStudentId}'"]`) ||
+                       document.querySelector(`button[onclick*='openDirectChat("${targetStudentId}"']`);
+      if (matchBtn) {
+        setTimeout(function () { matchBtn.click(); }, 250);
+        return;
+      }
+    }
+
+    setTimeout(function () {
+      openDirectChat(targetStudentId, targetStudentName, targetClassroomId || '', targetClassName);
+    }, 250);
+  }
+});
 </script>
 {% endblock %}

@@ -6175,11 +6175,11 @@ def api_notifications():
 
             # 3. Messages from students in faculty's classrooms
             recent_msgs = conn.execute(
-                """SELECT m.id, m.message, m.created_at, u.name as sender_name, c.class_name, c.id as class_id
+                """SELECT m.id, m.message, m.created_at, m.sender_id, u.name as sender_name, c.class_name, c.id as class_id
                    FROM classroom_messages m
                    JOIN users u ON m.sender_id = u.id
                    JOIN classrooms c ON m.classroom_id = c.id
-                   WHERE c.faculty_id = ? AND m.sender_id != ?
+                   WHERE c.faculty_id = ? AND m.sender_id != ? AND COALESCE(m.is_announcement, 0) = 0
                    ORDER BY m.id DESC LIMIT 6""",
                 (uid, uid),
             ).fetchall()
@@ -6191,7 +6191,13 @@ def api_notifications():
                     "title": f"Message from {m['sender_name']} • {m['class_name']}",
                     "text": m["message"][:80] + ("..." if len(m["message"]) > 80 else ""),
                     "time": m["created_at"],
-                    "url": url_for("classrooms", class_id=m["class_id"], tab="tab-comms")
+                    "url": url_for(
+                        "students",
+                        student_id=m["sender_id"],
+                        classroom_id=m["class_id"],
+                        student_name=m["sender_name"],
+                        class_name=m["class_name"],
+                    )
                 })
 
             # 4. Student quiz submissions in faculty's quizzes

@@ -183,6 +183,28 @@ class NotificationsTestCase(unittest.TestCase):
         self.assertEqual(cleared_fac_notifs["count"], 0)
         self.assertEqual(len(cleared_fac_notifs["notifications"]), 0)
 
+        # 10. Student sends a message to faculty -> Faculty notification links to /students chat section
+        client.get("/logout")
+        client.post("/login", data={"email": student_email, "password": "password123"}, follow_redirects=True)
+        msg_resp = client.post(
+            "/api/chat/send",
+            data={
+                "classroom_id": str(class_id),
+                "message": "Hello Professor, I have a question regarding Turing reductions.",
+            },
+        )
+        self.assertEqual(msg_resp.status_code, 200)
+
+        # Faculty logs in -> verifies message notification links to student chat section
+        client.get("/logout")
+        client.post("/login", data={"email": faculty_email, "password": "password123"}, follow_redirects=True)
+        fac_notifs = client.get("/api/notifications").get_json()
+        msg_notifs = [n for n in fac_notifs["notifications"] if n["type"] == "message"]
+        self.assertGreaterEqual(len(msg_notifs), 1)
+        self.assertIn("/students", msg_notifs[0]["url"])
+        self.assertIn(f"student_id={ada_user['id']}", msg_notifs[0]["url"])
+        self.assertIn(f"classroom_id={class_id}", msg_notifs[0]["url"])
+
 
 if __name__ == "__main__":
     unittest.main()

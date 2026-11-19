@@ -726,6 +726,15 @@
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0"
+                      style="font-size: 0.72rem; line-height: 1.6"
+                      title="Direct Message"
+                      onclick="openDirectChat('{{ student.id }}', '{{ student.name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
+                    >
+                      <i class="fas fa-comment-dots me-1"></i>Chat
+                    </button>
                     <span
                       class="badge rounded-pill d-none d-sm-inline-block"
                       style="
@@ -2016,23 +2025,29 @@
                 {% endif %}
               </div>
 
-              <!-- Direct message trigger / quick form -->
-              <div class="cls-send-bar">
+              <!-- Direct message inline form (direct typing without opening modal) -->
+              <form
+                id="inlineChatForm"
+                onsubmit="sendInlineMessage(event)"
+                class="cls-send-bar m-0"
+              >
                 <input
                   type="text"
                   id="quickMsgInput"
+                  name="message"
                   placeholder="Ask your faculty a question..."
-                  onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
+                  autocomplete="off"
+                  required
                 />
                 <button
-                  type="button"
+                  type="submit"
+                  id="quickMsgSendBtn"
                   class="cls-send-btn"
-                  onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
-                  title="Open Chat Box"
+                  title="Send Question"
                 >
                   <i class="fas fa-paper-plane"></i>
                 </button>
-              </div>
+              </form>
             </div>
           </div>
         </div>
@@ -3277,6 +3292,95 @@
     return div.innerHTML;
   }
 
+  /* ─── Inline Student Chat in Classroom Page ───────────── */
+  async function sendInlineMessage(event) {
+    if (event) event.preventDefault();
+    const input = document.getElementById("quickMsgInput");
+    if (!input) return;
+    const message = input.value.trim();
+    if (!message) return;
+
+    const btn = document.getElementById("quickMsgSendBtn");
+    if (btn) btn.disabled = true;
+
+    const classroomId = currentClassId || "{{ selected_classroom.id if selected_classroom else '' }}";
+    const formData = new FormData();
+    formData.append("classroom_id", classroomId);
+    formData.append("message", message);
+
+    try {
+      const res = await fetch("/api/chat/send", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.status === "ok") {
+        input.value = "";
+        await loadInlineChatHistory();
+      } else {
+        alert(data.message || "Failed to send message.");
+      }
+    } catch (err) {
+      console.error("Error sending inline message:", err);
+      alert("An error occurred while sending the message.");
+    } finally {
+      if (btn) btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  async function loadInlineChatHistory() {
+    const chatWin = document.getElementById("chatWindow");
+    const classroomId = currentClassId || "{{ selected_classroom.id if selected_classroom else '' }}";
+    if (!chatWin || !classroomId) return;
+
+    try {
+      const res = await fetch(`/api/chat/history?classroom_id=${classroomId}`);
+      const data = await res.json();
+
+      if (data.status === "ok") {
+        const messages = data.messages || [];
+        if (messages.length === 0) {
+          chatWin.innerHTML = `
+            <div class="cls-empty py-4">
+              <div class="cls-empty-icon" style="font-size: 2rem">
+                <i class="fas fa-comments text-primary"></i>
+              </div>
+              <p class="small mb-0">
+                No private messages yet. Send a question to your instructor below!
+              </p>
+            </div>`;
+          return;
+        }
+
+        let html = "";
+        messages.forEach((m) => {
+          const mineClass = m.is_mine ? "mine" : "";
+          let attachmentHtml = "";
+          if (m.attachment_path) {
+            attachmentHtml = `
+              <div class="mt-1">
+                <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" class="small" style="color: var(--cls-primary)">
+                  <i class="fas fa-paperclip me-1"></i>Attachment
+                </a>
+              </div>`;
+          }
+          html += `
+            <div class="bubble-wrap ${mineClass}">
+              <div class="bubble">${escapeHtml(m.message)}</div>
+              ${attachmentHtml}
+              <div class="bubble-ts">${escapeHtml(m.sender_name)} &bull; ${m.created_at || ""}</div>
+            </div>`;
+        });
+        chatWin.innerHTML = html;
+        chatWin.scrollTop = chatWin.scrollHeight;
+      }
+    } catch (err) {
+      console.error("Error refreshing inline chat:", err);
+    }
+  }
+
   /* ─── Track Seen Study Materials / Resources per Classroom ─────── */
   const currentClassId = Number(
     "{{ selected_classroom.id if selected_classroom else 0 }}",
@@ -3423,7 +3527,23 @@
         switchTab(targetBtn, requestedTab);
       }
     }
+    const requestedStudentId = urlParams.get("student_id");
+    if (requestedStudentId && typeof openDirectChat === "function") {
+      const targetStudentName = urlParams.get("student_name") || "Student";
+      const targetClassName = urlParams.get("class_name") || "{{ selected_classroom.class_name|escape if selected_classroom else 'Classroom' }}";
+      setTimeout(function () {
+        openDirectChat(requestedStudentId, targetStudentName, "{{ selected_classroom.id if selected_classroom else '' }}", targetClassName);
+      }, 250);
+    }
     checkUnseenResources();
+
+    // Auto-poll inline chat every 4 seconds when Announcements & Chat tab is active
+    setInterval(function () {
+      const commsTab = document.getElementById("tab-student-comms");
+      if (commsTab && !commsTab.classList.contains("d-none")) {
+        loadInlineChatHistory();
+      }
+    }, 4000);
   });
 
   /* ─── Code copy ─────────────────────────────────── */
