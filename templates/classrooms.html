@@ -1,12 +1,15 @@
-{% extends "base.html" %} 
-{% block title %}Classrooms — AI SmartClass{% endblock %} 
+{% extends "base.html" %}
+{% block title %}Classrooms — AI SmartClass{% endblock %}
 
 {% block extra_css %}
 <style>
   :root {
-    --theme-primary: #0891b2;       /* Base deep cyan */
-    --theme-primary-dark: #0f8c9d;  /* Left-side cyan */
-    --theme-primary-light: #38bdf8; /* Sky blue */
+    --theme-primary: #0891b2;
+    /* Base deep cyan */
+    --theme-primary-dark: #0f8c9d;
+    /* Left-side cyan */
+    --theme-primary-light: #38bdf8;
+    /* Sky blue */
     --theme-primary-subtle: rgba(6, 182, 212, 0.12);
 
     /* Override template variables to replace old blue values */
@@ -38,6 +41,7 @@
     border: 1px solid rgba(6, 182, 212, 0.28) !important;
     transition: all 0.2s ease;
   }
+
   .cls-code-chip:hover {
     background: rgba(6, 182, 212, 0.2) !important;
     border-color: #0891b2 !important;
@@ -51,10 +55,12 @@
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(15, 140, 157, 0.3) !important;
   }
+
   .cls-room-item.active .cls-room-avatar {
     background: rgba(255, 255, 255, 0.22) !important;
     color: #ffffff !important;
   }
+
   .cls-room-item.active .cls-room-meta {
     color: rgba(255, 255, 255, 0.9) !important;
   }
@@ -64,6 +70,7 @@
     color: #0891b2 !important;
     border-bottom: 2px solid #0891b2 !important;
   }
+
   .cls-tab-btn:hover {
     color: #0891b2 !important;
   }
@@ -75,6 +82,7 @@
     color: #ffffff !important;
     box-shadow: 0 4px 12px rgba(15, 140, 157, 0.25) !important;
   }
+
   .btn-primary:hover,
   .btn-primary:focus,
   .btn-primary:active {
@@ -86,6 +94,7 @@
     color: #0891b2 !important;
     border-color: #15aabf !important;
   }
+
   .btn-outline-primary:hover,
   .btn-outline-primary:focus,
   .btn-outline-primary:active {
@@ -98,13 +107,16 @@
   .text-primary {
     color: #0891b2 !important;
   }
+
   .bg-primary {
     background-color: #0891b2 !important;
   }
+
   .bg-primary-subtle {
     background-color: rgba(6, 182, 212, 0.12) !important;
     color: #0891b2 !important;
   }
+
   .border-primary,
   .border-primary-subtle {
     border-color: rgba(6, 182, 212, 0.28) !important;
@@ -115,6 +127,7 @@
   .cls-empty-icon i {
     color: #15aabf !important;
   }
+
   .student-avatar,
   .student-avatar-lg {
     background: rgba(6, 182, 212, 0.15) !important;
@@ -133,17 +146,21 @@
     color: #38bdf8 !important;
     border-color: rgba(56, 189, 248, 0.35) !important;
   }
+
   [data-bs-theme="dark"] .text-primary {
     color: #38bdf8 !important;
   }
+
   [data-bs-theme="dark"] .cls-tab-btn.active {
     color: #38bdf8 !important;
     border-bottom-color: #38bdf8 !important;
   }
+
   [data-bs-theme="dark"] .bg-primary-subtle {
     background-color: rgba(56, 189, 248, 0.16) !important;
     color: #38bdf8 !important;
   }
+
   [data-bs-theme="dark"] .btn-outline-primary {
     color: #38bdf8 !important;
     border-color: #38bdf8 !important;
@@ -159,43 +176,37 @@
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
           <!-- Eyebrow label matching Learning Repository sizing & spacing -->
-          <div class="d-inline-flex align-items-center gap-2 mb-2 fw-bold text-uppercase" 
-               style="font-size: 0.78rem; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.9); line-height: 1;">
+          <div class="d-inline-flex align-items-center gap-2 mb-2 fw-bold text-uppercase"
+            style="font-size: 0.78rem; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.9); line-height: 1;">
             <i class="fas fa-chalkboard-teacher" style="font-size: 0.85rem; opacity: 0.95;"></i>
             <span>Classroom Hub</span>
           </div>
 
-          <h2
-            class="mb-1 text-white"
-            style="
+          <h2 class="mb-1 text-white" style="
               font-family: 'Plus Jakarta Sans', sans-serif;
               font-weight: 800;
-            "
-          >
+            ">
             {% if user_type == 'faculty' %}Manage Your Classrooms{% else %}My Enrolled Classes{% endif %}
           </h2>
           <p class="mb-0 text-white-50" style="font-size: 0.9rem">
-            {% if user_type == 'faculty' %}Create classrooms, manage rosters, assign tasks, and broadcast announcements. {% else %}Access class materials, submit coursework, view announcements, and chat with faculty.{% endif %}
+            {% if user_type == 'faculty' %}Create classrooms, manage rosters, assign tasks, and broadcast announcements.
+            {% else %}Access class materials, submit coursework, view announcements, and chat with faculty.{% endif %}
           </p>
         </div>
         <div class="d-flex gap-3">
-          <div
-            class="text-center"
-            style="
+          <div class="text-center" style="
               background: rgba(255, 255, 255, 0.15);
               border-radius: 12px;
               padding: 0.7rem 1.2rem;
               color: #fff;
-            "
-          >
-            <div
-              style="
+            ">
+            <div style="
                 font-size: 1.5rem;
                 font-weight: 800;
                 font-family: 'Plus Jakarta Sans', sans-serif;
-              "
-            >
-              {% if user_type == 'faculty' %}{{ created_classrooms|length if created_classrooms else 0 }} {% else %}{{ joined_classrooms|length if joined_classrooms else 0 }}{% endif %}
+              ">
+              {% if user_type == 'faculty' %}{{ created_classrooms|length if created_classrooms else 0 }} {% else %}{{
+              joined_classrooms|length if joined_classrooms else 0 }}{% endif %}
             </div>
             <div style="font-size: 0.72rem; opacity: 0.85; font-weight: 600">
               CLASSROOMS
@@ -213,8 +224,7 @@
       <!-- Create / Join Form -->
       <div class="cls-card p-4 mb-4 anim-fade anim-delay-1">
         <div class="d-flex align-items-center gap-2 mb-3">
-          <div
-            style="
+          <div style="
               width: 32px;
               height: 32px;
               background: linear-gradient(135deg, #0f8c9d, #15aabf);
@@ -224,14 +234,11 @@
               justify-content: center;
               color: #fff;
               font-size: 0.8rem;
-            "
-          >
-            {% if user_type == 'faculty' %}<i class="fas fa-plus"></i>{% else %}<i class="fas fa-sign-in-alt"></i>{% endif %}
+            ">
+            {% if user_type == 'faculty' %}<i class="fas fa-plus"></i>{% else %}<i class="fas fa-sign-in-alt"></i>{%
+            endif %}
           </div>
-          <h6
-            class="mb-0 fw-bold"
-            style="font-family: 'Plus Jakarta Sans', sans-serif"
-          >
+          <h6 class="mb-0 fw-bold" style="font-family: 'Plus Jakarta Sans', sans-serif">
             {% if user_type == 'faculty' %}New Classroom{% else %}Join a Class{% endif %}
           </h6>
         </div>
@@ -239,36 +246,18 @@
           {% if user_type == 'faculty' %}
           <div class="cls-input-chip d-flex align-items-center gap-2">
             <i class="fas fa-chalkboard text-primary" style="font-size: 0.85rem"></i>
-            <input
-              type="text"
-              class="form-control"
-              name="class_name"
-              placeholder="Classroom name e.g. CS 401"
-              required
-            />
-            <button
-              class="btn btn-primary btn-sm px-3 rounded-pill"
-              type="submit"
-              style="white-space: nowrap"
-            >
+            <input type="text" class="form-control" name="class_name" placeholder="Classroom name e.g. CS 401"
+              required />
+            <button class="btn btn-primary btn-sm px-3 rounded-pill" type="submit" style="white-space: nowrap">
               Create
             </button>
           </div>
           {% else %}
           <div class="cls-input-chip d-flex align-items-center gap-2">
-            <i class="fas fa-key" style="font-size: 0.85rem; background: linear-gradient(135deg, #0f8c9d, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-            <input
-              type="text"
-              class="form-control"
-              name="class_code"
-              placeholder="Enter class code"
-              required
-            />
-            <button
-              class="btn btn-primary btn-sm px-3 rounded-pill"
-              type="submit"
-              style="white-space: nowrap"
-            >
+            <i class="fas fa-key"
+              style="font-size: 0.85rem; background: linear-gradient(135deg, #0f8c9d, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+            <input type="text" class="form-control" name="class_code" placeholder="Enter class code" required />
+            <button class="btn btn-primary btn-sm px-3 rounded-pill" type="submit" style="white-space: nowrap">
               Join
             </button>
           </div>
@@ -279,67 +268,52 @@
       <!-- Classroom Directory -->
       <div class="cls-card anim-fade anim-delay-2">
         <div class="p-4 pb-2 d-flex align-items-center justify-content-between">
-          <h6
-            class="mb-0 fw-bold"
-            style="font-family: 'Plus Jakarta Sans', sans-serif"
-          >
+          <h6 class="mb-0 fw-bold" style="font-family: 'Plus Jakarta Sans', sans-serif">
             {% if user_type == 'faculty' %}My Classrooms{% else %}Enrolled{% endif %}
           </h6>
-          <span
-            class="badge rounded-pill"
-            style="
+          <span class="badge rounded-pill" style="
               background: var(--cls-primary-light);
               color: var(--cls-primary);
               font-size: 0.72rem;
               font-weight: 600;
-            "
-          >
-            {% if user_type == 'faculty' %}{{ created_classrooms|length if created_classrooms else 0 }} {% else %}{{ joined_classrooms|length if joined_classrooms else 0 }}{% endif %} rooms
+            ">
+            {% if user_type == 'faculty' %}{{ created_classrooms|length if created_classrooms else 0 }} {% else %}{{
+            joined_classrooms|length if joined_classrooms else 0 }}{% endif %} rooms
           </span>
         </div>
         <div class="px-3 pb-3 classroom-list">
-          {% set rooms = created_classrooms if user_type == 'faculty' else joined_classrooms %} 
-          {% if rooms %} 
+          {% set rooms = created_classrooms if user_type == 'faculty' else joined_classrooms %}
+          {% if rooms %}
           {% for item in rooms %}
-          <a
-            href="{{ url_for('classrooms', class_id=item.id) }}"
-            class="cls-room-item {% if selected_classroom and selected_classroom.id == item.id %}active{% endif %}"
-          >
+          <a href="{{ url_for('classrooms', class_id=item.id) }}"
+            class="cls-room-item {% if selected_classroom and selected_classroom.id == item.id %}active{% endif %}">
             <div class="cls-room-avatar">{{ item.class_name[:2]|upper }}</div>
             <div class="flex-grow-1 overflow-hidden">
               <div class="fw-semibold text-truncate" style="font-size: 0.9rem">
                 {{ item.class_name }}
               </div>
-              <div
-                class="cls-room-meta"
-                style="font-size: 0.74rem;"
-              >
+              <div class="cls-room-meta" style="font-size: 0.74rem;">
                 {% if user_type == 'faculty' %}
-                <code
-                  style="
+                <code style="
                     font-size: 0.72rem;
                     color: inherit;
                     background: rgba(255, 255, 255, 0.2);
-                  "
-                  >{{ item.class_code }}</code
-                >
-                &bull; {{ item.student_count }} student{% if item.student_count != 1 %}s{% endif %} 
+                  ">{{ item.class_code }}</code>
+                &bull; {{ item.student_count }} student{% if item.student_count != 1 %}s{% endif %}
                 {% else %}
-                <i
-                  class="fas fa-chalkboard-teacher"
-                  style="font-size: 0.65rem"
-                ></i>
-                {{ item.faculty_name }} 
+                <i class="fas fa-chalkboard-teacher" style="font-size: 0.65rem"></i>
+                {{ item.faculty_name }}
                 {% endif %}
               </div>
             </div>
           </a>
-          {% endfor %} 
+          {% endfor %}
           {% else %}
           <div class="cls-empty py-4">
             <div class="cls-empty-icon"><i class="fas fa-school text-primary"></i></div>
             <p class="small mb-0">
-              No classrooms yet.<br />{% if user_type == 'faculty' %}Create one above.{% else %}Join with a code.{% endif %}
+              No classrooms yet.<br />{% if user_type == 'faculty' %}Create one above.{% else %}Join with a code.{%
+              endif %}
             </p>
           </div>
           {% endif %}
@@ -354,45 +328,32 @@
 
       <!-- Workspace Header -->
       <div
-        class="cls-workspace-header anim-fade d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4"
-      >
+        class="cls-workspace-header anim-fade d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
           <div class="d-flex align-items-center gap-2 mb-1">
-            <span
-              class="badge"
-              style="
+            <span class="badge" style="
                 background: var(--cls-primary-light);
                 color: var(--cls-primary);
                 font-size: 0.72rem;
                 font-weight: 700;
                 letter-spacing: 0.05em;
-              "
-              >ACTIVE WORKSPACE</span
-            >
+              ">ACTIVE WORKSPACE</span>
           </div>
-          <h3
-            class="mb-0 fw-bold"
-            style="font-family: 'Plus Jakarta Sans', sans-serif"
-          >
+          <h3 class="mb-0 fw-bold" style="font-family: 'Plus Jakarta Sans', sans-serif">
             {{ selected_classroom.class_name }}
           </h3>
         </div>
         <div class="d-flex align-items-center gap-3">
           {% if user_type == 'faculty' %}
           <div class="cls-stat-mini">
-            <div
-              class="fw-bold"
-              style="font-size: 1.2rem; color: var(--cls-primary)"
-            >
+            <div class="fw-bold" style="font-size: 1.2rem; color: var(--cls-primary)">
               {{ enrolled_students|length if enrolled_students else 0 }}
             </div>
-            <div
-              style="
+            <div style="
                 font-size: 0.7rem;
                 color: var(--cls-muted);
                 font-weight: 600;
-              "
-            >
+              ">
               STUDENTS
             </div>
           </div>
@@ -400,41 +361,29 @@
             <div class="fw-bold" style="font-size: 1.2rem; color: var(--cls-primary)">
               {{ classroom_assignments|length if classroom_assignments else 0 }}
             </div>
-            <div
-              style="
+            <div style="
                 font-size: 0.7rem;
                 color: var(--cls-muted);
                 font-weight: 600;
-              "
-            >
+              ">
               TASKS
             </div>
           </div>
-          {% endif %} 
+          {% endif %}
           {% if user_type != 'faculty' and (faculty_contact or selected_classroom.faculty_name) %}
-          <button
-            type="button"
+          <button type="button"
             class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-sm d-flex align-items-center gap-1.5"
-            onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
-          >
+            onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')">
             <i class="fas fa-comment-dots"></i>
             <span class="d-none d-sm-inline">Message Faculty</span>
           </button>
           {% endif %}
-          
+
           <!-- Class Code Chip -->
-          <div
-            class="cls-code-chip"
-            onclick="copyCode('{{ selected_classroom.class_code }}')"
-            title="Click to copy"
-          >
+          <div class="cls-code-chip" onclick="copyCode('{{ selected_classroom.class_code }}')" title="Click to copy">
             <i class="fas fa-key" style="font-size: 0.8rem; opacity: 0.85"></i>
             {{ selected_classroom.class_code }}
-            <i
-              class="fas fa-copy"
-              style="font-size: 0.72rem; opacity: 0.7"
-              id="copy-icon"
-            ></i>
+            <i class="fas fa-copy" style="font-size: 0.72rem; opacity: 0.7" id="copy-icon"></i>
           </div>
         </div>
       </div>
@@ -444,45 +393,22 @@
 
       <!-- Tab Navigation -->
       <div class="d-flex cls-tabs mb-4">
-        <button
-          class="cls-tab-btn active"
-          data-tab="tab-students"
-          onclick="switchTab(this, 'tab-students')"
-        >
+        <button class="cls-tab-btn active" data-tab="tab-students" onclick="switchTab(this, 'tab-students')">
           <i class="fas fa-users me-1"></i> Students &amp; Roster
         </button>
-        <button
-          class="cls-tab-btn"
-          data-tab="tab-resources"
-          onclick="switchTab(this, 'tab-resources')"
-        >
+        <button class="cls-tab-btn" data-tab="tab-resources" onclick="switchTab(this, 'tab-resources')">
           <i class="fas fa-folder-open me-1"></i> Study Materials &amp; Resources
-          <span
-            class="badge rounded-pill bg-danger ms-1 d-none"
-            id="resNewBadgeFaculty"
-            style="font-size: 0.65rem"
-            >NEW</span
-          >
+          <span class="badge rounded-pill bg-danger ms-1 d-none" id="resNewBadgeFaculty"
+            style="font-size: 0.65rem">NEW</span>
           {% if classroom_resources %}
-          <span
-            class="badge rounded-pill bg-primary ms-1"
-            style="font-size: 0.68rem"
-            >{{ classroom_resources|length }}</span
-          >
+          <span class="badge rounded-pill bg-primary ms-1" style="font-size: 0.68rem">{{ classroom_resources|length
+            }}</span>
           {% endif %}
         </button>
-        <button
-          class="cls-tab-btn"
-          data-tab="tab-tasks"
-          onclick="switchTab(this, 'tab-tasks')"
-        >
+        <button class="cls-tab-btn" data-tab="tab-tasks" onclick="switchTab(this, 'tab-tasks')">
           <i class="fas fa-tasks me-1"></i> Assignments Monitor
         </button>
-        <button
-          class="cls-tab-btn"
-          data-tab="tab-comms"
-          onclick="switchTab(this, 'tab-comms')"
-        >
+        <button class="cls-tab-btn" data-tab="tab-comms" onclick="switchTab(this, 'tab-comms')">
           <i class="fas fa-bullhorn me-1"></i> Class Announcements
         </button>
       </div>
@@ -494,37 +420,16 @@
           <div class="col-lg-5">
             <!-- Enroll Student Card -->
             <div class="cls-card p-4 mb-4">
-              <h6
-                class="fw-bold mb-3"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h6 class="fw-bold mb-3" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-user-plus text-primary me-2"></i>Enroll Student
               </h6>
-              <form
-                method="post"
-                action="{{ url_for('enroll_student_by_faculty') }}"
-              >
-                <input
-                  type="hidden"
-                  name="classroom_id"
-                  value="{{ selected_classroom.id }}"
-                />
+              <form method="post" action="{{ url_for('enroll_student_by_faculty') }}">
+                <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}" />
                 <div class="cls-input-chip d-flex align-items-center gap-2">
-                  <i
-                    class="fas fa-envelope text-primary"
-                    style="font-size: 0.82rem"
-                  ></i>
-                  <input
-                    type="email"
-                    class="form-control"
-                    name="student_email"
-                    placeholder="student@university.edu"
-                    required
-                  />
-                  <button
-                    class="btn btn-primary btn-sm px-3 rounded-pill"
-                    type="submit"
-                  >
+                  <i class="fas fa-envelope text-primary" style="font-size: 0.82rem"></i>
+                  <input type="email" class="form-control" name="student_email" placeholder="student@university.edu"
+                    required />
+                  <button class="btn btn-primary btn-sm px-3 rounded-pill" type="submit">
                     Enroll
                   </button>
                 </div>
@@ -533,96 +438,44 @@
 
             <!-- Quick Assign Task Card -->
             <div class="cls-card p-4">
-              <h6
-                class="fw-bold mb-3"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h6 class="fw-bold mb-3" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-paper-plane text-primary me-2"></i>Assign Task
               </h6>
-              <form
-                method="post"
-                action="{{ url_for('classroom_assign_task') }}"
-                enctype="multipart/form-data"
-              >
-                <input
-                  type="hidden"
-                  name="classroom_id"
-                  value="{{ selected_classroom.id }}"
-                />
+              <form method="post" action="{{ url_for('classroom_assign_task') }}" enctype="multipart/form-data">
+                <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}" />
                 <div class="mb-2">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Task Title</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Task Title</label>
+                  <input type="text" class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
                       background: var(--cls-bg);
-                    "
-                    name="task_name"
-                    placeholder="e.g. Lab Exercise 1"
-                    required
-                  />
+                    " name="task_name" placeholder="e.g. Lab Exercise 1" required />
                 </div>
                 <div class="row g-2 mb-2">
                   <div class="col-6">
-                    <label
-                      class="form-label small fw-semibold"
-                      style="color: var(--cls-muted)"
-                      >Subject</label
-                    >
-                    <input
-                      type="text"
-                      class="form-control form-control-sm"
-                      style="
+                    <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Subject</label>
+                    <input type="text" class="form-control form-control-sm" style="
                         border-radius: 10px;
                         border: 1px solid var(--cls-border);
                         background: var(--cls-bg);
-                      "
-                      name="subject"
-                      placeholder="General"
-                      required
-                    />
+                      " name="subject" placeholder="General" required />
                   </div>
                   <div class="col-6">
-                    <label
-                      class="form-label small fw-semibold"
-                      style="color: var(--cls-muted)"
-                      >Deadline</label
-                    >
-                    <input
-                      type="date"
-                      class="form-control form-control-sm"
-                      style="
+                    <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Deadline</label>
+                    <input type="date" class="form-control form-control-sm" style="
                         border-radius: 10px;
                         border: 1px solid var(--cls-border);
                         background: var(--cls-bg);
-                      "
-                      name="deadline"
-                      required
-                    />
+                      " name="deadline" required />
                   </div>
                 </div>
                 <div class="mb-2">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Target</label
-                  >
-                  <select
-                    class="form-select form-select-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Target</label>
+                  <select class="form-select form-select-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
                       background: var(--cls-bg);
-                    "
-                    name="target_student_id"
-                    required
-                  >
+                    " name="target_student_id" required>
                     <option value="all">All Enrolled Students</option>
                     {% for student in enrolled_students %}
                     <option value="{{ student.id }}">{{ student.name }}</option>
@@ -630,47 +483,26 @@
                   </select>
                 </div>
                 <div class="mb-2">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Instructions</label
-                  >
-                  <textarea
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Instructions</label>
+                  <textarea class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
                       background: var(--cls-bg);
-                    "
-                    rows="2"
-                    name="instructions"
-                    placeholder="Optional directions..."
-                  ></textarea>
+                    " rows="2" name="instructions" placeholder="Optional directions..."></textarea>
                 </div>
                 <div class="mb-3">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Attachment / Reference Material (Optional)</label
-                  >
-                  <input
-                    type="file"
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Attachment / Reference
+                    Material (Optional)</label>
+                  <input type="file" class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
-                    "
-                    name="attachment"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx"
-                  />
+                    " name="attachment"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx" />
                   <div class="form-text small text-muted">
                     Supports PDFs, documents, code files, notes, and archives.
                   </div>
                 </div>
-                <button
-                  class="btn btn-primary w-100 rounded-pill fw-semibold"
-                  type="submit"
-                >
+                <button class="btn btn-primary w-100 rounded-pill fw-semibold" type="submit">
                   <i class="fas fa-paper-plane me-2"></i>Publish Assignment
                 </button>
               </form>
@@ -680,84 +512,55 @@
           <!-- Student Roster Column -->
           <div class="col-lg-7">
             <div class="cls-card p-4 h-100">
-              <div
-                class="d-flex align-items-center justify-content-between mb-3"
-              >
-                <h6
-                  class="fw-bold mb-0"
-                  style="font-family: 'Plus Jakarta Sans', sans-serif"
-                >
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                   <i class="fas fa-id-card text-primary me-2"></i>Enrolled Students Roster
                 </h6>
-                <span
-                  class="badge rounded-pill"
-                  style="
+                <span class="badge rounded-pill" style="
                     background: var(--cls-primary-light);
                     color: var(--cls-primary);
                     font-weight: 600;
-                  "
-                >
+                  ">
                   {{ enrolled_students|length if enrolled_students else 0 }} Enrolled
                 </span>
               </div>
               {% if enrolled_students %}
               <div style="max-height: 480px; overflow-y: auto">
                 {% for student in enrolled_students %}
-                <div
-                  class="student-roster-row d-flex align-items-center justify-content-between gap-2"
-                >
+                <div class="student-roster-row d-flex align-items-center justify-content-between gap-2">
                   <div class="d-flex align-items-center gap-2 overflow-hidden">
                     <div class="student-avatar">
                       {{ student.name[:2]|upper }}
                     </div>
                     <div class="overflow-hidden">
-                      <div
-                        class="fw-semibold text-truncate"
-                        style="font-size: 0.92rem"
-                      >
+                      <div class="fw-semibold text-truncate" style="font-size: 0.92rem">
                         {{ student.name }}
                       </div>
-                      <div
-                        class="text-truncate"
-                        style="font-size: 0.78rem; color: var(--cls-muted)"
-                      >
+                      <div class="text-truncate" style="font-size: 0.78rem; color: var(--cls-muted)">
                         {{ student.email }}
                       </div>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0"
-                      style="font-size: 0.72rem; line-height: 1.6"
-                      title="Direct Message"
-                      onclick="openDirectChat('{{ student.id }}', '{{ student.name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
-                    >
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0"
+                      style="font-size: 0.72rem; line-height: 1.6" title="Direct Message"
+                      onclick="openDirectChat('{{ student.id }}', '{{ student.name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')">
                       <i class="fas fa-comment-dots me-1"></i>Chat
                     </button>
-                    <span
-                      class="badge rounded-pill d-none d-sm-inline-block"
-                      style="
+                    <span class="badge rounded-pill d-none d-sm-inline-block" style="
                         background: #dcfce7;
                         color: #166534;
                         border: 1px solid #bbf7d0;
                         font-size: 0.72rem;
-                      "
-                    >
+                      ">
                       <i class="fas fa-check-circle me-1"></i>Active
                     </span>
-                    <form
-                      method="post"
+                    <form method="post"
                       action="{{ url_for('remove_student_from_classroom', class_id=selected_classroom.id, student_id=student.id) }}"
                       onsubmit="return confirm('Remove student &quot;{{ student.name|escape }}&quot; from {{ selected_classroom.class_name|escape }}?');"
-                      class="m-0"
-                    >
-                      <button
-                        type="submit"
-                        class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0"
-                        style="font-size: 0.72rem; line-height: 1.6"
-                        title="Remove student from this classroom"
-                      >
+                      class="m-0">
+                      <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-0"
+                        style="font-size: 0.72rem; line-height: 1.6" title="Remove student from this classroom">
                         <i class="fas fa-user-minus"></i>
                       </button>
                     </form>
@@ -783,38 +586,26 @@
       <!-- TAB: Assignments Monitor ──────────────────────────── -->
       <div id="tab-tasks" class="cls-tab-content d-none anim-fade">
         <div class="cls-card p-4">
-          <div
-            class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
-          >
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-              <h6
-                class="fw-bold mb-0"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-clipboard-list text-primary me-2"></i>Assignment &amp; Submission Monitor
               </h6>
-              <small class="text-muted"
-                >Track assigned coursework, evaluate student submissions, and download attached files.</small
-              >
+              <small class="text-muted">Track assigned coursework, evaluate student submissions, and download attached
+                files.</small>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span
-                class="badge rounded-pill"
-                style="
+              <span class="badge rounded-pill" style="
                   background: var(--cls-primary-light);
                   color: var(--cls-primary);
                   font-size: 0.78rem;
                   font-weight: 600;
                   padding: 0.4rem 0.8rem;
-                "
-              >
+                ">
                 {{ classroom_assignments|length if classroom_assignments else 0 }} Assigned
               </span>
-              <button
-                class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm"
-                data-bs-toggle="modal"
-                data-bs-target="#createAssignmentModal"
-              >
+              <button class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm" data-bs-toggle="modal"
+                data-bs-target="#createAssignmentModal">
                 <i class="fas fa-plus me-1"></i>New Assignment
               </button>
             </div>
@@ -837,23 +628,14 @@
                 <tr>
                   <td>
                     <div class="d-flex align-items-center gap-2">
-                      <div
-                        class="student-avatar"
-                        style="width: 32px; height: 32px; font-size: 0.75rem"
-                      >
+                      <div class="student-avatar" style="width: 32px; height: 32px; font-size: 0.75rem">
                         {{ item.student_name[:2]|upper }}
                       </div>
                       <div class="overflow-hidden">
-                        <div
-                          class="fw-semibold text-truncate"
-                          style="font-size: 0.88rem"
-                        >
+                        <div class="fw-semibold text-truncate" style="font-size: 0.88rem">
                           {{ item.student_name }}
                         </div>
-                        <div
-                          class="text-muted text-truncate"
-                          style="font-size: 0.72rem"
-                        >
+                        <div class="text-muted text-truncate" style="font-size: 0.72rem">
                           {{ item.student_email }}
                         </div>
                       </div>
@@ -865,35 +647,26 @@
                     </div>
                     {% if item.attachment_path %}
                     <div class="mt-1 d-flex align-items-center gap-2">
-                      <a
-                        href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
-                        class="small text-decoration-none"
-                        style="color: var(--cls-primary); font-size: 0.74rem"
-                      >
+                      <a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
+                        class="small text-decoration-none" style="color: var(--cls-primary); font-size: 0.74rem">
                         <i class="fas fa-paperclip me-1"></i>{{ item.attachment_name or 'Reference Material' }}
                       </a>
                     </div>
                     {% endif %}
                   </td>
                   <td>
-                    <span
-                      class="badge"
-                      style="
+                    <span class="badge" style="
                         background: var(--cls-bg);
                         color: var(--cls-muted);
                         border: 1px solid var(--cls-border);
                         font-size: 0.72rem;
-                      "
-                      >{{ item.subject }}</span
-                    >
+                      ">{{ item.subject }}</span>
                   </td>
-                  <td
-                    style="
+                  <td style="
                       font-size: 0.82rem;
                       color: var(--cls-muted);
                       white-space: nowrap;
-                    "
-                  >
+                    ">
                     <i class="far fa-calendar-alt me-1"></i>{{ item.deadline }}
                   </td>
                   <td>
@@ -905,75 +678,45 @@
                           font-size: 0.72rem;
                           font-weight: 700;
                           width: fit-content;
-                        "
-                      >
+                        ">
                         <i class="fas fa-check-double me-1"></i>Submitted
                       </span>
                       {% if item.submission_grade %}
                       <span
                         class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5"
-                        style="font-size: 0.68rem; width: fit-content"
-                      >
+                        style="font-size: 0.68rem; width: fit-content">
                         <i class="fas fa-star me-1"></i>Grade: {{ item.submission_grade }}
                       </span>
                       {% endif %}
                     </div>
                     {% elif item.status == 'In Progress' %}
-                    <span
-                      class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2.5 py-1"
-                      style="font-size: 0.72rem"
-                    >
+                    <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2.5 py-1"
+                      style="font-size: 0.72rem">
                       <i class="fas fa-spinner fa-spin me-1"></i>In Progress
                     </span>
                     {% else %}
                     <span
                       class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1"
-                      style="font-size: 0.72rem"
-                    >
+                      style="font-size: 0.72rem">
                       <i class="fas fa-clock me-1"></i>Pending
                     </span>
                     {% endif %}
                   </td>
                   <td class="text-end">
-                    <div
-                      class="d-flex gap-1 justify-content-end align-items-center"
-                    >
-                      <button
-                        class="btn btn-sm btn-outline-primary rounded-pill px-2.5"
-                        data-bs-toggle="modal"
-                        data-bs-target="#submissionReviewModal{{ item.id }}"
-                        title="Review Student Work"
-                      >
-                        <i
-                          class="fas {% if item.submission_id %}fa-file-signature{% else %}fa-eye{% endif %} me-1"
-                        ></i>
+                    <div class="d-flex gap-1 justify-content-end align-items-center">
+                      <button class="btn btn-sm btn-outline-primary rounded-pill px-2.5" data-bs-toggle="modal"
+                        data-bs-target="#submissionReviewModal{{ item.id }}" title="Review Student Work">
+                        <i class="fas {% if item.submission_id %}fa-file-signature{% else %}fa-eye{% endif %} me-1"></i>
                         {% if item.submission_id %}Review{% else %}Details{% endif %}
                       </button>
-                      <button
-                        class="btn btn-sm btn-light border rounded-pill px-2"
-                        data-bs-toggle="modal"
-                        data-bs-target="#editAssignmentModal{{ item.id }}"
-                        title="Edit"
-                      >
-                        <i
-                          class="fas fa-edit"
-                          style="font-size: 0.75rem; color: var(--cls-muted)"
-                        ></i>
+                      <button class="btn btn-sm btn-light border rounded-pill px-2" data-bs-toggle="modal"
+                        data-bs-target="#editAssignmentModal{{ item.id }}" title="Edit">
+                        <i class="fas fa-edit" style="font-size: 0.75rem; color: var(--cls-muted)"></i>
                       </button>
-                      <form
-                        method="post"
-                        action="{{ url_for('delete_classroom_assignment', assignment_id=item.id) }}"
-                        onsubmit="return confirm('Delete this assignment?');"
-                      >
-                        <button
-                          type="submit"
-                          class="btn btn-sm btn-light border rounded-pill px-2"
-                          title="Delete"
-                        >
-                          <i
-                            class="fas fa-trash-alt"
-                            style="font-size: 0.75rem; color: #ef4444"
-                          ></i>
+                      <form method="post" action="{{ url_for('delete_classroom_assignment', assignment_id=item.id) }}"
+                        onsubmit="return confirm('Delete this assignment?');">
+                        <button type="submit" class="btn btn-sm btn-light border rounded-pill px-2" title="Delete">
+                          <i class="fas fa-trash-alt" style="font-size: 0.75rem; color: #ef4444"></i>
                         </button>
                       </form>
                     </div>
@@ -992,11 +735,8 @@
             <p class="small text-muted mb-3">
               Create assignments and tasks with instructions, deadlines, and reference files for your students.
             </p>
-            <button
-              class="btn btn-primary btn-sm rounded-pill px-3"
-              data-bs-toggle="modal"
-              data-bs-target="#createAssignmentModal"
-            >
+            <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="modal"
+              data-bs-target="#createAssignmentModal">
               <i class="fas fa-plus me-1"></i>Create First Assignment
             </button>
           </div>
@@ -1010,132 +750,73 @@
           <!-- Upload Material Column -->
           <div class="col-lg-5">
             <div class="cls-card p-4">
-              <div
-                class="d-flex align-items-center justify-content-between mb-3"
-              >
-                <h6
-                  class="fw-bold mb-0"
-                  style="font-family: 'Plus Jakarta Sans', sans-serif"
-                >
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                   <i class="fas fa-cloud-arrow-up text-primary me-2"></i>Upload Study Material
                 </h6>
-                <span
-                  class="badge rounded-pill"
-                  style="
+                <span class="badge rounded-pill" style="
                     background: var(--cls-primary-light);
                     color: var(--cls-primary);
                     font-size: 0.72rem;
-                  "
-                  >Faculty Upload</span
-                >
+                  ">Faculty Upload</span>
               </div>
 
-              <form
-                method="post"
-                action="{{ url_for('upload_classroom_resource', class_id=selected_classroom.id) }}"
-                enctype="multipart/form-data"
-              >
+              <form method="post" action="{{ url_for('upload_classroom_resource', class_id=selected_classroom.id) }}"
+                enctype="multipart/form-data">
                 <div class="mb-3">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Material Title <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Material Title <span
+                      class="text-danger">*</span></label>
+                  <input type="text" class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
                       background: var(--cls-bg);
-                    "
-                    name="title"
-                    placeholder="e.g. Chapter 4 Lecture Notes &amp; Slides"
-                    required
-                  />
+                    " name="title" placeholder="e.g. Chapter 4 Lecture Notes &amp; Slides" required />
                 </div>
 
                 <div class="mb-3">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Resource Type</label
-                  >
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Resource Type</label>
                   <div class="d-flex gap-3">
                     <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="resource_type"
-                        id="resTypeFile"
-                        value="file"
-                        checked
-                        onchange="toggleResourceType('file')"
-                      />
-                      <label class="form-check-label small" for="resTypeFile"
-                        ><i class="fas fa-file me-1 text-primary"></i>Document / File</label
-                      >
+                      <input class="form-check-input" type="radio" name="resource_type" id="resTypeFile" value="file"
+                        checked onchange="toggleResourceType('file')" />
+                      <label class="form-check-label small" for="resTypeFile"><i
+                          class="fas fa-file me-1 text-primary"></i>Document / File</label>
                     </div>
                     <div class="form-check">
-                      <input
-                        class="form-check-input"
-                        type="radio"
-                        name="resource_type"
-                        id="resTypeLink"
-                        value="link"
-                        onchange="toggleResourceType('link')"
-                      />
-                      <label class="form-check-label small" for="resTypeLink"
-                        ><i class="fas fa-link me-1 text-primary"></i>Web Link / URL</label
-                      >
+                      <input class="form-check-input" type="radio" name="resource_type" id="resTypeLink" value="link"
+                        onchange="toggleResourceType('link')" />
+                      <label class="form-check-label small" for="resTypeLink"><i
+                          class="fas fa-link me-1 text-primary"></i>Web Link / URL</label>
                     </div>
                   </div>
                 </div>
 
                 <div class="mb-3" id="fileUploadContainer">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Choose File <span class="text-danger">*</span></label
-                  >
-                  <input
-                    type="file"
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Choose File <span
+                      class="text-danger">*</span></label>
+                  <input type="file" class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
-                    "
-                    id="resourceFileField"
-                    name="resource_file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.md"
-                  />
+                    " id="resourceFileField" name="resource_file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.md" />
                   <div class="form-text small text-muted">
                     Supports PDF, Word, PowerPoint, Excel, text notes, archives &amp; images.
                   </div>
                 </div>
 
                 <div class="mb-3 d-none" id="linkInputContainer">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Resource URL / Web Link <span class="text-danger">*</span></label
-                  >
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Resource URL / Web Link
+                    <span class="text-danger">*</span></label>
                   <div class="input-group input-group-sm">
                     <span class="input-group-text">
                       <i class="fas fa-globe text-primary"></i>
                     </span>
-                    <input
-                      type="url"
-                      class="form-control"
-                      style="
+                    <input type="url" class="form-control" style="
                         border-radius: 0 10px 10px 0;
                         border: 1px solid var(--cls-border);
                         background: var(--cls-bg);
-                      "
-                      id="externalUrlField"
-                      name="external_url"
-                      placeholder="https://drive.google.com/... or https://youtube.com/..."
-                    />
+                      " id="externalUrlField" name="external_url"
+                      placeholder="https://drive.google.com/... or https://youtube.com/..." />
                   </div>
                   <div class="form-text small text-muted">
                     Link to external slides, videos, articles, or cloud documents.
@@ -1143,28 +824,17 @@
                 </div>
 
                 <div class="mb-3">
-                  <label
-                    class="form-label small fw-semibold"
-                    style="color: var(--cls-muted)"
-                    >Description / Instructions (Optional)</label
-                  >
-                  <textarea
-                    class="form-control form-control-sm"
-                    style="
+                  <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Description / Instructions
+                    (Optional)</label>
+                  <textarea class="form-control form-control-sm" style="
                       border-radius: 10px;
                       border: 1px solid var(--cls-border);
                       background: var(--cls-bg);
-                    "
-                    rows="3"
-                    name="description"
-                    placeholder="Add study guidance, syllabus references, or reading goals..."
-                  ></textarea>
+                    " rows="3" name="description"
+                    placeholder="Add study guidance, syllabus references, or reading goals..."></textarea>
                 </div>
 
-                <button
-                  class="btn btn-primary w-100 rounded-pill fw-semibold"
-                  type="submit"
-                >
+                <button class="btn btn-primary w-100 rounded-pill fw-semibold" type="submit">
                   <i class="fas fa-upload me-2"></i>Publish to Classroom
                 </button>
               </form>
@@ -1174,28 +844,18 @@
           <!-- Repository List Column -->
           <div class="col-lg-7">
             <div class="cls-card p-4 h-100">
-              <div
-                class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
-              >
+              <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <div>
-                  <h6
-                    class="fw-bold mb-0"
-                    style="font-family: 'Plus Jakarta Sans', sans-serif;"
-                  >
+                  <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif;">
                     <i class="fas fa-folder-open text-primary me-2"></i>Study Materials Library
                   </h6>
-                  <small class="text-muted"
-                    >All uploaded notes, PDFs, and shared resources for this class</small
-                  >
+                  <small class="text-muted">All uploaded notes, PDFs, and shared resources for this class</small>
                 </div>
-                <span
-                  class="badge rounded-pill"
-                  style="
+                <span class="badge rounded-pill" style="
                     background: var(--cls-primary-light);
                     color: var(--cls-primary);
                     font-weight: 600;
-                  "
-                >
+                  ">
                   {{ classroom_resources|length if classroom_resources else 0 }} items
                 </span>
               </div>
@@ -1239,89 +899,47 @@
                               {{ r.title }}
                             </div>
                             {% if r.description %}
-                            <div
-                              class="small text-muted text-truncate"
-                              style="max-width: 240px; font-size: 0.78rem"
-                            >
+                            <div class="small text-muted text-truncate" style="max-width: 240px; font-size: 0.78rem">
                               {{ r.description }}
                             </div>
                             {% endif %}
-                            <div
-                              class="d-flex align-items-center gap-2 mt-1"
-                              style="
+                            <div class="d-flex align-items-center gap-2 mt-1" style="
                                 font-size: 0.72rem;
                                 color: var(--cls-muted);
-                              "
-                            >
-                              <span
-                                class="badge bg-light text-secondary border text-uppercase"
-                                style="font-size: 0.65rem"
-                                >{{ r.resource_type }}</span
-                              >
+                              ">
+                              <span class="badge bg-light text-secondary border text-uppercase"
+                                style="font-size: 0.65rem">{{ r.resource_type }}</span>
                               {% if r.file_size %}&bull;
                               <span>{{ r.file_size|filesize_format }}</span>{% endif %}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td
-                        style="
+                      <td style="
                           font-size: 0.78rem;
                           color: var(--cls-muted);
                           white-space: nowrap;
-                        "
-                      >
+                        ">
                         {{ r.created_at[:10] if r.created_at else 'Recent' }}
                       </td>
                       <td class="text-end">
                         <div class="d-flex gap-1 justify-content-end">
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-light border rounded-pill px-2"
-                            data-bs-toggle="modal"
-                            data-bs-target="#resourceModal{{ r.id }}"
-                            title="View Details"
-                          >
-                            <i
-                              class="fas fa-info-circle text-primary"
-                              style="font-size: 0.75rem;"
-                            ></i>
+                          <button type="button" class="btn btn-sm btn-light border rounded-pill px-2"
+                            data-bs-toggle="modal" data-bs-target="#resourceModal{{ r.id }}" title="View Details">
+                            <i class="fas fa-info-circle text-primary" style="font-size: 0.75rem;"></i>
                           </button>
-                          <a
-                            href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}"
-                            target="_blank"
-                            class="btn btn-sm btn-light border rounded-pill px-2"
-                            title="Preview"
-                          >
-                            <i
-                              class="fas fa-eye"
-                              style="font-size: 0.75rem; color: var(--cls-muted)"
-                            ></i>
+                          <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
+                            class="btn btn-sm btn-light border rounded-pill px-2" title="Preview">
+                            <i class="fas fa-eye" style="font-size: 0.75rem; color: var(--cls-muted)"></i>
                           </a>
-                          <a
-                            href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
-                            class="btn btn-sm btn-light border rounded-pill px-2"
-                            title="Download"
-                          >
-                            <i
-                              class="fas fa-download text-primary"
-                              style="font-size: 0.75rem;"
-                            ></i>
+                          <a href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
+                            class="btn btn-sm btn-light border rounded-pill px-2" title="Download">
+                            <i class="fas fa-download text-primary" style="font-size: 0.75rem;"></i>
                           </a>
-                          <form
-                            method="post"
-                            action="{{ url_for('delete_classroom_resource', resource_id=r.id) }}"
-                            onsubmit="return confirm('Delete this study material?');"
-                          >
-                            <button
-                              type="submit"
-                              class="btn btn-sm btn-light border rounded-pill px-2"
-                              title="Delete"
-                            >
-                              <i
-                                class="fas fa-trash-alt"
-                                style="font-size: 0.75rem; color: #ef4444"
-                              ></i>
+                          <form method="post" action="{{ url_for('delete_classroom_resource', resource_id=r.id) }}"
+                            onsubmit="return confirm('Delete this study material?');">
+                            <button type="submit" class="btn btn-sm btn-light border rounded-pill px-2" title="Delete">
+                              <i class="fas fa-trash-alt" style="font-size: 0.75rem; color: #ef4444"></i>
                             </button>
                           </form>
                         </div>
@@ -1352,64 +970,32 @@
         <div class="cls-card p-4">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
-              <h6
-                class="fw-bold mb-0"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-bullhorn text-warning me-2"></i>Classroom Announcements &amp; Broadcast
               </h6>
-              <small class="text-muted"
-                >Broadcast important updates to all students enrolled in this classroom.</small
-              >
+              <small class="text-muted">Broadcast important updates to all students enrolled in this classroom.</small>
             </div>
-            <span
-              class="badge rounded-pill"
-              style="background: rgba(234, 179, 8, 0.15); color: #854d0e"
-            >
+            <span class="badge rounded-pill" style="background: rgba(234, 179, 8, 0.15); color: #854d0e">
               Broadcast Mode
             </span>
           </div>
 
           <!-- Broadcast Form -->
-          <form
-            method="post"
-            action="{{ url_for('classroom_send_message') }}"
-            enctype="multipart/form-data"
-            class="mb-4"
-          >
-            <input
-              type="hidden"
-              name="classroom_id"
-              value="{{ selected_classroom.id }}"
-            />
+          <form method="post" action="{{ url_for('classroom_send_message') }}" enctype="multipart/form-data"
+            class="mb-4">
+            <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}" />
             <input type="hidden" name="recipient_student_id" value="all" />
             <div class="cls-broadcast-bar">
-              <i
-                class="fas fa-volume-up"
-                style="color: #ca8a04; font-size: 0.9rem"
-              ></i>
-              <input
-                type="text"
-                name="message"
-                placeholder="Post an announcement to all students in this classroom..."
-                required
-              />
-              <input
-                type="file"
-                class="form-control form-control-sm border-0"
-                name="attachment"
-                accept=".pdf,image/*"
-                style="max-width: 130px; background: transparent"
-              />
-              <button
-                class="btn btn-sm fw-semibold rounded-pill px-3"
-                style="
+              <i class="fas fa-volume-up" style="color: #ca8a04; font-size: 0.9rem"></i>
+              <input type="text" name="message" placeholder="Post an announcement to all students in this classroom..."
+                required />
+              <input type="file" class="form-control form-control-sm border-0" name="attachment" accept=".pdf,image/*"
+                style="max-width: 130px; background: transparent" />
+              <button class="btn btn-sm fw-semibold rounded-pill px-3" style="
                   background: #fef08a;
                   color: #713f12;
                   border: 1px solid #fde68a;
-                "
-                type="submit"
-              >
+                " type="submit">
                 <i class="fas fa-paper-plane me-1"></i>Publish
               </button>
             </div>
@@ -1418,33 +1004,23 @@
           <!-- Published Announcements Feed -->
           <div>
             <div class="d-flex align-items-center justify-content-between mb-3">
-              <h6
-                class="small fw-bold text-uppercase text-secondary mb-0"
-                style="letter-spacing: 0.05em"
-              >
+              <h6 class="small fw-bold text-uppercase text-secondary mb-0" style="letter-spacing: 0.05em">
                 <i class="fas fa-history me-1"></i>Published Announcements (Latest First)
               </h6>
             </div>
 
-            {% if classroom_messages %} 
-            {% for msg in classroom_messages|reverse %} 
+            {% if classroom_messages %}
+            {% for msg in classroom_messages|reverse %}
             {% if msg.is_announcement == 1 %}
-            <div
-              class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}"
-            >
-              <div
-                class="d-flex justify-content-between align-items-center mb-1"
-              >
+            <div class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}">
+              <div class="d-flex justify-content-between align-items-center mb-1">
                 <div class="d-flex align-items-center gap-2">
                   <span class="fw-bold" style="font-size: 0.9rem">
                     <i class="fas fa-bullhorn text-warning me-1"></i>{{ msg.sender_name }}
                   </span>
                   {% if loop.first %}
-                  <span
-                    class="badge rounded-pill bg-primary"
-                    style="font-size: 0.65rem; letter-spacing: 0.04em"
-                    >LATEST</span
-                  >
+                  <span class="badge rounded-pill bg-primary"
+                    style="font-size: 0.65rem; letter-spacing: 0.04em">LATEST</span>
                   {% endif %}
                 </div>
                 <span class="small text-muted" style="font-size: 0.75rem">
@@ -1456,18 +1032,16 @@
               </p>
               {% if msg.attachment_path %}
               <div class="mt-2">
-                <a
-                  href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
+                <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
                   class="btn btn-sm btn-light border rounded-pill px-3 py-1"
-                  style="font-size: 0.78rem; color: var(--cls-primary)"
-                >
+                  style="font-size: 0.78rem; color: var(--cls-primary)">
                   <i class="fas fa-paperclip me-1"></i>Attached Material
                 </a>
               </div>
               {% endif %}
             </div>
-            {% endif %} 
-            {% endfor %} 
+            {% endif %}
+            {% endfor %}
             {% else %}
             <div class="text-center py-4 bg-light rounded-3 text-muted small">
               <i class="fas fa-bullhorn fa-2x mb-2 opacity-50"></i>
@@ -1483,45 +1057,24 @@
 
       <!-- Student Tab Navigation -->
       <div class="d-flex cls-tabs mb-4">
-        <button
-          class="cls-tab-btn active"
-          data-tab="tab-student-materials"
-          onclick="switchTab(this, 'tab-student-materials')"
-        >
+        <button class="cls-tab-btn active" data-tab="tab-student-materials"
+          onclick="switchTab(this, 'tab-student-materials')">
           <i class="fas fa-folder-open me-1"></i> Study Materials &amp; Notes
-          <span
-            class="badge rounded-pill bg-danger ms-1 d-none"
-            id="resNewBadgeStudent"
-            style="font-size: 0.65rem"
-            >NEW</span
-          >
+          <span class="badge rounded-pill bg-danger ms-1 d-none" id="resNewBadgeStudent"
+            style="font-size: 0.65rem">NEW</span>
           {% if classroom_resources %}
-          <span
-            class="badge rounded-pill bg-primary ms-1"
-            style="font-size: 0.68rem"
-            >{{ classroom_resources|length }}</span
-          >
+          <span class="badge rounded-pill bg-primary ms-1" style="font-size: 0.68rem">{{ classroom_resources|length
+            }}</span>
           {% endif %}
         </button>
-        <button
-          class="cls-tab-btn"
-          data-tab="tab-student-tasks"
-          onclick="switchTab(this, 'tab-student-tasks')"
-        >
-          <i class="fas fa-tasks me-1"></i> Class Assignments 
+        <button class="cls-tab-btn" data-tab="tab-student-tasks" onclick="switchTab(this, 'tab-student-tasks')">
+          <i class="fas fa-tasks me-1"></i> Class Assignments
           {% if classroom_assignments %}
-          <span
-            class="badge rounded-pill bg-success ms-1"
-            style="font-size: 0.68rem"
-            >{{ classroom_assignments|length }}</span
-          >
+          <span class="badge rounded-pill bg-success ms-1" style="font-size: 0.68rem">{{ classroom_assignments|length
+            }}</span>
           {% endif %}
         </button>
-        <button
-          class="cls-tab-btn"
-          data-tab="tab-student-comms"
-          onclick="switchTab(this, 'tab-student-comms')"
-        >
+        <button class="cls-tab-btn" data-tab="tab-student-comms" onclick="switchTab(this, 'tab-student-comms')">
           <i class="fas fa-comments me-1"></i> Announcements &amp; Chat
         </button>
       </div>
@@ -1529,14 +1082,9 @@
       <!-- TAB 1: Student Study Materials ─────────────────────── -->
       <div id="tab-student-materials" class="cls-tab-content anim-fade">
         <div class="cls-card p-4">
-          <div
-            class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4"
-          >
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
-              <h5
-                class="fw-bold mb-1"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h5 class="fw-bold mb-1" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-book-open-reader text-primary me-2"></i>Class Study Materials &amp; Resources
               </h5>
               <p class="text-muted small mb-0">
@@ -1544,16 +1092,14 @@
               </p>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <span
-                class="badge rounded-pill"
-                style="
+              <span class="badge rounded-pill" style="
                   background: var(--cls-primary-light);
                   color: var(--cls-primary);
                   font-weight: 600;
                   padding: 0.45rem 0.85rem;
-                "
-              >
-                <i class="fas fa-folder-open me-1"></i> {{ classroom_resources|length if classroom_resources else 0 }} Shared Items
+                ">
+                <i class="fas fa-folder-open me-1"></i> {{ classroom_resources|length if classroom_resources else 0 }}
+                Shared Items
               </span>
             </div>
           </div>
@@ -1563,90 +1109,60 @@
             {% for r in classroom_resources %}
             <div class="col-md-6 col-xl-4">
               <div
-                class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between bg-light-subtle shadow-sm hover-lift transition"
-              >
+                class="p-3 border rounded-3 h-100 d-flex flex-column justify-content-between bg-light-subtle shadow-sm hover-lift transition">
                 <div>
-                  <div
-                    class="d-flex justify-content-between align-items-start mb-2"
-                  >
+                  <div class="d-flex justify-content-between align-items-start mb-2">
                     <span
                       class="badge rounded-pill {% if r.resource_type == 'pdf' %}bg-danger-subtle text-danger {% elif r.resource_type == 'doc' %}bg-primary-subtle text-primary {% elif r.resource_type == 'presentation' %}bg-warning-subtle text-warning {% elif r.resource_type == 'spreadsheet' %}bg-success-subtle text-success {% elif r.resource_type == 'link' %}bg-info-subtle text-info {% else %}bg-secondary-subtle text-secondary{% endif %} px-2.5 py-1 text-uppercase"
-                      style="font-size: 0.68rem; font-weight: 700"
-                    >
+                      style="font-size: 0.68rem; font-weight: 700">
                       <i
-                        class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} me-1"
-                      ></i>
+                        class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} me-1"></i>
                       {{ r.resource_type }}
                     </span>
-                    <small class="text-muted" style="font-size: 0.72rem"
-                      ><i class="far fa-calendar me-1"></i>{{ r.created_at[:10] if r.created_at else 'Recent' }}</small
-                    >
+                    <small class="text-muted" style="font-size: 0.72rem"><i class="far fa-calendar me-1"></i>{{
+                      r.created_at[:10] if r.created_at else 'Recent' }}</small>
                   </div>
 
-                  <h6
-                    class="fw-bold mb-1"
-                    style="font-size: 0.95rem; line-height: 1.35"
-                  >
+                  <h6 class="fw-bold mb-1" style="font-size: 0.95rem; line-height: 1.35">
                     {{ r.title }}
                   </h6>
 
                   {% if r.description %}
-                  <p
-                    class="text-muted small mb-2"
-                    style="
+                  <p class="text-muted small mb-2" style="
                       font-size: 0.8rem;
                       line-height: 1.4;
                       display: -webkit-box;
                       -webkit-line-clamp: 2;
                       -webkit-box-orient: vertical;
                       overflow: hidden;
-                    "
-                  >
+                    ">
                     {{ r.description }}
                   </p>
                   {% endif %}
 
-                  <div
-                    class="d-flex align-items-center gap-2 mb-3"
-                    style="font-size: 0.74rem; color: var(--cls-muted)"
-                  >
-                    <span
-                      ><i class="fas fa-chalkboard-teacher me-1 text-primary"></i>{{ r.uploader_name }}</span
-                    >
+                  <div class="d-flex align-items-center gap-2 mb-3" style="font-size: 0.74rem; color: var(--cls-muted)">
+                    <span><i class="fas fa-chalkboard-teacher me-1 text-primary"></i>{{ r.uploader_name }}</span>
                     {% if r.file_size %} &bull;
-                    <span
-                      ><i class="fas fa-hard-drive me-1"></i>{{ r.file_size|filesize_format }}</span
-                    >
+                    <span><i class="fas fa-hard-drive me-1"></i>{{ r.file_size|filesize_format }}</span>
                     {% endif %}
                   </div>
                 </div>
 
-                <div
-                  class="pt-3 border-top mt-auto d-flex align-items-center justify-content-between gap-1"
-                >
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1"
-                    style="font-size: 0.76rem; padding: 0.32rem 0.65rem"
-                    data-bs-toggle="modal"
-                    data-bs-target="#resourceModal{{ r.id }}"
-                  >
+                <div class="pt-3 border-top mt-auto d-flex align-items-center justify-content-between gap-1">
+                  <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1"
+                    style="font-size: 0.76rem; padding: 0.32rem 0.65rem" data-bs-toggle="modal"
+                    data-bs-target="#resourceModal{{ r.id }}">
                     <i class="fas fa-circle-info me-1"></i>Details
                   </button>
                   <div class="d-flex align-items-center gap-1">
-                    <a
-                      href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}"
-                      target="_blank"
+                    <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
                       class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1"
-                      style="font-size: 0.76rem; padding: 0.32rem 0.65rem"
-                    >
+                      style="font-size: 0.76rem; padding: 0.32rem 0.65rem">
                       <i class="fas fa-eye me-1"></i>Preview
                     </a>
-                    <a
-                      href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
+                    <a href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
                       class="btn btn-sm btn-primary rounded-pill px-2.5 py-1"
-                      style="font-size: 0.76rem; padding: 0.32rem 0.75rem"
-                    >
+                      style="font-size: 0.76rem; padding: 0.32rem 0.75rem">
                       <i class="fas fa-download me-1"></i>Download
                     </a>
                   </div>
@@ -1672,30 +1188,21 @@
       <!-- TAB 2: Student Assignments ─────────────────────────── -->
       <div id="tab-student-tasks" class="cls-tab-content d-none anim-fade">
         <div class="cls-card p-4">
-          <div
-            class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
-          >
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-              <h6
-                class="fw-bold mb-0"
-                style="font-family: 'Plus Jakarta Sans', sans-serif"
-              >
+              <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                 <i class="fas fa-tasks text-primary me-2"></i>Class Assignments &amp; Tasks
               </h6>
-              <small class="text-muted"
-                >Review coursework assigned by your faculty, reference attached materials, and submit your deliverables.</small
-              >
+              <small class="text-muted">Review coursework assigned by your faculty, reference attached materials, and
+                submit your deliverables.</small>
             </div>
-            <span
-              class="badge rounded-pill"
-              style="
+            <span class="badge rounded-pill" style="
                 background: var(--cls-primary-light);
                 color: var(--cls-primary);
                 font-size: 0.78rem;
                 font-weight: 600;
                 padding: 0.4rem 0.8rem;
-              "
-            >
+              ">
               {{ classroom_assignments|length if classroom_assignments else 0 }} Assigned
             </span>
           </div>
@@ -1719,44 +1226,32 @@
                       {{ item.task_name }}
                     </div>
                     {% if item.instructions %}
-                    <div
-                      class="small text-muted text-truncate mt-0.5"
-                      style="max-width: 280px; font-size: 0.78rem"
-                    >
+                    <div class="small text-muted text-truncate mt-0.5" style="max-width: 280px; font-size: 0.78rem">
                       {{ item.instructions }}
                     </div>
-                    {% endif %} 
+                    {% endif %}
                     {% if item.attachment_path %}
                     <div class="mt-1 d-flex align-items-center gap-2">
-                      <a
-                        href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
-                        class="small text-decoration-none"
-                        style="color: var(--cls-primary); font-size: 0.74rem"
-                      >
+                      <a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
+                        class="small text-decoration-none" style="color: var(--cls-primary); font-size: 0.74rem">
                         <i class="fas fa-paperclip me-1"></i>Reference: {{ item.attachment_name or 'Material' }}
                       </a>
                     </div>
                     {% endif %}
                   </td>
                   <td>
-                    <span
-                      class="badge"
-                      style="
+                    <span class="badge" style="
                         background: var(--cls-bg);
                         color: var(--cls-muted);
                         border: 1px solid var(--cls-border);
                         font-size: 0.72rem;
-                      "
-                      >{{ item.subject }}</span
-                    >
+                      ">{{ item.subject }}</span>
                   </td>
-                  <td
-                    style="
+                  <td style="
                       font-size: 0.82rem;
                       color: var(--cls-muted);
                       white-space: nowrap;
-                    "
-                  >
+                    ">
                     <i class="far fa-calendar-alt me-1"></i>{{ item.deadline }}
                   </td>
                   <td>
@@ -1768,65 +1263,46 @@
                           font-size: 0.72rem;
                           font-weight: 700;
                           width: fit-content;
-                        "
-                      >
+                        ">
                         <i class="fas fa-check-double me-1"></i>Submitted
                       </span>
                       {% if item.submission_grade %}
                       <span
                         class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5"
-                        style="font-size: 0.68rem; width: fit-content"
-                      >
+                        style="font-size: 0.68rem; width: fit-content">
                         <i class="fas fa-star me-1"></i>Grade: {{ item.submission_grade }}
                       </span>
                       {% endif %}
                     </div>
                     {% elif item.status == 'In Progress' %}
-                    <span
-                      class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2.5 py-1"
-                      style="font-size: 0.72rem"
-                    >
+                    <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle px-2.5 py-1"
+                      style="font-size: 0.72rem">
                       <i class="fas fa-spinner fa-spin me-1"></i>In Progress
                     </span>
                     {% else %}
                     <span
                       class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1"
-                      style="font-size: 0.72rem"
-                    >
+                      style="font-size: 0.72rem">
                       <i class="fas fa-clock me-1"></i>Pending
                     </span>
                     {% endif %}
                   </td>
                   <td class="text-end">
-                    <div
-                      class="d-flex gap-1 justify-content-end align-items-center"
-                    >
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-sm"
-                        data-bs-toggle="modal"
-                        data-bs-target="#submitAssignmentModal{{ item.id }}"
-                        style="font-size: 0.78rem"
-                      >
+                    <div class="d-flex gap-1 justify-content-end align-items-center">
+                      <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold shadow-sm"
+                        data-bs-toggle="modal" data-bs-target="#submitAssignmentModal{{ item.id }}"
+                        style="font-size: 0.78rem">
                         <i
-                          class="fas {% if item.submission_id %}fa-pen-to-square{% else %}fa-paper-plane{% endif %} me-1"
-                        ></i>
+                          class="fas {% if item.submission_id %}fa-pen-to-square{% else %}fa-paper-plane{% endif %} me-1"></i>
                         {% if item.submission_id %}Edit Submission{% else %}Submit Work{% endif %}
                       </button>
-                      <form
-                        method="post"
-                        action="{{ url_for('borrow_classroom_assignment', assignment_id=item.id) }}"
-                      >
-                        <button
-                          type="submit"
-                          class="btn btn-sm rounded-pill px-2.5"
-                          style="
+                      <form method="post" action="{{ url_for('borrow_classroom_assignment', assignment_id=item.id) }}">
+                        <button type="submit" class="btn btn-sm rounded-pill px-2.5" style="
                             background: var(--cls-primary-light);
                             color: var(--cls-primary);
                             font-size: 0.75rem;
-                          "
-                          {% if item.borrowed %}disabled title="Already in your task list"{% else %}title="Add to my personal task manager"{% endif %}
-                        >
+                          " {% if item.borrowed %}disabled title="Already in your task list" {% else
+                          %}title="Add to my personal task manager" {% endif %}>
                           <i class="fas fa-bookmark me-1"></i>Borrow
                         </button>
                       </form>
@@ -1857,42 +1333,26 @@
           <!-- Announcements Feed -->
           <div class="col-lg-6">
             <div class="cls-card p-4 h-100">
-              <div
-                class="d-flex align-items-center justify-content-between mb-3"
-              >
-                <h6
-                  class="fw-bold mb-0"
-                  style="font-family: 'Plus Jakarta Sans', sans-serif"
-                >
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
                   <i class="fas fa-bullhorn text-warning me-2"></i>Class Announcements
                 </h6>
-                <span
-                  class="badge rounded-pill bg-light text-secondary border"
-                  style="font-size: 0.7rem"
-                  >Latest First</span
-                >
+                <span class="badge rounded-pill bg-light text-secondary border" style="font-size: 0.7rem">Latest
+                  First</span>
               </div>
 
               <div class="overflow-auto pe-1" style="max-height: 360px">
-                {% if classroom_messages %} 
-                {% for msg in classroom_messages|reverse %} 
+                {% if classroom_messages %}
+                {% for msg in classroom_messages|reverse %}
                 {% if msg.is_announcement == 1 %}
-                <div
-                  class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}"
-                >
-                  <div
-                    class="d-flex justify-content-between align-items-center mb-1"
-                  >
+                <div class="broadcast-feed-item {% if loop.first %}is-latest shadow-sm{% endif %}">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
                     <div class="d-flex align-items-center gap-2">
                       <span class="fw-bold" style="font-size: 0.88rem">
                         {{ msg.sender_name }}
                       </span>
                       {% if loop.first %}
-                      <span
-                        class="badge rounded-pill bg-primary"
-                        style="font-size: 0.62rem"
-                        >LATEST</span
-                      >
+                      <span class="badge rounded-pill bg-primary" style="font-size: 0.62rem">LATEST</span>
                       {% endif %}
                     </div>
                     <span class="small text-muted" style="font-size: 0.72rem">
@@ -1904,18 +1364,16 @@
                   </p>
                   {% if msg.attachment_path %}
                   <div class="mt-2">
-                    <a
-                      href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
+                    <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
                       class="btn btn-sm btn-light border rounded-pill px-3 py-1"
-                      style="font-size: 0.75rem; color: var(--cls-primary)"
-                    >
+                      style="font-size: 0.75rem; color: var(--cls-primary)">
                       <i class="fas fa-paperclip me-1"></i>Attached Material
                     </a>
                   </div>
                   {% endif %}
                 </div>
-                {% endif %} 
-                {% endfor %} 
+                {% endif %}
+                {% endfor %}
                 {% else %}
                 <div class="cls-empty py-4">
                   <div class="cls-empty-icon" style="font-size: 2rem">
@@ -1934,32 +1392,19 @@
           <div class="col-lg-6">
             <div class="cls-card p-4 h-100 d-flex flex-column">
               <div class="mb-3">
-                <div
-                  class="d-flex align-items-center justify-content-between mb-1"
-                >
-                  <h6
-                    class="fw-bold mb-0"
-                    style="font-family: 'Plus Jakarta Sans', sans-serif;"
-                  >
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif;">
                     <i class="fas fa-comments text-primary me-2"></i>Private Chat with Faculty
                   </h6>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-semibold"
-                    onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
-                  >
+                  <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-semibold"
+                    onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')">
                     <i class="fas fa-expand me-1"></i> Open Live Chat Box
                   </button>
                 </div>
                 {% if faculty_contact %}
-                <div
-                  class="d-flex align-items-center justify-content-between mt-2 p-2.5 bg-light rounded-3"
-                >
+                <div class="d-flex align-items-center justify-content-between mt-2 p-2.5 bg-light rounded-3">
                   <div class="d-flex align-items-center gap-2 overflow-hidden">
-                    <div
-                      class="student-avatar"
-                      style="width: 34px; height: 34px; font-size: 0.78rem"
-                    >
+                    <div class="student-avatar" style="width: 34px; height: 34px; font-size: 0.78rem">
                       {{ faculty_contact.name[:2]|upper }}
                     </div>
                     <div class="overflow-hidden">
@@ -1971,12 +1416,9 @@
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1"
+                  <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1"
                     style="font-size: 0.75rem"
-                    onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')"
-                  >
+                    onclick="openDirectChat('{{ faculty_contact.id if faculty_contact else selected_classroom.faculty_id }}', 'Prof. {{ faculty_contact.name if faculty_contact else selected_classroom.faculty_name|escape }}', '{{ selected_classroom.id }}', '{{ selected_classroom.class_name|escape }}')">
                     <i class="fas fa-paper-plane me-1"></i> Direct Message
                   </button>
                 </div>
@@ -1984,25 +1426,16 @@
               </div>
 
               <!-- Chat message history thread -->
-              <div
-                class="chat-window flex-grow-1 mb-3"
-                id="chatWindow"
-                style="max-height: 280px; min-height: 200px"
-              >
-                {% if classroom_messages %} 
+              <div class="chat-window flex-grow-1 mb-3" id="chatWindow" style="max-height: 280px; min-height: 200px">
+                {% if classroom_messages %}
                 {% for msg in classroom_messages %}
                 {% if msg.is_announcement != 1 %}
-                <div
-                  class="bubble-wrap {% if msg.sender_id == session.user_id %}mine{% endif %}"
-                >
+                <div class="bubble-wrap {% if msg.sender_id == session.user_id %}mine{% endif %}">
                   <div class="bubble">{{ msg.message }}</div>
                   {% if msg.attachment_path %}
                   <div class="mt-1">
-                    <a
-                      href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
-                      class="small"
-                      style="color: var(--cls-primary)"
-                    >
+                    <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}" class="small"
+                      style="color: var(--cls-primary)">
                       <i class="fas fa-paperclip me-1"></i>Attachment
                     </a>
                   </div>
@@ -2011,8 +1444,8 @@
                     {{ msg.sender_name }} &bull; {{ msg.created_at }}
                   </div>
                 </div>
-                {% endif %} 
-                {% endfor %} 
+                {% endif %}
+                {% endfor %}
                 {% else %}
                 <div class="cls-empty py-4">
                   <div class="cls-empty-icon" style="font-size: 2rem">
@@ -2026,25 +1459,10 @@
               </div>
 
               <!-- Direct message inline form (direct typing without opening modal) -->
-              <form
-                id="inlineChatForm"
-                onsubmit="sendInlineMessage(event)"
-                class="cls-send-bar m-0"
-              >
-                <input
-                  type="text"
-                  id="quickMsgInput"
-                  name="message"
-                  placeholder="Ask your faculty a question..."
-                  autocomplete="off"
-                  required
-                />
-                <button
-                  type="submit"
-                  id="quickMsgSendBtn"
-                  class="cls-send-btn"
-                  title="Send Question"
-                >
+              <form id="inlineChatForm" onsubmit="sendInlineMessage(event)" class="cls-send-bar m-0">
+                <input type="text" id="quickMsgInput" name="message" placeholder="Ask your faculty a question..."
+                  autocomplete="off" required />
+                <button type="submit" id="quickMsgSendBtn" class="cls-send-btn" title="Send Question">
                   <i class="fas fa-paper-plane"></i>
                 </button>
               </form>
@@ -2053,12 +1471,11 @@
         </div>
       </div>
 
-      {% endif %} 
+      {% endif %}
       {% else %}
       <!-- ─── No classroom selected ───────────────────────────── -->
       <div class="cls-card text-center anim-fade" style="padding: 5rem 2rem">
-        <div
-          style="
+        <div style="
             width: 80px;
             height: 80px;
             background: linear-gradient(135deg, rgba(13, 148, 136, 0.12), rgba(20, 184, 166, 0.18));
@@ -2067,24 +1484,15 @@
             display: flex;
             align-items: center;
             justify-content: center;
-          "
-        >
-          <i
-            class="fas fa-chalkboard"
-            style="font-size: 2rem; color: #0d9488"
-          ></i>
+          ">
+          <i class="fas fa-chalkboard" style="font-size: 2rem; color: #0d9488"></i>
         </div>
-        <h4
-          class="fw-bold mb-2"
-          style="font-family: 'Plus Jakarta Sans', sans-serif"
-        >
+        <h4 class="fw-bold mb-2" style="font-family: 'Plus Jakarta Sans', sans-serif">
           Select a Classroom
         </h4>
-        <p
-          class="mb-0"
-          style="color: var(--cls-muted); max-width: 400px; margin: auto"
-        >
-          Choose an existing classroom from the sidebar, or {% if user_type == 'faculty' %}create a new one{% else %}join with a class code{% endif %} to open the full workspace.
+        <p class="mb-0" style="color: var(--cls-muted); max-width: 400px; margin: auto">
+          Choose an existing classroom from the sidebar, or {% if user_type == 'faculty' %}create a new one{% else
+          %}join with a class code{% endif %} to open the full workspace.
         </p>
       </div>
       {% endif %}
@@ -2096,57 +1504,35 @@
 <!-- /container -->
 
 <!-- ══ RESOURCE DETAILS MODALS ═══════════════════════════════════ -->
-{% if classroom_resources %} 
+{% if classroom_resources %}
 {% for r in classroom_resources %}
-<div
-  class="modal fade"
-  id="resourceModal{{ r.id }}"
-  tabindex="-1"
-  aria-hidden="true"
->
+<div class="modal fade" id="resourceModal{{ r.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 pb-0 pt-4 px-4">
         <div class="d-flex align-items-center gap-2">
-          <div
-            class="p-2 rounded-3"
-            style="
+          <div class="p-2 rounded-3" style="
               background: var(--cls-primary-light);
               color: var(--cls-primary);
-            "
-          >
+            ">
             <i
-              class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} fs-5"
-            ></i>
+              class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} fs-5"></i>
           </div>
           <div>
-            <h5
-              class="modal-title fw-bold mb-0"
-              style="font-family: 'Plus Jakarta Sans', sans-serif"
-            >
+            <h5 class="modal-title fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
               {{ r.title }}
             </h5>
-            <span
-              class="badge bg-secondary-subtle text-secondary text-uppercase"
-              style="font-size: 0.65rem"
-              >{{ r.resource_type }}</span
-            >
+            <span class="badge bg-secondary-subtle text-secondary text-uppercase" style="font-size: 0.65rem">{{
+              r.resource_type }}</span>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body px-4 py-3">
         {% if r.description %}
         <div class="mb-3 p-3 bg-light-subtle border rounded-3">
-          <label
-            class="small fw-bold text-muted text-uppercase mb-1"
-            style="font-size: 0.7rem"
-            >Description &amp; Notes</label
-          >
+          <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.7rem">Description &amp;
+            Notes</label>
           <p class="mb-0 small" style="white-space: pre-wrap; line-height: 1.5">
             {{ r.description }}
           </p>
@@ -2156,10 +1542,7 @@
         <div class="row g-2 mb-2 text-muted small">
           <div class="col-6">
             <div class="p-2 border rounded-3 bg-light-subtle">
-              <div
-                style="font-size: 0.7rem; font-weight: 600"
-                class="text-uppercase text-muted"
-              >
+              <div style="font-size: 0.7rem; font-weight: 600" class="text-uppercase text-muted">
                 Uploaded By
               </div>
               <div class="fw-bold text-truncate">{{ r.uploader_name }}</div>
@@ -2167,10 +1550,7 @@
           </div>
           <div class="col-6">
             <div class="p-2 border rounded-3 bg-light-subtle">
-              <div
-                style="font-size: 0.7rem; font-weight: 600"
-                class="text-uppercase text-muted"
-              >
+              <div style="font-size: 0.7rem; font-weight: 600" class="text-uppercase text-muted">
                 Date Published
               </div>
               <div class="fw-bold">
@@ -2182,185 +1562,104 @@
 
         {% if r.file_name %}
         <div
-          class="p-2 border rounded-3 bg-light-subtle mb-2 text-muted small d-flex justify-content-between align-items-center"
-        >
+          class="p-2 border rounded-3 bg-light-subtle mb-2 text-muted small d-flex justify-content-between align-items-center">
           <span class="text-truncate me-2">
             <i class="fas fa-paperclip me-1 text-primary"></i>{{ r.file_name }}
           </span>
-          {% if r.file_size %}<span class="badge bg-light text-secondary border">{{ r.file_size|filesize_format }}</span>{% endif %}
+          {% if r.file_size %}<span class="badge bg-light text-secondary border">{{ r.file_size|filesize_format
+            }}</span>{% endif %}
         </div>
-        {% endif %} 
+        {% endif %}
         {% if r.external_url %}
         <div class="p-2 border rounded-3 bg-light-subtle mb-2 small">
-          <div
-            style="font-size: 0.7rem; font-weight: 600"
-            class="text-uppercase text-muted mb-1"
-          >
+          <div style="font-size: 0.7rem; font-weight: 600" class="text-uppercase text-muted mb-1">
             External Resource URL
           </div>
-          <a
-            href="{{ r.external_url }}"
-            target="_blank"
-            class="text-primary text-truncate d-block"
-            >{{ r.external_url }}</a
-          >
+          <a href="{{ r.external_url }}" target="_blank" class="text-primary text-truncate d-block">{{ r.external_url
+            }}</a>
         </div>
         {% endif %}
       </div>
       <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-        <button
-          type="button"
-          class="btn btn-light rounded-pill px-3"
-          data-bs-dismiss="modal"
-        >
+        <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">
           Close
         </button>
-        <a
-          href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}"
-          target="_blank"
-          class="btn btn-outline-primary rounded-pill px-3"
-        >
+        <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
+          class="btn btn-outline-primary rounded-pill px-3">
           <i class="fas fa-eye me-1"></i>Preview
         </a>
-        <a
-          href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
-          class="btn btn-primary rounded-pill px-3 fw-semibold"
-        >
+        <a href="{{ url_for('download_classroom_resource', resource_id=r.id) }}"
+          class="btn btn-primary rounded-pill px-3 fw-semibold">
           <i class="fas fa-download me-1"></i>Download
         </a>
       </div>
     </div>
   </div>
 </div>
-{% endfor %} 
+{% endfor %}
 {% endif %}
 
 <!-- ══ CREATE ASSIGNMENT MODAL (Faculty) ═════════════════════ -->
 {% if user_type == 'faculty' and selected_classroom %}
-<div
-  class="modal fade"
-  id="createAssignmentModal"
-  tabindex="-1"
-  aria-hidden="true"
->
+<div class="modal fade" id="createAssignmentModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div
-      class="modal-content border-0 rounded-4 shadow-lg"
-    >
+    <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 pb-0 pt-4 px-4">
         <div class="d-flex align-items-center gap-2">
-          <div
-            class="p-2 rounded-3"
-            style="
+          <div class="p-2 rounded-3" style="
               background: var(--cls-primary-light);
               color: var(--cls-primary);
-            "
-          >
+            ">
             <i class="fas fa-paper-plane fs-5"></i>
           </div>
           <div>
-            <h5
-              class="modal-title fw-bold mb-0"
-              style="font-family: 'Plus Jakarta Sans', sans-serif"
-            >
+            <h5 class="modal-title fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
               Create Classroom Assignment
             </h5>
-            <span class="small text-muted"
-              >Assign work to all or individual students</span
-            >
+            <span class="small text-muted">Assign work to all or individual students</span>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form
-        method="post"
-        action="{{ url_for('classroom_assign_task') }}"
-        enctype="multipart/form-data"
-      >
-        <input
-          type="hidden"
-          name="classroom_id"
-          value="{{ selected_classroom.id }}"
-        />
+      <form method="post" action="{{ url_for('classroom_assign_task') }}" enctype="multipart/form-data">
+        <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}" />
         <div class="modal-body px-4 py-3">
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Task Title <span class="text-danger">*</span></label
-            >
-            <input
-              type="text"
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Task Title <span
+                class="text-danger">*</span></label>
+            <input type="text" class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              name="task_name"
-              placeholder="e.g. Lab Exercise 1: Algorithm Analysis"
-              required
-            />
+              " name="task_name" placeholder="e.g. Lab Exercise 1: Algorithm Analysis" required />
           </div>
           <div class="row g-2 mb-3">
             <div class="col-6">
-              <label
-                class="form-label small fw-semibold"
-                style="color: var(--cls-muted)"
-                >Subject <span class="text-danger">*</span></label
-              >
-              <input
-                type="text"
-                class="form-control"
-                style="
+              <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Subject <span
+                  class="text-danger">*</span></label>
+              <input type="text" class="form-control" style="
                   border-radius: 10px;
                   background: var(--cls-bg);
                   border: 1px solid var(--cls-border);
-                "
-                name="subject"
-                placeholder="e.g. Computer Science"
-                required
-              />
+                " name="subject" placeholder="e.g. Computer Science" required />
             </div>
             <div class="col-6">
-              <label
-                class="form-label small fw-semibold"
-                style="color: var(--cls-muted)"
-                >Deadline <span class="text-danger">*</span></label
-              >
-              <input
-                type="date"
-                class="form-control"
-                style="
+              <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Deadline <span
+                  class="text-danger">*</span></label>
+              <input type="date" class="form-control" style="
                   border-radius: 10px;
                   background: var(--cls-bg);
                   border: 1px solid var(--cls-border);
-                "
-                name="deadline"
-                required
-              />
+                " name="deadline" required />
             </div>
           </div>
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Assign To</label
-            >
-            <select
-              class="form-select"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Assign To</label>
+            <select class="form-select" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              name="target_student_id"
-              required
-            >
+              " name="target_student_id" required>
               <option value="all">
                 All Enrolled Students ({{ enrolled_students|length if enrolled_students else 0 }})
               </option>
@@ -2372,53 +1671,31 @@
             </select>
           </div>
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Instructions &amp; Requirements</label
-            >
-            <textarea
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Instructions &amp;
+              Requirements</label>
+            <textarea class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              rows="3"
-              name="instructions"
-              placeholder="Provide problem statement, guidelines, formatting requirements..."
-            ></textarea>
+              " rows="3" name="instructions"
+              placeholder="Provide problem statement, guidelines, formatting requirements..."></textarea>
           </div>
           <div class="mb-2">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Reference Material / Starter File (Optional)</label
-            >
-            <input
-              type="file"
-              class="form-control"
-              style="border-radius: 10px; border: 1px solid var(--cls-border)"
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Reference Material / Starter
+              File (Optional)</label>
+            <input type="file" class="form-control" style="border-radius: 10px; border: 1px solid var(--cls-border)"
               name="attachment"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx"
-            />
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx" />
             <div class="form-text small text-muted">
               Upload rubric, starter code, problem sheet, or assignment PDF.
             </div>
           </div>
         </div>
         <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-          <button
-            type="button"
-            class="btn btn-light rounded-pill px-4"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button
-            type="submit"
-            class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
-          >
+          <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
             <i class="fas fa-paper-plane me-1"></i>Publish Assignment
           </button>
         </div>
@@ -2429,57 +1706,33 @@
 {% endif %}
 
 <!-- ══ SUBMISSION REVIEW MODALS (Faculty) ════════════════════════ -->
-{% if user_type == 'faculty' and classroom_assignments %} 
+{% if user_type == 'faculty' and classroom_assignments %}
 {% for item in classroom_assignments %}
-<div
-  class="modal fade"
-  id="submissionReviewModal{{ item.id }}"
-  tabindex="-1"
-  aria-hidden="true"
->
+<div class="modal fade" id="submissionReviewModal{{ item.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 pb-0 pt-4 px-4">
         <div class="d-flex align-items-center gap-3">
-          <div
-            class="student-avatar"
-            style="width: 42px; height: 42px; font-size: 1rem"
-          >
+          <div class="student-avatar" style="width: 42px; height: 42px; font-size: 1rem">
             {{ item.student_name[:2]|upper }}
           </div>
           <div>
-            <h5
-              class="modal-title fw-bold mb-0"
-              style="font-family: 'Plus Jakarta Sans', sans-serif"
-            >
+            <h5 class="modal-title fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
               {{ item.task_name }}
             </h5>
-            <span class="small text-muted"
-              >{{ item.student_name }} &bull; {{ item.student_email }}</span
-            >
+            <span class="small text-muted">{{ item.student_name }} &bull; {{ item.student_email }}</span>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body px-4 py-3">
         <!-- Assignment Metadata Summary -->
         <div class="p-3 bg-light-subtle border rounded-3 mb-3">
-          <div
-            class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2"
-          >
-            <span
-              class="badge bg-primary-subtle text-primary border text-uppercase"
-              style="font-size: 0.68rem"
-              >{{ item.subject }}</span
-            >
-            <span class="small text-muted"
-              ><i class="far fa-calendar-alt me-1"></i>Deadline:
-              <strong>{{ item.deadline }}</strong></span
-            >
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <span class="badge bg-primary-subtle text-primary border text-uppercase" style="font-size: 0.68rem">{{
+              item.subject }}</span>
+            <span class="small text-muted"><i class="far fa-calendar-alt me-1"></i>Deadline:
+              <strong>{{ item.deadline }}</strong></span>
           </div>
           {% if item.instructions %}
           <div class="small mb-2">
@@ -2488,17 +1741,13 @@
               {{ item.instructions }}
             </div>
           </div>
-          {% endif %} 
+          {% endif %}
           {% if item.attachment_path %}
           <div class="pt-2 border-top">
-            <span class="small text-muted me-2"
-              ><i class="fas fa-paperclip text-primary me-1"></i>Reference Attachment:</span
-            >
-            <a
-              href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
-              class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0.5"
-              style="font-size: 0.72rem"
-            >
+            <span class="small text-muted me-2"><i class="fas fa-paperclip text-primary me-1"></i>Reference
+              Attachment:</span>
+            <a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
+              class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0.5" style="font-size: 0.72rem">
               <i class="fas fa-download me-1"></i>Download {{ item.attachment_name or 'Material' }}
             </a>
           </div>
@@ -2519,26 +1768,18 @@
 
           {% if item.submission_text %}
           <div class="mb-3">
-            <label
-              class="small fw-bold text-muted text-uppercase mb-1"
-              style="font-size: 0.7rem"
-              >Student Notes / Response Text</label
-            >
-            <div
-              class="p-3 bg-light border rounded-3 small"
-              style="white-space: pre-wrap; line-height: 1.5"
-            >
+            <label class="small fw-bold text-muted text-uppercase mb-1" style="font-size: 0.7rem">Student Notes /
+              Response Text</label>
+            <div class="p-3 bg-light border rounded-3 small" style="white-space: pre-wrap; line-height: 1.5">
               {{ item.submission_text }}
             </div>
           </div>
-          {% endif %} 
+          {% endif %}
           {% if item.submission_file_path %}
           <div
-            class="p-3 border rounded-3 bg-light-subtle d-flex flex-wrap align-items-center justify-content-between gap-2"
-          >
+            class="p-3 border rounded-3 bg-light-subtle d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="d-flex align-items-center gap-2 overflow-hidden">
-              <div
-                style="
+              <div style="
                   width: 36px;
                   height: 36px;
                   background: var(--cls-primary-light);
@@ -2548,8 +1789,7 @@
                   align-items: center;
                   justify-content: center;
                   font-size: 1.1rem;
-                "
-              >
+                ">
                 <i class="fas fa-file-code"></i>
               </div>
               <div class="overflow-hidden">
@@ -2557,22 +1797,18 @@
                   {{ item.submission_file_name or 'Submitted Deliverable File' }}
                 </div>
                 <div class="text-muted" style="font-size: 0.72rem">
-                  {% if item.submission_file_size %}{{ item.submission_file_size|filesize_format }} &bull; {% endif %} {{ item.submission_file_mime or 'File' }}
+                  {% if item.submission_file_size %}{{ item.submission_file_size|filesize_format }} &bull; {% endif %}
+                  {{ item.submission_file_mime or 'File' }}
                 </div>
               </div>
             </div>
             <div class="d-flex gap-1">
-              <a
-                href="{{ url_for('preview_classroom_submission', submission_id=item.submission_id) }}"
-                target="_blank"
-                class="btn btn-sm btn-outline-primary rounded-pill px-3"
-              >
+              <a href="{{ url_for('preview_classroom_submission', submission_id=item.submission_id) }}" target="_blank"
+                class="btn btn-sm btn-outline-primary rounded-pill px-3">
                 <i class="fas fa-eye me-1"></i>Preview
               </a>
-              <a
-                href="{{ url_for('download_classroom_submission', submission_id=item.submission_id) }}"
-                class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold"
-              >
+              <a href="{{ url_for('download_classroom_submission', submission_id=item.submission_id) }}"
+                class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold">
                 <i class="fas fa-download me-1"></i>Download
               </a>
             </div>
@@ -2581,81 +1817,46 @@
         </div>
 
         <!-- Grading & Feedback Form -->
-        <form
-          method="post"
-          action="{{ url_for('grade_classroom_submission', submission_id=item.submission_id) }}"
-        >
+        <form method="post" action="{{ url_for('grade_classroom_submission', submission_id=item.submission_id) }}">
           <div class="p-3 border rounded-3 bg-light-subtle">
-            <h6
-              class="fw-bold mb-3"
-              style="
+            <h6 class="fw-bold mb-3" style="
                 font-size: 0.9rem;
                 font-family: 'Plus Jakarta Sans', sans-serif;
-              "
-            >
+              ">
               <i class="fas fa-star text-warning me-1"></i>Faculty Evaluation &amp; Feedback
             </h6>
             <div class="row g-2 mb-2">
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-muted"
-                  >Grade / Score</label
-                >
-                <input
-                  type="text"
-                  class="form-control form-control-sm"
-                  style="border-radius: 8px; background: #fff"
-                  name="grade"
-                  value="{{ item.submission_grade }}"
-                  placeholder="e.g. A+, 95/100, Excellent"
-                />
+                <label class="form-label small fw-semibold text-muted">Grade / Score</label>
+                <input type="text" class="form-control form-control-sm" style="border-radius: 8px; background: #fff"
+                  name="grade" value="{{ item.submission_grade }}" placeholder="e.g. A+, 95/100, Excellent" />
               </div>
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-muted"
-                  >Assignment Status</label
-                >
-                <select
-                  class="form-select form-select-sm"
-                  style="border-radius: 8px; background: #fff;"
-                  name="status"
-                >
-                  <option
-                    value="Reviewed"
-                    {% if item.submission_status == 'Reviewed' or item.status == 'Reviewed' %}selected{% endif %}
-                  >
+                <label class="form-label small fw-semibold text-muted">Assignment Status</label>
+                <select class="form-select form-select-sm" style="border-radius: 8px; background: #fff;" name="status">
+                  <option value="Reviewed" {% if item.submission_status=='Reviewed' or item.status=='Reviewed'
+                    %}selected{% endif %}>
                     Reviewed
                   </option>
-                  <option
-                    value="Completed"
-                    {% if item.submission_status == 'Completed' or item.status == 'Completed' %}selected{% endif %}
-                  >
+                  <option value="Completed" {% if item.submission_status=='Completed' or item.status=='Completed'
+                    %}selected{% endif %}>
                     Completed &amp; Approved
                   </option>
-                  <option
-                    value="Needs Revision"
-                    {% if item.submission_status == 'Needs Revision' or item.status == 'Needs Revision' %}selected{% endif %}
-                  >
+                  <option value="Needs Revision" {% if item.submission_status=='Needs Revision' or
+                    item.status=='Needs Revision' %}selected{% endif %}>
                     Needs Revision
                   </option>
                 </select>
               </div>
             </div>
             <div class="mb-3">
-              <label class="form-label small fw-semibold text-muted"
-                >Instructor Feedback &amp; Comments</label
-              >
-              <textarea
-                class="form-control form-control-sm"
-                style="border-radius: 8px; background: #fff"
-                rows="3"
+              <label class="form-label small fw-semibold text-muted">Instructor Feedback &amp; Comments</label>
+              <textarea class="form-control form-control-sm" style="border-radius: 8px; background: #fff" rows="3"
                 name="feedback"
-                placeholder="Provide constructive feedback, notes, or suggestions for improvement..."
-              >{{ item.submission_feedback }}</textarea>
+                placeholder="Provide constructive feedback, notes, or suggestions for improvement...">{{ item.submission_feedback }}</textarea>
             </div>
             <div class="d-flex justify-content-end">
-              <button
-                type="submit"
-                class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold shadow-sm"
-              >
+              <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 fw-semibold shadow-sm">
                 <i class="fas fa-save me-1"></i>Save Evaluation &amp; Feedback
               </button>
             </div>
@@ -2672,105 +1873,66 @@
         {% endif %}
       </div>
       <div class="modal-footer border-0 px-4 pb-4 pt-0">
-        <button
-          type="button"
-          class="btn btn-light rounded-pill px-4"
-          data-bs-dismiss="modal"
-        >
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
           Close
         </button>
       </div>
     </div>
   </div>
 </div>
-{% endfor %} 
+{% endfor %}
 {% endif %}
 
 <!-- ══ SUBMIT ASSIGNMENT MODALS (Student) ════════════════════════ -->
-{% if user_type != 'faculty' and classroom_assignments %} 
+{% if user_type != 'faculty' and classroom_assignments %}
 {% for item in classroom_assignments %}
-<div
-  class="modal fade"
-  id="submitAssignmentModal{{ item.id }}"
-  tabindex="-1"
-  aria-hidden="true"
->
+<div class="modal fade" id="submitAssignmentModal{{ item.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 pb-0 pt-4 px-4">
         <div class="d-flex align-items-center gap-2">
-          <div
-            class="p-2 rounded-3"
-            style="
+          <div class="p-2 rounded-3" style="
               background: var(--cls-primary-light);
               color: var(--cls-primary);
-            "
-          >
+            ">
             <i class="fas fa-paper-plane fs-5"></i>
           </div>
           <div>
-            <h5
-              class="modal-title fw-bold mb-0"
-              style="font-family: 'Plus Jakarta Sans', sans-serif"
-            >
+            <h5 class="modal-title fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
               {{ item.task_name }}
             </h5>
-            <span
-              class="badge bg-secondary-subtle text-secondary text-uppercase"
-              style="font-size: 0.65rem"
-              >{{ item.subject }}</span
-            >
+            <span class="badge bg-secondary-subtle text-secondary text-uppercase" style="font-size: 0.65rem">{{
+              item.subject }}</span>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form
-        method="post"
-        action="{{ url_for('submit_classroom_assignment', assignment_id=item.id) }}"
-        enctype="multipart/form-data"
-      >
+      <form method="post" action="{{ url_for('submit_classroom_assignment', assignment_id=item.id) }}"
+        enctype="multipart/form-data">
         <div class="modal-body px-4 py-3">
           <!-- Task Instructions & Reference Files -->
           <div class="p-3 bg-light-subtle border rounded-3 mb-3">
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <label
-                class="small fw-bold text-muted text-uppercase mb-0"
-                style="font-size: 0.7rem"
-                >Task Directions &amp; Deadline</label
-              >
-              <span class="small text-muted"
-                ><i class="far fa-calendar-alt me-1"></i>Due:
-                <strong>{{ item.deadline }}</strong></span
-              >
+              <label class="small fw-bold text-muted text-uppercase mb-0" style="font-size: 0.7rem">Task Directions
+                &amp; Deadline</label>
+              <span class="small text-muted"><i class="far fa-calendar-alt me-1"></i>Due:
+                <strong>{{ item.deadline }}</strong></span>
             </div>
             {% if item.instructions %}
-            <p
-              class="small text-muted mb-2"
-              style="white-space: pre-wrap; line-height: 1.5"
-            >
+            <p class="small text-muted mb-2" style="white-space: pre-wrap; line-height: 1.5">
               {{ item.instructions }}
             </p>
             {% else %}
             <p class="small text-muted mb-2">
               No special instructions specified by instructor.
             </p>
-            {% endif %} 
+            {% endif %}
             {% if item.attachment_path %}
-            <div
-              class="pt-2 border-top d-flex align-items-center justify-content-between"
-            >
-              <span class="small text-muted"
-                ><i class="fas fa-paperclip text-primary me-1"></i>Reference: {{ item.attachment_name or 'Material' }}</span
-              >
-              <a
-                href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
-                class="btn btn-sm btn-outline-primary rounded-pill px-3 py-0.5"
-                style="font-size: 0.72rem"
-              >
+            <div class="pt-2 border-top d-flex align-items-center justify-content-between">
+              <span class="small text-muted"><i class="fas fa-paperclip text-primary me-1"></i>Reference: {{
+                item.attachment_name or 'Material' }}</span>
+              <a href="{{ url_for('classroom_attachment_download', filepath=item.attachment_path) }}"
+                class="btn btn-sm btn-outline-primary rounded-pill px-3 py-0.5" style="font-size: 0.72rem">
                 <i class="fas fa-download me-1"></i>Download Material
               </a>
             </div>
@@ -2779,34 +1941,27 @@
 
           <!-- Existing Submission / Feedback Banner if present -->
           {% if item.submission_id %}
-          <div
-            class="p-3 bg-success-subtle border border-success-subtle rounded-3 mb-3"
-          >
+          <div class="p-3 bg-success-subtle border border-success-subtle rounded-3 mb-3">
             <div class="d-flex align-items-center justify-content-between mb-1">
-              <span class="fw-bold text-success small"
-                ><i class="fas fa-check-circle me-1"></i>Previously Submitted</span
-              >
-              <span class="small text-muted" style="font-size: 0.72rem"
-                >{{ item.submission_time }}</span
-              >
+              <span class="fw-bold text-success small"><i class="fas fa-check-circle me-1"></i>Previously
+                Submitted</span>
+              <span class="small text-muted" style="font-size: 0.72rem">{{ item.submission_time }}</span>
             </div>
             {% if item.submission_file_name %}
             <div class="small text-muted mb-1">
               Attached File: <strong>{{ item.submission_file_name }}</strong>
-              <a
-                href="{{ url_for('download_classroom_submission', submission_id=item.submission_id) }}"
-                class="ms-2 text-decoration-none text-primary fw-semibold"
-                ><i class="fas fa-download me-1"></i>Download</a
-              >
+              <a href="{{ url_for('download_classroom_submission', submission_id=item.submission_id) }}"
+                class="ms-2 text-decoration-none text-primary fw-semibold"><i
+                  class="fas fa-download me-1"></i>Download</a>
             </div>
-            {% endif %} 
+            {% endif %}
             {% if item.submission_grade or item.submission_feedback %}
             <div class="mt-2 pt-2 border-top border-success-subtle">
               {% if item.submission_grade %}
               <div class="fw-bold text-primary small">
                 <i class="fas fa-award me-1"></i>Grade / Evaluation: {{ item.submission_grade }}
               </div>
-              {% endif %} 
+              {% endif %}
               {% if item.submission_feedback %}
               <div class="small text-muted mt-1">
                 <i class="fas fa-comment-dots me-1"></i>Faculty Feedback: {{ item.submission_feedback }}
@@ -2819,184 +1974,97 @@
 
           <!-- Submission Inputs -->
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-            >
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">
               Text Response / Solution Notes (Optional if uploading a file)
             </label>
-            <textarea
-              class="form-control"
-              style="
+            <textarea class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              rows="3"
-              name="submission_text"
-              placeholder="Add explanation, notes, solution overview, or code repository link..."
-            >{{ item.submission_text }}</textarea>
+              " rows="3" name="submission_text"
+              placeholder="Add explanation, notes, solution overview, or code repository link...">{{ item.submission_text }}</textarea>
           </div>
 
           <div class="mb-2">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-            >
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">
               Upload Completed Work / Deliverable (Document, Code, PDF, Archive)
             </label>
-            <input
-              type="file"
-              class="form-control"
-              style="border-radius: 10px; border: 1px solid var(--cls-border)"
+            <input type="file" class="form-control" style="border-radius: 10px; border: 1px solid var(--cls-border)"
               name="submission_file"
-              accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx,.ipynb"
-            />
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.py,.js,.html,.css,.java,.cpp,.c,.md,.csv,.xlsx,.ipynb" />
             <div class="form-text small text-muted">
               Supports code files (.py, .js, .cpp, .java), PDFs, Word docs, text files, archives (.zip), and images.
             </div>
           </div>
         </div>
         <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-          <button
-            type="button"
-            class="btn btn-light rounded-pill px-4"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button
-            type="submit"
-            class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm"
-          >
-            <i class="fas fa-paper-plane me-1"></i>{% if item.submission_id %}Update Submission{% else %}Submit Work{% endif %}
+          <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold shadow-sm">
+            <i class="fas fa-paper-plane me-1"></i>{% if item.submission_id %}Update Submission{% else %}Submit Work{%
+            endif %}
           </button>
         </div>
       </form>
     </div>
   </div>
 </div>
-{% endfor %} 
+{% endfor %}
 {% endif %}
 
 <!-- ══ EDIT ASSIGNMENT MODALS (Faculty) ═════════════════════ -->
-{% if user_type == 'faculty' and classroom_assignments %} 
+{% if user_type == 'faculty' and classroom_assignments %}
 {% for item in classroom_assignments %}
-<div
-  class="modal fade"
-  id="editAssignmentModal{{ item.id }}"
-  tabindex="-1"
-  aria-hidden="true"
->
+<div class="modal fade" id="editAssignmentModal{{ item.id }}" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div
-      class="modal-content border-0 rounded-4 shadow-lg"
-    >
+    <div class="modal-content border-0 rounded-4 shadow-lg">
       <div class="modal-header border-0 pb-0 pt-4 px-4">
-        <h5
-          class="modal-title fw-bold"
-          style="font-family: 'Plus Jakarta Sans', sans-serif"
-        >
+        <h5 class="modal-title fw-bold" style="font-family: 'Plus Jakarta Sans', sans-serif">
           <i class="fas fa-edit text-primary me-2"></i>Edit Assignment
         </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form
-        method="post"
-        action="{{ url_for('edit_classroom_assignment', assignment_id=item.id) }}"
-      >
+      <form method="post" action="{{ url_for('edit_classroom_assignment', assignment_id=item.id) }}">
         <div class="modal-body px-4 py-3">
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Task Title</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Task Title</label>
+            <input type="text" class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              name="task_name"
-              value="{{ item.task_name }}"
-              required
-            />
+              " name="task_name" value="{{ item.task_name }}" required />
           </div>
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Subject</label
-            >
-            <input
-              type="text"
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Subject</label>
+            <input type="text" class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              name="subject"
-              value="{{ item.subject }}"
-              required
-            />
+              " name="subject" value="{{ item.subject }}" required />
           </div>
           <div class="mb-3">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Deadline</label
-            >
-            <input
-              type="date"
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Deadline</label>
+            <input type="date" class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              name="deadline"
-              value="{{ item.deadline }}"
-              required
-            />
+              " name="deadline" value="{{ item.deadline }}" required />
           </div>
           <div class="mb-0">
-            <label
-              class="form-label small fw-semibold"
-              style="color: var(--cls-muted)"
-              >Instructions</label
-            >
-            <textarea
-              class="form-control"
-              style="
+            <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Instructions</label>
+            <textarea class="form-control" style="
                 border-radius: 10px;
                 background: var(--cls-bg);
                 border: 1px solid var(--cls-border);
-              "
-              rows="3"
-              name="instructions"
-            >{{ item.instructions }}</textarea>
+              " rows="3" name="instructions">{{ item.instructions }}</textarea>
           </div>
         </div>
         <div class="modal-footer border-0 px-4 pb-4 pt-0 gap-2">
-          <button
-            type="button"
-            class="btn btn-light rounded-pill px-4"
-            data-bs-dismiss="modal"
-          >
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
             Cancel
           </button>
-          <button
-            type="submit"
-            class="btn btn-primary rounded-pill px-4 fw-semibold"
-          >
+          <button type="submit" class="btn btn-primary rounded-pill px-4 fw-semibold">
             Save Changes
           </button>
         </div>
@@ -3004,20 +2072,14 @@
     </div>
   </div>
 </div>
-{% endfor %} 
+{% endfor %}
 {% endif %}
 
 <!-- ══ Direct Private Messaging Modal ═════════════════════════════════════ -->
-<div
-  class="modal fade"
-  id="privateChatModal"
-  tabindex="-1"
-  aria-labelledby="privateChatModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="privateChatModal" tabindex="-1" aria-labelledby="privateChatModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content rounded-4 shadow-lg border-0">
-      
+
       <!-- Modal Header -->
       <div class="modal-header border-bottom px-4 py-3 bg-light-subtle">
         <div class="d-flex align-items-center gap-3">
@@ -3026,95 +2088,53 @@
             <h5 class="modal-title fw-bold mb-0" id="privateChatModalLabel">
               Direct Message
             </h5>
-            <small class="text-muted" id="modalClassBadge"
-              ><i class="fas fa-chalkboard me-1 text-primary"></i>Classroom</small
-            >
+            <small class="text-muted" id="modalClassBadge"><i
+                class="fas fa-chalkboard me-1 text-primary"></i>Classroom</small>
           </div>
         </div>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <!-- Modal Body (Chat History) -->
       <div class="modal-body px-4 py-3">
         <div class="chat-box-container" id="chatBox">
           <div class="text-center py-4 text-muted" id="chatLoadingSpinner">
-            <div
-              class="spinner-border spinner-border-sm text-primary mb-2"
-              role="status"
-            ></div>
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
             <div>Loading chat history...</div>
           </div>
         </div>
 
         <!-- Attachment Preview Pill -->
-        <div
-          id="attachmentPreview"
-          class="d-none mt-2 p-2 bg-primary-subtle rounded-3 d-flex justify-content-between align-items-center small"
-        >
-          <span class="text-primary text-truncate" id="attachmentName"
-            ><i class="fas fa-paperclip me-1"></i>file.pdf</span
-          >
-          <button
-            type="button"
-            class="btn-close btn-close-sm"
-            onclick="clearAttachment()"
-          ></button>
+        <div id="attachmentPreview"
+          class="d-none mt-2 p-2 bg-primary-subtle rounded-3 d-flex justify-content-between align-items-center small">
+          <span class="text-primary text-truncate" id="attachmentName"><i
+              class="fas fa-paperclip me-1"></i>file.pdf</span>
+          <button type="button" class="btn-close btn-close-sm" onclick="clearAttachment()"></button>
         </div>
       </div>
 
       <!-- Modal Footer (Input Bar) -->
       <div class="modal-footer border-top px-4 py-3 bg-light-subtle">
-        <form
-          id="chatSendForm"
-          class="w-100 d-flex gap-2 align-items-center"
-          onsubmit="sendMessage(event)"
-        >
+        <form id="chatSendForm" class="w-100 d-flex gap-2 align-items-center" onsubmit="sendMessage(event)">
           <input type="hidden" id="chatStudentId" name="student_id" value="" />
-          <input
-            type="hidden"
-            id="chatClassroomId"
-            name="classroom_id"
-            value=""
-          />
+          <input type="hidden" id="chatClassroomId" name="classroom_id" value="" />
 
           <!-- Attachment Input -->
           <label
             class="btn btn-outline-secondary btn-sm rounded-circle d-flex align-items-center justify-content-center"
-            style="width: 38px; height: 38px; cursor: pointer"
-            title="Attach file"
-          >
+            style="width: 38px; height: 38px; cursor: pointer" title="Attach file">
             <i class="fas fa-paperclip"></i>
-            <input
-              type="file"
-              id="chatAttachmentInput"
-              name="attachment"
-              class="d-none"
-              onchange="handleAttachmentSelect(this)"
-            />
+            <input type="file" id="chatAttachmentInput" name="attachment" class="d-none"
+              onchange="handleAttachmentSelect(this)" />
           </label>
 
           <!-- Text Message Field -->
-          <input
-            type="text"
-            id="chatMessageInput"
-            name="message"
-            class="form-control rounded-pill px-3"
-            placeholder="Type your private message..."
-            autocomplete="off"
-            required
-          />
+          <input type="text" id="chatMessageInput" name="message" class="form-control rounded-pill px-3"
+            placeholder="Type your private message..." autocomplete="off" required />
 
           <!-- Send Button -->
-          <button
-            type="submit"
-            id="sendBtn"
-            class="btn btn-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2"
-          >
+          <button type="submit" id="sendBtn"
+            class="btn btn-primary rounded-pill px-4 fw-semibold d-flex align-items-center gap-2">
             <span>Send</span> <i class="fas fa-paper-plane"></i>
           </button>
         </form>
@@ -3493,7 +2513,7 @@
           .then(() => {
             if (typeof fetchNotifications === "function") fetchNotifications();
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
   }

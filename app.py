@@ -3293,7 +3293,7 @@ def delete_classroom(class_id):
 def remove_student_from_classroom(class_id, student_id):
     if session.get("user_type") != "faculty":
         flash("Only faculty members have permission to remove students from classrooms.", "danger")
-        return redirect(url_for("settings"))
+        return redirect(url_for("classrooms", class_id=class_id))
 
     uid = session["user_id"]
     conn = get_db()
@@ -3307,13 +3307,13 @@ def remove_student_from_classroom(class_id, student_id):
     if not classroom:
         conn.close()
         flash("Classroom not found or you do not have permission to manage this classroom.", "danger")
-        return redirect(url_for("settings"))
+        return redirect(url_for("classrooms"))
 
     # Verify that the student is enrolled in this classroom
     student = conn.execute(
         """SELECT u.id, u.name, u.email
            FROM users u
-           JOIN classroom_members cm ON cm.classroom_id = c.id
+           JOIN classroom_members cm ON cm.student_id = u.id
            WHERE cm.classroom_id=? AND u.id=?""",
         (class_id, student_id),
     ).fetchone()
@@ -3321,7 +3321,7 @@ def remove_student_from_classroom(class_id, student_id):
     if not student:
         conn.close()
         flash("The selected student is not enrolled in this classroom.", "warning")
-        return redirect(request.referrer or url_for("settings"))
+        return redirect(request.referrer or url_for("classrooms", class_id=class_id))
 
     # Remove enrollment and associated records for this student in this classroom
     conn.execute(
@@ -3340,7 +3340,7 @@ def remove_student_from_classroom(class_id, student_id):
     conn.close()
 
     flash(f"Student \"{student['name']}\" ({student['email']}) has been successfully removed from \"{classroom['class_name']}\".", "success")
-    return redirect(request.referrer or url_for("settings"))
+    return redirect(request.referrer or url_for("classrooms", class_id=class_id))
 
 
 # ── Classroom Study Materials / Resources Routes ──────────────────────────────
