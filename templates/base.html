@@ -81,11 +81,11 @@
                 class="nav-label">Students</span>
             </a>
           </li>
-          <li class="nav-item">
+          <!--- <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'tasks' %}active{% endif %}" href="{{ url_for('tasks') }}">
               <span class="nav-icon-wrap"><i class="fas fa-tasks"></i></span><span class="nav-label">Tasks</span>
             </a>
-          </li>
+          </li> -->
           <li class="nav-item">
             <a class="nav-link {% if request.endpoint == 'resources' %}active{% endif %}"
               href="{{ url_for('resources') }}">
@@ -368,7 +368,7 @@
 
       // If already on the same classroom page, activate the tab or chat modal directly
       if (window.location.pathname === parsedUrl.pathname &&
-          window.location.search.includes(`class_id=${parsedUrl.searchParams.get('class_id')}`)) {
+        window.location.search.includes(`class_id=${parsedUrl.searchParams.get('class_id')}`)) {
         if (tabParam) {
           const tabTrigger = document.querySelector(`[data-bs-target="#${tabParam}"], #${tabParam}-tab`);
           if (tabTrigger) {
