@@ -279,7 +279,7 @@
             <tr>
               <td>
                 <div class="d-flex align-items-center gap-2">
-                  <i class="fas {% if m.resource_type == 'pdf' %}fa-file-pdf text-danger{% elif m.resource_type == 'doc' %}fa-file-word text-primary{% elif m.resource_type == 'presentation' %}fa-file-powerpoint text-warning{% elif m.resource_type == 'spreadsheet' %}fa-file-excel text-success{% elif m.resource_type == 'link' %}fa-link text-info{% else %}fa-file-lines text-secondary{% endif %} fs-5"></i>
+                  <i class="fas {% if m.resource_type == 'pdf' %}fa-file-pdf text-danger{% elif m.resource_type == 'doc' %}fa-file-word text-primary{% elif m.resource_type == 'text' or (m.file_name and m.file_name.lower().endswith('.txt')) %}fa-file-alt text-secondary{% elif m.resource_type == 'presentation' %}fa-file-powerpoint text-warning{% elif m.resource_type == 'spreadsheet' %}fa-file-excel text-success{% elif m.resource_type == 'link' %}fa-link text-info{% else %}fa-file-lines text-secondary{% endif %} fs-5"></i>
                   <div>
                     <span class="fw-semibold">{{ m.title }}</span>
                     {% if m.description %}<div class="small text-muted text-truncate" style="max-width:260px;">{{ m.description }}</div>{% endif %}
@@ -287,14 +287,14 @@
                 </div>
               </td>
               <td>
-                <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-25 text-uppercase" style="font-size:.7rem;">{{ m.resource_type }}</span>
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-25 text-uppercase" style="font-size:.7rem;">{% if m.resource_type == 'text' or (m.file_name and m.file_name.lower().endswith('.txt')) %}TEXT{% else %}{{ m.resource_type }}{% endif %}</span>
               </td>
               <td><span class="badge badge-theme-green">{{ m.class_name }}</span></td>
               <td><small class="text-muted">{{ m.uploader_name }}</small></td>
               <td><small class="text-muted">{{ m.created_at[:10] if m.created_at else 'Recent' }}</small></td>
               <td class="text-end">
                 <div class="d-flex gap-1 justify-content-end">
-                  <a href="{{ url_for('preview_classroom_resource', resource_id=m.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5">
+                  <a href="{{ url_for('view_classroom_resource', resource_id=m.id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5">
                     <i class="fas fa-eye me-1"></i>Preview
                   </a>
                   <a href="{{ url_for('download_classroom_resource', resource_id=m.id) }}" class="btn btn-sm btn-theme-green rounded-pill px-2.5">
@@ -347,9 +347,14 @@
               <td>{{ f.class_name }}</td>
               <td><small class="text-muted">{{ f.created_at[:10] if f.created_at else 'Recent' }}</small></td>
               <td class="text-end">
+                <div class="d-flex justify-content-end gap-1">
+                <a href="{{ url_for('document_preview', filepath=f.attachment_path, title=f.attachment_name) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                  <i class="fas fa-eye me-1"></i> Preview
+                </a>
                 <a href="{{ url_for('classroom_attachment_download', filepath=f.attachment_path) }}" class="btn btn-sm btn-outline-theme-green rounded-pill px-3">
                   <i class="fas fa-download me-1"></i> Download
                 </a>
+                </div>
               </td>
             </tr>
             {% endfor %}

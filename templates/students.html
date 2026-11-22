@@ -349,14 +349,14 @@
                 {% if s.classrooms|length == 1 %}
                   <button type="button"
                           class="btn btn-sm btn-primary shadow-sm"
-                          onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
+                          onclick="openStudentInClassroomChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
                     <i class="fas fa-comment-dots me-1"></i> Private Message
                   </button>
                 {% else %}
                   <div class="btn-group">
                     <button type="button"
                             class="btn btn-sm btn-primary shadow-sm"
-                            onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
+                            onclick="openStudentInClassroomChat('{{ s.id }}', '{{ s.name|escape }}', '{{ s.classrooms[0].id }}', '{{ s.classrooms[0].name|escape }}')">
                       <i class="fas fa-comment-dots me-1"></i> Message
                     </button>
                     <button type="button" class="btn btn-sm btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
@@ -367,7 +367,7 @@
                       {% for cl in s.classrooms %}
                         <li>
                           <a class="dropdown-item small" href="javascript:void(0)"
-                             onclick="openDirectChat('{{ s.id }}', '{{ s.name|escape }}', '{{ cl.id }}', '{{ cl.name|escape }}')">
+                             onclick="openStudentInClassroomChat('{{ s.id }}', '{{ s.name|escape }}', '{{ cl.id }}', '{{ cl.name|escape }}')">
                             <i class="fas fa-chalkboard text-primary me-2"></i>{{ cl.name }}
                           </a>
                         </li>
@@ -590,7 +590,7 @@ async function loadChatHistory() {
       if (m.attachment_path && m.attachment_name) {
         attachmentHtml = `
           <div>
-            <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" target="_blank" class="chat-attachment-pill">
+            <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" download="${escapeHtml(m.attachment_name)}" class="chat-attachment-pill">
               <i class="fas fa-file-arrow-down"></i> ${escapeHtml(m.attachment_name)}
             </a>
           </div>`;
@@ -665,7 +665,23 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// Auto-open chat modal if target parameters exist in URL (e.g. from notification pop-up View button)
+function openStudentInClassroomChat(studentId, studentName, classroomId, className) {
+  const params = new URLSearchParams();
+  params.set('class_id', classroomId);
+  params.set('tab', 'tab-comms');
+  params.set('student_id', studentId);
+  params.set('student_name', studentName);
+  params.set('class_name', className);
+  try {
+    sessionStorage.setItem('openRosterChatOnce', JSON.stringify({
+      studentId: String(studentId),
+      classroomId: String(classroomId)
+    }));
+  } catch (err) {}
+  window.location.href = `/classrooms?${params.toString()}`;
+}
+
+// Keep notifications opening the direct chat modal, while roster actions navigate to the classroom inline chat.
 document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search);
   const targetStudentId = urlParams.get('student_id');

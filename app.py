@@ -43,6 +43,15 @@ from email.message import EmailMessage
 from werkzeug.utils import secure_filename
 import uuid
 import time
+import xml.etree.ElementTree as ET
+import mimetypes
+import html
+import hashlib
+from docx import Document
+from pptx import Presentation
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+import base64
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -1933,6 +1942,7 @@ def api_chat_history():
             """SELECT m.id, m.sender_id, m.message, m.created_at,
                       COALESCE(m.attachment_path, '') AS attachment_path,
                       COALESCE(m.attachment_name, '') AS attachment_name,
+                      COALESCE(m.attachment_mime, '') AS attachment_mime,
                       u.name AS sender_name
                FROM classroom_messages m
                JOIN users u ON u.id = m.sender_id
@@ -1951,6 +1961,7 @@ def api_chat_history():
                 "created_at": m["created_at"],
                 "attachment_path": m["attachment_path"],
                 "attachment_name": m["attachment_name"],
+                "attachment_mime": m["attachment_mime"],
                 "is_mine": (m["sender_id"] == uid),
             }
             for m in messages
@@ -3190,22 +3201,608 @@ def borrow_classroom_assignment(assignment_id):
     return redirect(url_for("classrooms", class_id=assignment["classroom_id"]))
 
 
-@app.route('/classrooms/attachment/<path:filepath>')
-@login_required
-def classroom_attachment_download(filepath):
-    # Prevent path traversal
+def _export_pptx_slides(full_path):
+    if os.name != "nt":
+        return []
+
+    try:
+        import pythoncom
+        import win32com.client
+    except Exception:
+        return []
+
+    source_hash = hashlib.sha256(
+        open(full_path, "rb").read()
+    ).hexdigest()[:16]
+    cache_dir = os.path.join(UPLOAD_FOLDER, "document_renders", "pptx", source_hash)
+    os.makedirs(cache_dir, exist_ok=True)
+    slide_files = sorted(
+        (
+            os.path.join(cache_dir, name)
+            for name in os.listdir(cache_dir)
+            if name.lower().startswith("slide-") and name.lower().endswith(".png")
+        ),
+        key=lambda path: int(re.search(r"(\d+)", os.path.basename(path)).group(1)),
+    )
+    if slide_files:
+        return slide_files
+
+    powerpoint = None
+    presentation = None
+    pythoncom.CoInitialize()
+    try:
+        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+        presentation = powerpoint.Presentations.Open(
+            os.path.abspath(full_path),
+            ReadOnly=True,
+            Untitled=False,
+            WithWindow=False,
+        )
+        for slide_number in range(1, presentation.Slides.Count + 1):
+            slide_path = os.path.join(cache_dir, f"slide-{slide_number}.png")
+            presentation.Slides(slide_number).Export(slide_path, "PNG", 1600, 900)
+        presentation.Close()
+        powerpoint.Quit()
+        presentation = None
+        powerpoint = None
+    except Exception as exc:
+        app.logger.exception("PowerPoint slide export failed")
+        slide_files = []
+    finally:
+        try:
+            if presentation is not None:
+                presentation.Close()
+        except Exception:
+            pass
+        try:
+            if powerpoint is not None:
+                powerpoint.Quit()
+        except Exception:
+            pass
+        pythoncom.CoUninitialize()
+
+    return sorted(
+        (
+            os.path.join(cache_dir, name)
+            for name in os.listdir(cache_dir)
+            if name.lower().startswith("slide-") and name.lower().endswith(".png")
+        ),
+        key=lambda path: int(re.search(r"(\d+)", os.path.basename(path)).group(1)),
+    )
+
+
+def _safe_attachment_file(filepath):
+    filepath = filepath.replace("\\", "/")
     if '..' in filepath or filepath.startswith('/') or filepath.startswith('\\'):
         abort(400)
     directory = os.path.join(UPLOAD_FOLDER, os.path.dirname(filepath))
     filename = os.path.basename(filepath)
-    # Ensure directory is inside UPLOAD_FOLDER
     try:
         if os.path.commonpath([os.path.abspath(directory), os.path.abspath(UPLOAD_FOLDER)]) != os.path.abspath(UPLOAD_FOLDER):
             abort(400)
     except Exception:
         abort(400)
-    if not os.path.exists(os.path.join(directory, filename)):
+    full_path = os.path.join(directory, filename)
+    if not os.path.isfile(full_path):
         abort(404)
+    return directory, filename, full_path
+
+
+def _extract_document_sections(full_path, mime_type, filename):
+    mime_type = (mime_type or "").lower()
+    extension = os.path.splitext(filename)[1].lower()
+    if mime_type.startswith("text/") or extension in (".txt", ".md", ".csv", ".json", ".py", ".js", ".css", ".html", ".xml"):
+        try:
+            with open(full_path, "r", encoding="utf-8", errors="replace") as source:
+                content = source.read(80000)
+            return [{"title": "Document", "text": content}], "text"
+        except Exception:
+            return [{"title": "Document", "text": "Unable to read this text file."}], "text"
+
+    if extension == ".pdf" or mime_type == "application/pdf":
+        return [{"title": "PDF document", "text": "Use the page controls below to navigate this PDF."}], "pdf"
+
+    if extension in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg") or mime_type.startswith("image/"):
+        return [], "image"
+
+    if extension in (".xls", ".xlsx", ".xlsm", ".csv") or "spreadsheet" in mime_type or "sheet" in mime_type:
+        sections = []
+        try:
+            if extension == ".csv":
+                import pandas as _pandas
+                frame = _pandas.read_csv(full_path, dtype=str, keep_default_na=False)
+                sheets = [(os.path.splitext(filename)[0], frame)]
+            else:
+                workbook = load_workbook(full_path, data_only=False)
+                sheets = []
+                for worksheet in workbook.worksheets:
+                    sheets.append((worksheet.title, worksheet))
+
+            for sheet_name, sheet in sheets:
+                if extension == ".csv":
+                    rows = [frame.columns.tolist()] + frame.fillna("").values.tolist()
+                    column_widths = [18] * max(1, len(rows[0]))
+                    table_rows = []
+                    for row in rows:
+                        table_rows.append(["" if value is None else str(value) for value in row])
+                    text_rows = [" | ".join(row) for row in table_rows]
+                    html_rows = ['<div class="excel-sheet"><table class="excel-table"><thead><tr>']
+                    for column in table_rows[0]:
+                        html_rows.append(f'<th>{html.escape(column)}</th>')
+                    html_rows.append("</tr></thead><tbody>")
+                    for row in table_rows[1:]:
+                        html_rows.append("<tr>")
+                        for value in row:
+                            html_rows.append(f'<td>{html.escape(value)}</td>')
+                        html_rows.append("</tr>")
+                    html_rows.append("</tbody></table></div>")
+                    sections.append({
+                        "title": sheet_name,
+                        "text": "\n".join(text_rows),
+                        "html": "".join(html_rows),
+                        "kind": "sheet",
+                    })
+                    continue
+
+                worksheet = sheet
+                if worksheet.max_row == 1 and worksheet.max_column == 1 and worksheet["A1"].value is None:
+                    sections.append({"title": sheet_name, "text": "This worksheet is empty.", "html": '<div class="excel-empty">This worksheet is empty.</div>', "kind": "sheet"})
+                    continue
+
+                merged_ranges = list(worksheet.merged_cells.ranges)
+                table_rows = ['<div class="excel-sheet"><table class="excel-table">']
+                text_rows = []
+                max_row = min(worksheet.max_row, 500)
+                max_col = min(worksheet.max_column, 100)
+                table_rows.append("<thead><tr><th class=\"excel-corner\"></th>")
+                for column in range(1, max_col + 1):
+                    table_rows.append(f'<th class="excel-column-header">{html.escape(get_column_letter(column))}</th>')
+                table_rows.append("</tr></thead><tbody>")
+
+                merged_lookup = {}
+                for merged in merged_ranges:
+                    for row in range(merged.min_row, merged.max_row + 1):
+                        for column in range(merged.min_col, merged.max_col + 1):
+                            merged_lookup[(row, column)] = (merged, (row == merged.min_row and column == merged.min_col))
+
+                for row in range(1, max_row + 1):
+                    values = []
+                    table_rows.append(f'<tr><th class="excel-row-header">{row}</th>')
+                    for column in range(1, max_col + 1):
+                        merged = merged_lookup.get((row, column))
+                        if merged and not merged[1]:
+                            table_rows.append('<td class="excel-merged-hidden"></td>')
+                            values.append("")
+                            continue
+
+                        cell = worksheet.cell(row=row, column=column)
+                        value = "" if cell.value is None else str(cell.value)
+                        values.append(value)
+                        styles = []
+                        alignments = []
+
+                        if cell.font:
+                            if cell.font.bold:
+                                styles.append("font-weight:700")
+                            if cell.font.italic:
+                                styles.append("font-style:italic")
+                            if cell.font.underline:
+                                styles.append("text-decoration:underline")
+                            if cell.font.name:
+                                styles.append(f"font-family:'{html.escape(cell.font.name, quote=True)}'")
+                            if cell.font.sz:
+                                styles.append(f"font-size:{cell.font.sz:.1f}pt")
+                            if cell.font.color:
+                                try:
+                                    color = cell.font.color.rgb
+                                    if color:
+                                        styles.append(f"color:#{str(color)[-6:]}")
+                                except Exception:
+                                    pass
+
+                        if cell.alignment:
+                            horizontal = (cell.alignment.horizontal or "left").lower()
+                            alignments.append(f"text-align:{horizontal}")
+                            if cell.alignment.wrap_text:
+                                alignments.append("white-space:normal")
+
+                        fill_color = ""
+                        if cell.fill and cell.fill.fill_type == "solid":
+                            try:
+                                fill_color = str(cell.fill.fgColor.rgb)[-6:]
+                                if fill_color and fill_color.lower() not in ("000000", "00000000"):
+                                    styles.append(f"background-color:#{fill_color}")
+                            except Exception:
+                                pass
+
+                        attrs = ";".join(styles + alignments)
+                        span_attrs = ""
+                        if merged and merged[1]:
+                            colspan = merged[0].max_col - merged[0].min_col + 1
+                            rowspan = merged[0].max_row - merged[0].min_row + 1
+                            span_attrs = f' colspan="{colspan}" rowspan="{rowspan}"'
+                        table_rows.append(
+                            f'<td{span_attrs} style="{html.escape(attrs)}">{html.escape(value)}</td>'
+                        )
+                    table_rows.append("</tr>")
+                    text_rows.append(" | ".join(values))
+                table_rows.append("</tbody></table></div>")
+                sections.append({
+                    "title": sheet_name,
+                    "text": "\n".join(text_rows),
+                    "html": "".join(table_rows),
+                    "kind": "sheet",
+                })
+        except Exception as exc:
+            sections = [{
+                "title": "Spreadsheet",
+                "text": f"This spreadsheet could not be rendered: {exc}",
+            }]
+        if not sections:
+            sections = [{"title": "Spreadsheet", "text": "This workbook does not contain any worksheets."}]
+        return sections, "office"
+
+    if extension == ".docx" or mime_type.endswith("wordprocessingml.document"):
+        sections = []
+        try:
+            document = Document(full_path)
+            paragraphs = []
+
+            def alignment_name(paragraph):
+                value = getattr(paragraph.alignment, "name", None) if paragraph.alignment is not None else None
+                if value in ("LEFT", "RIGHT", "CENTER", "JUSTIFY"):
+                    return value.lower()
+                return "left"
+
+            for paragraph in document.paragraphs:
+                plain_text = paragraph.text.strip()
+                if not plain_text:
+                    continue
+
+                alignment = alignment_name(paragraph)
+                style_name = (paragraph.style.name or "").lower() if paragraph.style else ""
+                heading_style = ""
+                if style_name.startswith("heading"):
+                    heading_style = "font-weight:700;font-size:1.35em;"
+                elif style_name == "title":
+                    heading_style = "font-weight:700;font-size:1.75em;"
+                elif style_name == "subtitle":
+                    heading_style = "font-size:1.15em;color:#64748b;"
+
+                runs_html = []
+                for run in paragraph.runs:
+                    run_text = html.escape(run.text).replace("\n", "<br>")
+                    if not run_text:
+                        continue
+
+                    styles = []
+                    if run.bold:
+                        styles.append("font-weight:700")
+                    if run.italic:
+                        styles.append("font-style:italic")
+                    if run.underline:
+                        styles.append("text-decoration:underline")
+                    if run.font.name:
+                        styles.append(f"font-family:'{html.escape(run.font.name, quote=True)}'")
+                    if run.font.size:
+                        styles.append(f"font-size:{run.font.size.pt:.1f}pt")
+                    if run.font.color and run.font.color.rgb:
+                        styles.append(f"color:#{run.font.color.rgb}")
+
+                    if styles:
+                        runs_html.append(f'<span style="{";".join(styles)}">{run_text}</span>')
+                    else:
+                        runs_html.append(run_text)
+
+                paragraphs.append({
+                    "text": plain_text,
+                    "html": f'<p class="docx-paragraph" style="text-align:{alignment};{heading_style}">' + "".join(runs_html) + "</p>",
+                })
+
+            for table in document.tables:
+                rows_html = ['<table class="docx-table"><tbody>']
+                for row in table.rows:
+                    rows_html.append("<tr>")
+                    for cell in row.cells:
+                        cell_text = []
+                        for paragraph in cell.paragraphs:
+                            runs_html = []
+                            for run in paragraph.runs:
+                                run_text = html.escape(run.text).replace("\n", "<br>")
+                                styles = []
+                                if run.bold:
+                                    styles.append("font-weight:700")
+                                if run.italic:
+                                    styles.append("font-style:italic")
+                                if run.underline:
+                                    styles.append("text-decoration:underline")
+                                if run.font.name:
+                                    styles.append(f"font-family:'{html.escape(run.font.name, quote=True)}'")
+                                if run.font.size:
+                                    styles.append(f"font-size:{run.font.size.pt:.1f}pt")
+                                if run.font.color and run.font.color.rgb:
+                                    styles.append(f"color:#{run.font.color.rgb}")
+                                runs_html.append(
+                                    f'<span style="{";".join(styles)}">{run_text}</span>' if styles else run_text
+                                )
+                            cell_text.append("".join(runs_html))
+                        rows_html.append(f'<td>{"<br>".join(cell_text)}</td>')
+                    rows_html.append("</tr>")
+                rows_html.append("</tbody></table>")
+                table_text = "\n".join(" | ".join(cell.text for cell in row.cells) for row in table.rows)
+                paragraphs.append({"text": table_text, "html": "".join(rows_html)})
+
+            if not paragraphs:
+                paragraphs = [{"text": "No readable text found in this Word document.", "html": '<p class="docx-paragraph">No readable text found in this Word document.</p>'}]
+
+            sections = []
+            for index in range(0, len(paragraphs), 20):
+                chunk = paragraphs[index:index + 20]
+                sections.append({
+                    "title": f"Page {index // 20 + 1}",
+                    "text": "\n".join(item["text"] for item in chunk),
+                    "html": "".join(item["html"] for item in chunk),
+                })
+        except Exception:
+            try:
+                with zipfile.ZipFile(full_path) as archive:
+                    xml = archive.read("word/document.xml")
+                root = ET.fromstring(xml)
+                namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+                text_parts = [
+                    node.text or ""
+                    for node in root.findall(".//w:t", namespace)
+                    if node.text
+                ]
+                plain_text = "".join(text_parts).strip()
+                if plain_text:
+                    sections = [{"title": "Word document", "text": plain_text, "html": f'<p class="docx-paragraph">{html.escape(plain_text)}</p>'}]
+                else:
+                    sections = [{"title": "Word document", "text": "This Word document is available for download, but its text could not be extracted."}]
+            except Exception:
+                sections = [{"title": "Word document", "text": "This Word document could not be previewed. Download the file to open it in Microsoft Word or LibreOffice."}]
+        return sections, "office"
+
+    if extension in (".ppt", ".pptx") or "presentation" in mime_type:
+        sections = []
+        try:
+            exported_slides = _export_pptx_slides(full_path)
+            if exported_slides:
+                presentation = Presentation(full_path)
+                for slide_number, slide_path in enumerate(exported_slides, start=1):
+                    plain_text = []
+                    if slide_number <= len(presentation.slides):
+                        slide = presentation.slides[slide_number - 1]
+                        for shape in slide.shapes:
+                            if getattr(shape, "has_text_frame", False):
+                                for paragraph in shape.text_frame.paragraphs:
+                                    if paragraph.text.strip():
+                                        plain_text.append(paragraph.text.strip())
+                    relative_path = os.path.relpath(slide_path, UPLOAD_FOLDER).replace("\\", "/")
+                    sections.append({
+                        "title": f"Slide {slide_number}",
+                        "text": "\n".join(plain_text),
+                        "html": (
+                            '<div class="ppt-rendered-slide">'
+                            f'<img src="{url_for("document_preview_raw", filepath=relative_path)}" '
+                            'alt="Rendered slide">'
+                            '</div>'
+                        ),
+                        "kind": "slide",
+                    })
+                if sections:
+                    return sections, "office"
+
+            presentation = Presentation(full_path)
+            slide_width = presentation.slide_width or 9144000
+            slide_height = presentation.slide_height or 6858000
+
+            for slide_number, slide in enumerate(presentation.slides, start=1):
+                elements = []
+                plain_text = []
+                slide_background = "#ffffff"
+                try:
+                    background_fill = slide.background.fill
+                    if background_fill.type == 1:
+                        rgb = background_fill.fore_color.rgb
+                        if rgb:
+                            slide_background = f"#{rgb}"
+                    elif background_fill.type == 3:
+                        theme_color = getattr(background_fill.fore_color, "theme_color", None)
+                        if theme_color is not None:
+                            slide_background = "#f8fafc"
+                except Exception:
+                    pass
+                slide_style = f"--ppt-background:{slide_background};"
+                for shape in sorted(slide.shapes, key=lambda item: (item.top, item.left)):
+                    left = round(shape.left / slide_width * 100, 3)
+                    top = round(shape.top / slide_height * 100, 3)
+                    width = round(shape.width / slide_width * 100, 3)
+                    height = round(shape.height / slide_height * 100, 3)
+                    style = f"left:{left}%;top:{top}%;width:{width}%;height:{height}%;"
+                    try:
+                        if getattr(shape, "fill", None) and shape.fill.type == 1:
+                            rgb = shape.fill.fore_color.rgb
+                            if rgb:
+                                style += f"background-color:#{rgb};"
+                        if getattr(shape, "fill", None) and shape.fill.type == 5:
+                            style += "background:linear-gradient(135deg,#ffffff,#f1f5f9);"
+                        if getattr(shape, "line", None):
+                            try:
+                                line_rgb = shape.line.color.rgb
+                                line_width = getattr(shape.line, "width", None)
+                                if line_rgb:
+                                    width_pt = line_width.pt if line_width is not None else 1
+                                    style += f"border:{max(0.5, width_pt):.1f}px solid #{line_rgb};"
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+
+                    if getattr(shape, "shape_type", None) == 13:
+                        try:
+                            image_bytes = shape.image.blob
+                            image_type = shape.image.ext
+                            encoded = base64.b64encode(image_bytes).decode("ascii")
+                            elements.append(
+                                f'<img class="ppt-image" src="data:image/{html.escape(image_type)};base64,{encoded}" '
+                                f'alt="Slide image" style="{style}">'
+                            )
+                            continue
+                        except Exception:
+                            pass
+
+                    if not getattr(shape, "has_text_frame", False):
+                        continue
+
+                    text_frame = shape.text_frame
+                    text_vertical = getattr(text_frame, "vertical_anchor", None)
+                    vertical = getattr(text_vertical, "name", "") if text_vertical is not None else ""
+                    vertical_style = "flex-start"
+                    if vertical in ("MIDDLE", "CENTER"):
+                        vertical_style = "center"
+                    elif vertical == "BOTTOM":
+                        vertical_style = "bottom"
+                    style += f"display:flex;align-items:{vertical_style};"
+                    if hasattr(text_frame, "margin_left"):
+                        padding_x = round((text_frame.margin_left or 0) / slide_width * 100, 3)
+                        padding_y = round((text_frame.margin_top or 0) / slide_height * 100, 3)
+                        style += f"padding:{padding_y}% {padding_x}%;"
+                    fallback_font_pt = None
+                    for fallback_paragraph in text_frame.paragraphs:
+                        for fallback_run in fallback_paragraph.runs:
+                            fallback_font = getattr(fallback_run, "font", None)
+                            if fallback_font is not None and getattr(fallback_font, "size", None):
+                                fallback_font_pt = fallback_font.size.pt
+                                break
+                        if fallback_font_pt:
+                            break
+                    if fallback_font_pt:
+                        style += f"font-size:{fallback_font_pt:.1f}pt;"
+                    paragraph_html = []
+                    for paragraph in text_frame.paragraphs:
+                        text = html.escape(paragraph.text).replace("\n", "<br>")
+                        if not text:
+                            continue
+                        plain_text.append(paragraph.text)
+                        align = getattr(paragraph.alignment, "name", "") if paragraph.alignment is not None else ""
+                        align = align.lower() if align in ("LEFT", "RIGHT", "CENTER", "JUSTIFY") else "left"
+
+                        runs = []
+                        for run in paragraph.runs:
+                            run_text = html.escape(run.text).replace("\n", "<br>")
+                            if not run_text:
+                                continue
+                            run_styles = []
+                            if getattr(run, "bold", None):
+                                run_styles.append("font-weight:700")
+                            if getattr(run, "italic", None):
+                                run_styles.append("font-style:italic")
+                            if getattr(run, "underline", None):
+                                run_styles.append("text-decoration:underline")
+                            font = getattr(run, "font", None)
+                            if font is not None:
+                                if getattr(font, "name", None):
+                                    run_styles.append(f"font-family:'{html.escape(font.name, quote=True)}'")
+                                if getattr(font, "size", None):
+                                    run_styles.append(f"font-size:{font.size.pt:.1f}pt")
+                                try:
+                                    if font.color and font.color.rgb:
+                                        run_styles.append(f"color:#{font.color.rgb}")
+                                    elif getattr(font, "color", None):
+                                        try:
+                                            theme_color = font.color.theme_color
+                                            theme_name = str(theme_color).split(".")[-1].lower()
+                                            theme_fallback = {
+                                                "accent1": "#4472c4",
+                                                "accent2": "#ed7d31",
+                                                "accent3": "#a5a5a5",
+                                                "accent4": "#ffc000",
+                                                "accent5": "#5b9bd5",
+                                                "accent6": "#70ad47",
+                                                "dark1": "#172033",
+                                                "light1": "#ffffff",
+                                                "dark2": "#44546a",
+                                                "light2": "#e7e6e6",
+                                            }.get(theme_name)
+                                            if theme_fallback:
+                                                run_styles.append(f"color:{theme_fallback}")
+                                        except Exception:
+                                            pass
+                                except Exception:
+                                    pass
+                            runs.append(
+                                f'<span style="{";".join(run_styles)}">{run_text}</span>' if run_styles else run_text
+                            )
+
+                        paragraph_html.append(
+                            f'<div class="ppt-paragraph" data-align="{align}" style="text-align:{align};">'
+                            + "".join(runs)
+                            + "</div>"
+                        )
+
+                    if paragraph_html:
+                        elements.append(
+                            f'<div class="ppt-text" style="{style}">'
+                            + "".join(paragraph_html)
+                            + "</div>"
+                        )
+
+                slide_html = (
+                    f'<div class="ppt-slide" style="{slide_style}">'
+                    + "".join(elements)
+                    + "</div>"
+                )
+                sections.append({
+                    "title": f"Slide {slide_number}",
+                    "text": "\n".join(plain_text),
+                    "html": slide_html,
+                    "kind": "slide",
+                })
+        except Exception:
+            sections = []
+        if not sections:
+            sections = [{"title": "Presentation", "text": "Slide text could not be extracted."}]
+        return sections, "office"
+
+    return [{"title": "Document", "text": "Preview is not available for this file type. Download it to open with a compatible application."}], "unsupported"
+
+
+@app.route("/documents/preview")
+@login_required
+def document_preview():
+    filepath = request.args.get("filepath", "")
+    title = request.args.get("title", "Document Preview")
+    directory, filename, full_path = _safe_attachment_file(filepath)
+    mime_type = request.args.get("mime", "")
+    if not mime_type:
+        mime_type = (mimetypes.guess_type(filename)[0] or "application/octet-stream")
+    sections, viewer_type = _extract_document_sections(full_path, mime_type, filename)
+    file_url = url_for("document_preview_raw", filepath=filepath)
+    download_url = url_for("classroom_attachment_download", filepath=filepath)
+    return render_template(
+        "document_viewer.html",
+        title=title,
+        filename=filename,
+        file_url=file_url,
+        download_url=download_url,
+        mime_type=mime_type,
+        viewer_type=viewer_type,
+        sections=sections,
+    )
+
+
+@app.route("/documents/raw/<path:filepath>")
+@login_required
+def document_preview_raw(filepath):
+    directory, filename, _ = _safe_attachment_file(filepath)
+    return send_from_directory(directory, filename, as_attachment=False)
+
+
+@app.route('/classrooms/attachment/<path:filepath>')
+@login_required
+def classroom_attachment_download(filepath):
+    directory, filename, _ = _safe_attachment_file(filepath)
     return send_from_directory(directory, filename, as_attachment=True)
 
 
@@ -3404,8 +4001,10 @@ def upload_classroom_resource(class_id):
         ext = os.path.splitext(file_name)[1].lower()
         if ext in [".pdf"]:
             resource_type = "pdf"
-        elif ext in [".doc", ".docx", ".odt", ".rtf", ".txt", ".md"]:
+        elif ext in [".doc", ".docx", ".odt", ".rtf"]:
             resource_type = "doc"
+        elif ext in [".txt", ".md"]:
+            resource_type = "text"
         elif ext in [".ppt", ".pptx"]:
             resource_type = "presentation"
         elif ext in [".xls", ".xlsx", ".csv"]:
@@ -3580,6 +4179,91 @@ def preview_classroom_resource(resource_id):
         as_attachment=False,
         mimetype=resource["file_mime"] if resource["file_mime"] else None,
     )
+
+
+@app.route("/classrooms/resources/<int:resource_id>/viewer")
+@login_required
+def view_classroom_resource(resource_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    resource = conn.execute(
+        "SELECT * FROM classroom_resources WHERE id=?",
+        (resource_id,),
+    ).fetchone()
+    if not resource:
+        conn.close()
+        abort(404)
+
+    classroom_id = resource["classroom_id"]
+    if user_type == "faculty":
+        has_access = bool(conn.execute(
+            "SELECT 1 FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone())
+    else:
+        has_access = bool(conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+            (classroom_id, uid),
+        ).fetchone())
+    conn.close()
+
+    if not has_access:
+        abort(403)
+    if resource["resource_type"] == "link":
+        return redirect(resource["external_url"])
+
+    filepath = resource["file_path"]
+    if not filepath:
+        abort(404)
+    directory, filename, full_path = _safe_attachment_file(filepath)
+    mime_type = resource["file_mime"] or mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    sections, viewer_type = _extract_document_sections(full_path, mime_type, resource["file_name"] or filename)
+    return render_template(
+        "document_viewer.html",
+        title=resource["title"] or resource["file_name"] or filename,
+        filename=resource["file_name"] or filename,
+        file_url=url_for("preview_classroom_resource_raw", resource_id=resource_id),
+        download_url=url_for("download_classroom_resource", resource_id=resource_id),
+        mime_type=mime_type,
+        viewer_type=viewer_type,
+        sections=sections,
+    )
+
+
+@app.route("/classrooms/resources/<int:resource_id>/raw")
+@login_required
+def preview_classroom_resource_raw(resource_id):
+    uid = session["user_id"]
+    user_type = session.get("user_type", "student")
+    conn = get_db()
+    resource = conn.execute(
+        "SELECT * FROM classroom_resources WHERE id=?",
+        (resource_id,),
+    ).fetchone()
+    conn.close()
+    if not resource:
+        abort(404)
+
+    classroom_id = resource["classroom_id"]
+    conn = get_db()
+    if user_type == "faculty":
+        has_access = bool(conn.execute(
+            "SELECT 1 FROM classrooms WHERE id=? AND faculty_id=?",
+            (classroom_id, uid),
+        ).fetchone())
+    else:
+        has_access = bool(conn.execute(
+            "SELECT 1 FROM classroom_members WHERE classroom_id=? AND student_id=?",
+            (classroom_id, uid),
+        ).fetchone())
+    conn.close()
+    if not has_access:
+        abort(403)
+
+    filepath = resource["file_path"]
+    directory, filename, _ = _safe_attachment_file(filepath)
+    return send_from_directory(directory, filename, as_attachment=False)
 
 
 @app.route("/classrooms/resources/<int:resource_id>/delete", methods=["POST"])

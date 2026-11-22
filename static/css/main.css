@@ -6049,39 +6049,170 @@ h6,
 }
 
 .chat-window {
-  max-height: 300px;
+  height: 220px;
+  max-height: 220px !important;
+  min-height: 180px !important;
   overflow-y: auto;
-  scroll-behavior: smooth;
-  padding: 1rem;
-  background: var(--cls-bg);
+  overflow-x: hidden;
+  scroll-behavior: auto;
+  overscroll-behavior: contain;
+  padding: 0.65rem;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(15, 140, 157, 0.07) 1px, transparent 0),
+    var(--cls-bg);
+  background-size: 18px 18px;
   border: 1px solid var(--cls-border);
-  border-radius: 12px;
+  border-radius: 14px;
 }
 
 .chat-window::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 
 .chat-window::-webkit-scrollbar-thumb {
-  background: var(--cls-border);
+  background: linear-gradient(180deg, #38bdf8, #0891b2);
   border-radius: 8px;
 }
 
+.chat-window::-webkit-scrollbar-track,
+.chat-box-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-box-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chat-box-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #38bdf8, #0891b2);
+  border-radius: 8px;
+}
+
+.chat-box-container {
+  background:
+    radial-gradient(circle at 1px 1px, rgba(15, 140, 157, 0.08) 1px, transparent 0),
+    var(--bs-tertiary-bg, #f8fafc);
+  background-size: 20px 20px;
+  border: 1px solid var(--cls-border);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 5px rgba(15, 23, 42, 0.03);
+}
+
+.chat-bubble {
+  box-shadow: 0 5px 16px rgba(15, 23, 42, 0.08);
+}
+
+.chat-bubble-mine {
+  background: linear-gradient(135deg, #0f8c9d 0%, #15aabf 100%);
+}
+
+.chat-attachment-preview {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem;
+  border: 1px solid var(--cls-border);
+  border-radius: 14px;
+  background: var(--cls-surface);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.chat-preview-image {
+  width: 68px;
+  height: 58px;
+  flex: 0 0 68px;
+  border-radius: 10px;
+  background-position: center;
+  background-size: cover;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.chat-preview-icon {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--cls-primary-subtle);
+  color: var(--cls-primary);
+  font-size: 1.35rem;
+}
+
+.chat-preview-label {
+  color: var(--cls-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.chat-preview-name {
+  max-width: 240px;
+  color: var(--cls-text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin-top: 0.1rem;
+}
+
+.chat-preview-remove {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  margin-left: auto;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--cls-muted);
+}
+
+.chat-preview-remove:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.chat-image-preview {
+  display: block;
+  width: min(240px, 100%);
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 0.45rem 0 0.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
 .bubble-wrap {
-  margin-bottom: .85rem;
+  margin-bottom: .45rem;
 }
 
 .bubble-wrap.mine {
   text-align: right;
 }
 
+.chat-inline-attachment {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: .15rem;
+}
+
+.bubble-wrap.mine .chat-inline-attachment {
+  justify-content: flex-end;
+}
+
+.bubble-wrap.mine .chat-inline-attachment .chat-image-preview,
+.bubble-wrap.mine .chat-inline-attachment button {
+  margin-left: auto;
+}
+
 .bubble {
   display: inline-block;
   max-width: 78%;
-  padding: .55rem 1rem;
-  border-radius: 18px;
-  font-size: .88rem;
-  line-height: 1.5;
+  padding: .45rem .75rem;
+  border-radius: 14px;
+  font-size: .86rem;
+  line-height: 1.42;
   box-shadow: var(--cls-shadow-sm);
 }
 
@@ -6099,9 +6230,9 @@ h6,
 }
 
 .bubble-ts {
-  font-size: .68rem;
+  font-size: .65rem;
   color: var(--cls-muted);
-  margin-top: .25rem;
+  margin-top: .15rem;
 }
 
 .cls-send-bar {

@@ -880,6 +880,8 @@
                             <i class="fas fa-file-pdf text-danger"></i>
                             {% elif r.resource_type == 'doc' %}
                             <i class="fas fa-file-word text-primary"></i>
+                            {% elif r.resource_type == 'text' or r.file_name.lower().endswith('.txt') %}
+                            <i class="fas fa-file-alt text-secondary"></i>
                             {% elif r.resource_type == 'presentation' %}
                             <i class="fas fa-file-powerpoint text-warning"></i>
                             {% elif r.resource_type == 'spreadsheet' %}
@@ -928,7 +930,7 @@
                             data-bs-toggle="modal" data-bs-target="#resourceModal{{ r.id }}" title="View Details">
                             <i class="fas fa-info-circle text-primary" style="font-size: 0.75rem;"></i>
                           </button>
-                          <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
+                          <a href="{{ url_for('view_classroom_resource', resource_id=r.id) }}"
                             class="btn btn-sm btn-light border rounded-pill px-2" title="Preview">
                             <i class="fas fa-eye" style="font-size: 0.75rem; color: var(--cls-muted)"></i>
                           </a>
@@ -967,7 +969,9 @@
 
       <!-- TAB: Class Announcements ────────────────── -->
       <div id="tab-comms" class="cls-tab-content d-none anim-fade">
-        <div class="cls-card p-4">
+        <div class="row g-4">
+          <div class="col-lg-7">
+        <div class="cls-card p-4 h-100">
           <div class="d-flex align-items-center justify-content-between mb-3">
             <div>
               <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
@@ -1050,6 +1054,50 @@
             {% endif %}
           </div>
         </div>
+          </div>
+
+          <div class="col-lg-5">
+            <div class="cls-card p-4 h-100 d-flex flex-column">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h6 class="fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
+                  <i class="fas fa-comments text-primary me-2"></i>Private Student Chat
+                </h6>
+                <button type="button" class="btn btn-sm btn-primary rounded-pill px-3"
+                  onclick="openFacultySelectedChat()">
+                  <i class="fas fa-expand me-1"></i>Open Live Chat
+                </button>
+              </div>
+
+              {% if enrolled_students %}
+              <select id="facultyChatStudentSelect" class="form-select form-select-sm mb-3"
+                onchange="loadFacultyChatHistory(true)">
+                {% for student in enrolled_students %}
+                <option value="{{ student.id }}">{{ student.name }} — {{ student.email }}</option>
+                {% endfor %}
+              </select>
+
+              <div class="chat-window flex-grow-1 mb-3" id="facultyChatWindow"
+                style="height: 220px; max-height: 220px; min-height: 180px"></div>
+
+              <form id="facultyInlineChatForm" onsubmit="sendFacultyInlineMessage(event)"
+                class="cls-send-bar m-0">
+                <input type="text" id="facultyQuickMsgInput" name="message"
+                  placeholder="Reply to selected student..." autocomplete="off" required />
+                <button type="submit" id="facultyQuickMsgSendBtn" class="cls-send-btn" title="Send Reply">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </form>
+              {% else %}
+              <div class="cls-empty py-5 flex-grow-1 d-flex flex-column justify-content-center">
+                <div class="cls-empty-icon" style="font-size: 2rem">
+                  <i class="fas fa-user-slash text-primary"></i>
+                </div>
+                <p class="small mb-0">No students are enrolled in this classroom yet.</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- ════════ STUDENT VIEW ════════════════════════════════ -->
@@ -1116,8 +1164,8 @@
                       class="badge rounded-pill {% if r.resource_type == 'pdf' %}bg-danger-subtle text-danger {% elif r.resource_type == 'doc' %}bg-primary-subtle text-primary {% elif r.resource_type == 'presentation' %}bg-warning-subtle text-warning {% elif r.resource_type == 'spreadsheet' %}bg-success-subtle text-success {% elif r.resource_type == 'link' %}bg-info-subtle text-info {% else %}bg-secondary-subtle text-secondary{% endif %} px-2.5 py-1 text-uppercase"
                       style="font-size: 0.68rem; font-weight: 700">
                       <i
-                        class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} me-1"></i>
-                      {{ r.resource_type }}
+                        class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'text' or r.file_name.lower().endswith('.txt') %}fa-file-alt{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} me-1"></i>
+                      {% if r.resource_type == 'text' or r.file_name.lower().endswith('.txt') %}text{% else %}{{ r.resource_type }}{% endif %}
                     </span>
                     <small class="text-muted" style="font-size: 0.72rem"><i class="far fa-calendar me-1"></i>{{
                       r.created_at[:10] if r.created_at else 'Recent' }}</small>
@@ -1155,7 +1203,7 @@
                     <i class="fas fa-circle-info me-1"></i>Details
                   </button>
                   <div class="d-flex align-items-center gap-1">
-                    <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
+                    <a href="{{ url_for('view_classroom_resource', resource_id=r.id) }}"
                       class="btn btn-sm btn-outline-primary rounded-pill px-2.5 py-1"
                       style="font-size: 0.76rem; padding: 0.32rem 0.65rem">
                       <i class="fas fa-eye me-1"></i>Preview
@@ -1425,25 +1473,36 @@
                 {% endif %}
               </div>
 
-              <!-- Chat message history thread -->
+                <!-- Chat message history thread -->
               <div class="chat-window flex-grow-1 mb-3" id="chatWindow" style="max-height: 280px; min-height: 200px">
                 {% if classroom_messages %}
                 {% for msg in classroom_messages %}
                 {% if msg.is_announcement != 1 %}
+                {% if msg.message or msg.attachment_path %}
                 <div class="bubble-wrap {% if msg.sender_id == session.user_id %}mine{% endif %}">
-                  <div class="bubble">{{ msg.message }}</div>
+                  {% if msg.message %}<div class="bubble">{{ msg.message }}</div>{% endif %}
                   {% if msg.attachment_path %}
-                  <div class="mt-1">
-                    <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}" class="small"
+                  <div class="chat-inline-attachment">
+                    {% if msg.attachment_name and (msg.attachment_name|lower).endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg')) %}
+                    <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
+                      download="{{ msg.attachment_name }}" class="border-0 bg-transparent p-0">
+                      <img src="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
+                        alt="{{ msg.attachment_name }}" class="chat-image-preview">
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('classroom_attachment_download', filepath=msg.attachment_path) }}"
+                      download="{{ msg.attachment_name or 'Attachment' }}" class="btn btn-sm btn-link p-0 text-decoration-none small"
                       style="color: var(--cls-primary)">
                       <i class="fas fa-paperclip me-1"></i>Attachment
                     </a>
+                    {% endif %}
                   </div>
                   {% endif %}
                   <div class="bubble-ts">
                     {{ msg.sender_name }} &bull; {{ msg.created_at }}
                   </div>
                 </div>
+                {% endif %}
                 {% endif %}
                 {% endfor %}
                 {% else %}
@@ -1516,7 +1575,7 @@
               color: var(--cls-primary);
             ">
             <i
-              class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} fs-5"></i>
+              class="fas {% if r.resource_type == 'pdf' %}fa-file-pdf{% elif r.resource_type == 'doc' %}fa-file-word{% elif r.resource_type == 'text' or r.file_name.lower().endswith('.txt') %}fa-file-alt{% elif r.resource_type == 'presentation' %}fa-file-powerpoint{% elif r.resource_type == 'spreadsheet' %}fa-file-excel{% elif r.resource_type == 'link' %}fa-link{% else %}fa-file-lines{% endif %} fs-5"></i>
           </div>
           <div>
             <h5 class="modal-title fw-bold mb-0" style="font-family: 'Plus Jakarta Sans', sans-serif">
@@ -1584,7 +1643,7 @@
         <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">
           Close
         </button>
-        <a href="{{ url_for('preview_classroom_resource', resource_id=r.id) }}" target="_blank"
+        <a href="{{ url_for('view_classroom_resource', resource_id=r.id) }}"
           class="btn btn-outline-primary rounded-pill px-3">
           <i class="fas fa-eye me-1"></i>Preview
         </a>
@@ -2076,12 +2135,26 @@
 {% endif %}
 
 <!-- ══ Direct Private Messaging Modal ═════════════════════════════════════ -->
+<div class="modal fade" id="documentViewerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-fullscreen">
+    <div class="modal-content border-0">
+      <div class="modal-header border-0 px-3 py-2">
+        <h6 class="modal-title fw-bold" id="documentViewerTitle">Document Viewer</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <iframe id="documentViewerFrame" title="Document preview" style="width:100%; height:calc(100vh - 57px); border:0;"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal fade" id="privateChatModal" tabindex="-1" aria-labelledby="privateChatModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content rounded-4 shadow-lg border-0">
 
       <!-- Modal Header -->
-      <div class="modal-header border-bottom px-4 py-3 bg-light-subtle">
+      <div class="modal-header border-bottom px-3 py-2 bg-light-subtle">
         <div class="d-flex align-items-center gap-3">
           <div class="student-avatar-lg" id="modalTargetAvatar">P</div>
           <div>
@@ -2096,7 +2169,7 @@
       </div>
 
       <!-- Modal Body (Chat History) -->
-      <div class="modal-body px-4 py-3">
+      <div class="modal-body px-3 py-2">
         <div class="chat-box-container" id="chatBox">
           <div class="text-center py-4 text-muted" id="chatLoadingSpinner">
             <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
@@ -2104,17 +2177,22 @@
           </div>
         </div>
 
-        <!-- Attachment Preview Pill -->
-        <div id="attachmentPreview"
-          class="d-none mt-2 p-2 bg-primary-subtle rounded-3 d-flex justify-content-between align-items-center small">
-          <span class="text-primary text-truncate" id="attachmentName"><i
-              class="fas fa-paperclip me-1"></i>file.pdf</span>
-          <button type="button" class="btn-close btn-close-sm" onclick="clearAttachment()"></button>
+        <!-- Attachment Preview -->
+        <div id="attachmentPreview" class="chat-attachment-preview d-none mt-2">
+          <div id="attachmentImagePreview" class="chat-preview-image d-none"></div>
+          <div class="chat-preview-icon d-none" id="attachmentFileIcon"><i class="fas fa-file-lines"></i></div>
+          <div class="min-w-0 flex-grow-1">
+            <div class="chat-preview-label">Ready to send</div>
+            <div class="chat-preview-name text-truncate" id="attachmentName">file.pdf</div>
+          </div>
+          <button type="button" class="chat-preview-remove" onclick="clearAttachment()" aria-label="Remove attachment">
+            <i class="fas fa-xmark"></i>
+          </button>
         </div>
       </div>
 
       <!-- Modal Footer (Input Bar) -->
-      <div class="modal-footer border-top px-4 py-3 bg-light-subtle">
+      <div class="modal-footer border-top px-3 py-2 bg-light-subtle">
         <form id="chatSendForm" class="w-100 d-flex gap-2 align-items-center" onsubmit="sendMessage(event)">
           <input type="hidden" id="chatStudentId" name="student_id" value="" />
           <input type="hidden" id="chatClassroomId" name="classroom_id" value="" />
@@ -2125,12 +2203,13 @@
             style="width: 38px; height: 38px; cursor: pointer" title="Attach file">
             <i class="fas fa-paperclip"></i>
             <input type="file" id="chatAttachmentInput" name="attachment" class="d-none"
+              accept="image/*,.pdf,.doc,.docx,.txt,.zip"
               onchange="handleAttachmentSelect(this)" />
           </label>
 
           <!-- Text Message Field -->
           <input type="text" id="chatMessageInput" name="message" class="form-control rounded-pill px-3"
-            placeholder="Type your private message..." autocomplete="off" required />
+            placeholder="Type your private message..." autocomplete="off" />
 
           <!-- Send Button -->
           <button type="submit" id="sendBtn"
@@ -2148,6 +2227,44 @@
   let activeStudentId = null;
   let activeClassroomId = null;
   let chatInterval = null;
+  let attachmentPreviewUrl = null;
+
+  function scrollChatToBottom(element) {
+    if (!element) return;
+    element.scrollTop = element.scrollHeight;
+  }
+
+  function preserveChatScroll(element, forceBottom) {
+    if (!element) return;
+    if (forceBottom) {
+      scrollChatToBottom(element);
+      return;
+    }
+    const previousTop = element.scrollTop;
+    const previousHeight = element.scrollHeight;
+    requestAnimationFrame(() => {
+      if (previousTop === 0) {
+        element.scrollTop = 0;
+      } else {
+        element.scrollTop = previousTop + (element.scrollHeight - previousHeight);
+      }
+    });
+  }
+
+  function openDocumentViewer(filepath, title, mimeType) {
+    const modal = document.getElementById("documentViewerModal");
+    const frame = document.getElementById("documentViewerFrame");
+    if (!modal || !frame) return;
+
+    const params = new URLSearchParams();
+    params.set("filepath", String(filepath || "").replace(/\\/g, "/"));
+    params.set("title", title || "Document Preview");
+    params.set("mime", mimeType || "");
+
+    document.getElementById("documentViewerTitle").textContent = title || "Document Viewer";
+    frame.src = `/documents/preview?${params.toString()}`;
+    bootstrap.Modal.getOrCreateInstance(modal).show();
+  }
 
   function openDirectChat(studentId, targetName, classroomId, className) {
     activeStudentId = studentId || "{{ session.user_id }}";
@@ -2179,7 +2296,7 @@
       modal.show();
     }
 
-    loadChatHistory();
+    loadChatHistory(true);
 
     if (chatInterval) clearInterval(chatInterval);
     chatInterval = setInterval(loadChatHistory, 3000);
@@ -2193,9 +2310,14 @@
         chatInterval = null;
       }
     });
+    pModal.addEventListener("shown.bs.modal", function () {
+      const chatBox = document.getElementById("chatBox");
+      chatBox.scrollTop = 0;
+      requestAnimationFrame(() => scrollChatToBottom(chatBox));
+    });
   }
 
-  async function loadChatHistory() {
+  async function loadChatHistory(forceBottom = false) {
     if (!activeClassroomId) return;
 
     const chatBox = document.getElementById("chatBox");
@@ -2221,6 +2343,8 @@
 
         let html = "";
         messages.forEach((m) => {
+          const messageText = (m.message || "").trim();
+          if (!messageText && !m.attachment_path) return;
           const bubbleClass = m.is_mine
             ? "chat-bubble-mine"
             : "chat-bubble-theirs";
@@ -2228,25 +2352,31 @@
 
           let attachmentHtml = "";
           if (m.attachment_path && m.attachment_name) {
-            attachmentHtml = `
-              <div>
-                <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" target="_blank" class="chat-attachment-pill">
-                  <i class="fas fa-file-arrow-down"></i> ${m.attachment_name}
-                </a>
-              </div>`;
+            const attachmentUrl = `/classrooms/attachment/${encodeURIComponent(m.attachment_path)}`;
+            const isImage = (m.attachment_mime || "").startsWith("image/")
+              || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(m.attachment_name);
+            attachmentHtml = isImage
+              ? `<a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" download="${escapeHtml(m.attachment_name)}" class="border-0 bg-transparent p-0 d-block">
+                   <img src="${attachmentUrl}" alt="${escapeHtml(m.attachment_name)}" class="chat-image-preview">
+                 </a>`
+              : `<div>
+                   <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" download="${escapeHtml(m.attachment_name)}" class="chat-attachment-pill">
+                     <i class="fas fa-file-arrow-down"></i> ${escapeHtml(m.attachment_name)}
+                   </a>
+                 </div>`;
           }
 
           html += `
             <div class="chat-bubble ${bubbleClass}">
               <div class="small fw-bold opacity-75 mb-1" style="font-size:0.75rem;">${senderLabel}</div>
-              <div>${escapeHtml(m.message)}</div>
+              ${messageText ? `<div>${escapeHtml(messageText)}</div>` : ""}
               ${attachmentHtml}
               <span class="chat-time">${m.created_at ? m.created_at.substring(11, 16) : ""}</span>
             </div>`;
         });
 
         chatBox.innerHTML = html;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        preserveChatScroll(chatBox, forceBottom);
       }
     } catch (err) {
       console.error("Error loading chat:", err);
@@ -2258,7 +2388,8 @@
     const input = document.getElementById("chatMessageInput");
     if (!input) return;
     const message = input.value.trim();
-    if (!message) return;
+    const attachmentInput = document.getElementById("chatAttachmentInput");
+    if (!message && (!attachmentInput || !attachmentInput.files[0])) return;
 
     const sendBtn = document.getElementById("sendBtn");
     if (sendBtn) sendBtn.disabled = true;
@@ -2275,7 +2406,7 @@
       if (data.status === "ok") {
         input.value = "";
         clearAttachment();
-        await loadChatHistory();
+        await loadChatHistory(true);
       } else {
         alert(data.message || "Failed to send message.");
       }
@@ -2293,9 +2424,24 @@
       const file = input.files[0];
       const nameEl = document.getElementById("attachmentName");
       if (nameEl)
-        nameEl.innerHTML = `<i class="fas fa-paperclip me-1"></i>${file.name}`;
+        nameEl.textContent = file.name;
       const preview = document.getElementById("attachmentPreview");
       if (preview) preview.classList.remove("d-none");
+
+      const imagePreview = document.getElementById("attachmentImagePreview");
+      const fileIcon = document.getElementById("attachmentFileIcon");
+      if (file.type.startsWith("image/")) {
+        if (imagePreview) {
+          if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+          attachmentPreviewUrl = URL.createObjectURL(file);
+          imagePreview.style.backgroundImage = `url("${attachmentPreviewUrl}")`;
+          imagePreview.classList.remove("d-none");
+        }
+        if (fileIcon) fileIcon.classList.add("d-none");
+      } else {
+        if (imagePreview) imagePreview.classList.add("d-none");
+        if (fileIcon) fileIcon.classList.remove("d-none");
+      }
     }
   }
 
@@ -2304,12 +2450,127 @@
     if (attachInput) attachInput.value = "";
     const preview = document.getElementById("attachmentPreview");
     if (preview) preview.classList.add("d-none");
+    const imagePreview = document.getElementById("attachmentImagePreview");
+    if (imagePreview) {
+      if (attachmentPreviewUrl) URL.revokeObjectURL(attachmentPreviewUrl);
+      attachmentPreviewUrl = null;
+      imagePreview.style.backgroundImage = "";
+      imagePreview.classList.add("d-none");
+    }
   }
 
   function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function openFacultySelectedChat() {
+    const select = document.getElementById("facultyChatStudentSelect");
+    if (!select || !select.value) return;
+    const selectedOption = select.options[select.selectedIndex];
+    openDirectChat(
+      select.value,
+      selectedOption ? selectedOption.text.split(" — ")[0] : "Student",
+      "{{ selected_classroom.id if selected_classroom else '' }}",
+      "{{ selected_classroom.class_name|escape if selected_classroom else '' }}"
+    );
+  }
+
+  async function sendFacultyInlineMessage(event) {
+    if (event) event.preventDefault();
+    const select = document.getElementById("facultyChatStudentSelect");
+    const input = document.getElementById("facultyQuickMsgInput");
+    if (!select || !select.value || !input) return;
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    const btn = document.getElementById("facultyQuickMsgSendBtn");
+    if (btn) btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("classroom_id", "{{ selected_classroom.id if selected_classroom else '' }}");
+    formData.append("student_id", select.value);
+    formData.append("message", message);
+
+    try {
+      const res = await fetch("/api/chat/send", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.status === "ok") {
+        input.value = "";
+        await loadFacultyChatHistory(true);
+      } else {
+        alert(data.message || "Failed to send message.");
+      }
+    } catch (err) {
+      console.error("Error sending faculty inline chat:", err);
+      alert("An error occurred while sending the message.");
+    } finally {
+      if (btn) btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  async function loadFacultyChatHistory(forceBottom = false) {
+    const chatWin = document.getElementById("facultyChatWindow");
+    const select = document.getElementById("facultyChatStudentSelect");
+    if (!chatWin || !select || !select.value) return;
+
+    const classroomId = "{{ selected_classroom.id if selected_classroom else '' }}";
+    try {
+      const res = await fetch(
+        `/api/chat/history?classroom_id=${classroomId}&student_id=${encodeURIComponent(select.value)}`
+      );
+      const data = await res.json();
+      if (data.status !== "ok") return;
+
+      const messages = data.messages || [];
+      if (messages.length === 0) {
+        chatWin.innerHTML = `
+          <div class="cls-empty py-4">
+            <div class="cls-empty-icon" style="font-size: 2rem">
+              <i class="fas fa-comments text-primary"></i>
+            </div>
+            <p class="small mb-0">No messages with this student yet.</p>
+          </div>`;
+        preserveChatScroll(chatWin, true);
+        return;
+      }
+
+      let html = "";
+      messages.forEach((m) => {
+        const messageText = (m.message || "").trim();
+        if (!messageText && !m.attachment_path) return;
+        const mineClass = m.is_mine ? "mine" : "";
+        let attachmentHtml = "";
+        if (m.attachment_path) {
+          const attachmentUrl = `/classrooms/attachment/${encodeURIComponent(m.attachment_path)}`;
+          const isImage = (m.attachment_mime || "").startsWith("image/")
+            || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(m.attachment_name || "");
+          attachmentHtml = isImage
+            ? `<a href="${attachmentUrl}" download="${escapeHtml(m.attachment_name || "Chat image")}" class="border-0 bg-transparent p-0 d-block mt-1">
+                 <img src="${attachmentUrl}" alt="${escapeHtml(m.attachment_name || "Chat image")}" class="chat-image-preview">
+               </a>`
+            : `<a href="${attachmentUrl}" download="${escapeHtml(m.attachment_name || "Attachment")}" class="btn btn-sm btn-link p-0 text-decoration-none small">
+                 <i class="fas fa-paperclip me-1"></i>${escapeHtml(m.attachment_name || "Attachment")}
+               </a>`;
+        }
+        html += `
+          <div class="bubble-wrap ${mineClass}">
+            ${messageText ? `<div class="bubble">${escapeHtml(messageText)}</div>` : ""}
+            ${attachmentHtml ? `<div class="chat-inline-attachment">${attachmentHtml}</div>` : ""}
+            <div class="bubble-ts">${escapeHtml(m.sender_name)} &bull; ${m.created_at || ""}</div>
+          </div>`;
+      });
+      chatWin.innerHTML = html;
+      preserveChatScroll(chatWin, forceBottom);
+    } catch (err) {
+      console.error("Error refreshing faculty chat:", err);
+    }
   }
 
   /* ─── Inline Student Chat in Classroom Page ───────────── */
@@ -2337,7 +2598,7 @@
 
       if (data.status === "ok") {
         input.value = "";
-        await loadInlineChatHistory();
+        await loadInlineChatHistory(true);
       } else {
         alert(data.message || "Failed to send message.");
       }
@@ -2350,7 +2611,7 @@
     }
   }
 
-  async function loadInlineChatHistory() {
+  async function loadInlineChatHistory(forceBottom = false) {
     const chatWin = document.getElementById("chatWindow");
     const classroomId = currentClassId || "{{ selected_classroom.id if selected_classroom else '' }}";
     if (!chatWin || !classroomId) return;
@@ -2376,25 +2637,33 @@
 
         let html = "";
         messages.forEach((m) => {
+          const messageText = (m.message || "").trim();
+          if (!messageText && !m.attachment_path) return;
           const mineClass = m.is_mine ? "mine" : "";
           let attachmentHtml = "";
           if (m.attachment_path) {
-            attachmentHtml = `
-              <div class="mt-1">
-                <a href="/classrooms/attachment/${encodeURIComponent(m.attachment_path)}" class="small" style="color: var(--cls-primary)">
-                  <i class="fas fa-paperclip me-1"></i>Attachment
-                </a>
-              </div>`;
+            const attachmentUrl = `/classrooms/attachment/${encodeURIComponent(m.attachment_path)}`;
+            const isImage = (m.attachment_mime || "").startsWith("image/")
+              || /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(m.attachment_name || "");
+            attachmentHtml = isImage
+              ? `<a href="${attachmentUrl}" download="${escapeHtml(m.attachment_name || "Chat image")}" class="border-0 bg-transparent p-0 d-block mt-1">
+                   <img src="${attachmentUrl}" alt="${escapeHtml(m.attachment_name || "Chat image")}" class="chat-image-preview">
+                 </a>`
+              : `<div class="mt-1">
+                   <a href="${attachmentUrl}" download="${escapeHtml(m.attachment_name || "Attachment")}" class="btn btn-sm btn-link p-0 text-decoration-none small" style="color: var(--cls-primary)">
+                     <i class="fas fa-paperclip me-1"></i>${escapeHtml(m.attachment_name || "Attachment")}
+                   </a>
+                 </div>`;
           }
           html += `
             <div class="bubble-wrap ${mineClass}">
-              <div class="bubble">${escapeHtml(m.message)}</div>
-              ${attachmentHtml}
+              ${messageText ? `<div class="bubble">${escapeHtml(messageText)}</div>` : ""}
+              ${attachmentHtml ? `<div class="chat-inline-attachment">${attachmentHtml}</div>` : ""}
               <div class="bubble-ts">${escapeHtml(m.sender_name)} &bull; ${m.created_at || ""}</div>
             </div>`;
         });
         chatWin.innerHTML = html;
-        chatWin.scrollTop = chatWin.scrollHeight;
+        preserveChatScroll(chatWin, forceBottom);
       }
     } catch (err) {
       console.error("Error refreshing inline chat:", err);
@@ -2466,6 +2735,9 @@
       el.classList.remove("d-none");
       void el.offsetWidth;
       el.classList.add("anim-fade");
+    }
+    if (tabId === "tab-comms" && typeof loadFacultyChatHistory === "function") {
+      loadFacultyChatHistory(true);
     }
 
     if (tabId === "tab-resources" || tabId === "tab-student-materials") {
@@ -2548,20 +2820,44 @@
       }
     }
     const requestedStudentId = urlParams.get("student_id");
-    if (requestedStudentId && typeof openDirectChat === "function") {
-      const targetStudentName = urlParams.get("student_name") || "Student";
-      const targetClassName = urlParams.get("class_name") || "{{ selected_classroom.class_name|escape if selected_classroom else 'Classroom' }}";
+    if (requestedStudentId && requestedTab === "tab-comms") {
       setTimeout(function () {
-        openDirectChat(requestedStudentId, targetStudentName, "{{ selected_classroom.id if selected_classroom else '' }}", targetClassName);
+        const studentSelect = document.getElementById("facultyChatStudentSelect");
+        if (studentSelect) {
+          studentSelect.value = requestedStudentId;
+          loadFacultyChatHistory(true);
+          let shouldOpenChat = false;
+          try {
+            const rosterOpenState = JSON.parse(sessionStorage.getItem("openRosterChatOnce") || "null");
+            shouldOpenChat = rosterOpenState
+              && rosterOpenState.studentId === String(requestedStudentId)
+              && rosterOpenState.classroomId === String("{{ selected_classroom.id if selected_classroom else '' }}");
+            if (shouldOpenChat) sessionStorage.removeItem("openRosterChatOnce");
+          } catch (err) {
+            shouldOpenChat = false;
+          }
+          if (shouldOpenChat && typeof openDirectChat === "function") {
+            openDirectChat(requestedStudentId, urlParams.get("student_name") || "Student",
+              "{{ selected_classroom.id if selected_classroom else '' }}",
+              urlParams.get("class_name") || "{{ selected_classroom.class_name|escape if selected_classroom else 'Classroom' }}");
+          }
+        }
       }, 250);
     }
     checkUnseenResources();
+    if (typeof loadFacultyChatHistory === "function") {
+      loadFacultyChatHistory(true);
+    }
 
     // Auto-poll inline chat every 4 seconds when Announcements & Chat tab is active
     setInterval(function () {
       const commsTab = document.getElementById("tab-student-comms");
       if (commsTab && !commsTab.classList.contains("d-none")) {
         loadInlineChatHistory();
+      }
+      const facultyCommsTab = document.getElementById("tab-comms");
+      if (facultyCommsTab && !facultyCommsTab.classList.contains("d-none")) {
+        loadFacultyChatHistory();
       }
     }, 4000);
   });
@@ -2580,7 +2876,7 @@
   /* ─── Auto scroll chat ──────────────────────────── */
   const chatWin = document.getElementById("chatWindow");
   if (chatWin) {
-    chatWin.scrollTop = chatWin.scrollHeight;
+    requestAnimationFrame(() => scrollChatToBottom(chatWin));
   }
 </script>
 {% endblock %}

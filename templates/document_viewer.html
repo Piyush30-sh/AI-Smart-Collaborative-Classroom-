@@ -1,0 +1,552 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Document Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: #edf3f7; }
+  #mainNav,
+  #toastArea,
+  .navbar,
+  footer { display: none !important; }
+  body.dashboard-nav-motion { padding-top: 0 !important; }
+  .document-viewer-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    min-height: 100vh;
+    height: 100vh;
+    padding: 10px 12px 12px !important;
+    background: #edf3f7;
+    display: flex;
+    flex-direction: column;
+  }
+  .document-toolbar {
+    position: relative;
+    top: 0;
+    z-index: 20;
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #dbe5eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  }
+  .document-title {
+    min-width: 0;
+    max-width: 280px;
+  }
+  .document-title strong,
+  .document-title span {
+    display: block;
+  }
+  .document-workspace {
+    flex: 1;
+    min-height: 0;
+    margin-top: 0.75rem;
+    border: 1px solid #dbe5eb;
+    border-radius: 14px;
+    background: #dfe7ed;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .document-page {
+    width: min(820px, calc(100% - 32px));
+    min-height: 420px;
+    margin: 24px auto;
+    padding: 48px 58px;
+    background: #fff;
+    color: #172033;
+    border-radius: 4px;
+    box-shadow: 0 10px 35px rgba(15, 23, 42, 0.16);
+    transform-origin: top center;
+  }
+  #sectionContainer.ppt-page {
+    width: min(1280px, calc(100% - 24px));
+    min-height: 420px;
+    padding: 0;
+    margin: 0 auto;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  #sectionContainer.excel-page {
+    width: calc(100% - 24px);
+    max-width: none;
+    min-height: 420px;
+    padding: 18px;
+  }
+  #pdfCanvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+  .text-document {
+    white-space: pre-wrap;
+    font-family: Inter, monospace;
+    line-height: 1.75;
+  }
+  .word-document {
+    min-height: 330px;
+    font-family: "Times New Roman", Georgia, serif;
+    font-size: 12pt;
+    line-height: 1.55;
+  }
+  .docx-paragraph {
+    margin: 0 0 0.75em;
+    min-height: 1em;
+  }
+  .docx-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+  }
+  .docx-table td,
+  .docx-table th {
+    border: 1px solid #cbd5e1;
+    padding: 8px 10px;
+    vertical-align: top;
+  }
+  .ppt-viewer {
+    width: 100%;
+    position: relative;
+  }
+  .ppt-slide {
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--ppt-background, #ffffff);
+    border: 0;
+    box-shadow: none;
+  }
+  .ppt-text {
+    position: absolute;
+    overflow: visible;
+    box-sizing: border-box;
+    display: block;
+    padding: 0.6%;
+    font-size: clamp(10px, 1.15vw, 18px);
+    line-height: 1.15;
+    color: inherit;
+    white-space: normal;
+    overflow-wrap: break-word;
+    z-index: 5;
+  }
+  .ppt-paragraph {
+    margin: 0;
+    line-height: 1.25;
+  }
+  .ppt-image {
+    position: absolute;
+    object-fit: contain;
+  }
+  .ppt-rendered-slide {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    line-height: 0;
+  }
+  .ppt-rendered-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    background: transparent;
+  }
+  .excel-sheet {
+    overflow: auto;
+    max-width: 100%;
+  }
+  .excel-viewer {
+    width: 100%;
+    min-height: 300px;
+  }
+  .excel-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    font-size: 12px;
+  }
+  .excel-table th,
+  .excel-table td {
+    min-width: 92px;
+    max-width: 260px;
+    height: 28px;
+    padding: 5px 8px;
+    border-right: 1px solid #dbe3ea;
+    border-bottom: 1px solid #dbe3ea;
+    white-space: nowrap;
+  }
+  .excel-column-header,
+  .excel-row-header,
+  .excel-corner {
+    position: sticky;
+    z-index: 3;
+    background: #e9eff5;
+    color: #64748b;
+    text-align: center;
+    font-weight: 700;
+  }
+  .excel-column-header {
+    top: 0;
+  }
+  .excel-row-header {
+    left: 0;
+  }
+  .excel-corner {
+    left: 0;
+    top: 0;
+  }
+  .excel-empty {
+    text-align: center;
+    color: #94a3b8;
+    padding: 4rem 1rem;
+  }
+  .document-search {
+    width: 190px;
+  }
+  .search-highlight {
+    color: #5f3700;
+    background: linear-gradient(180deg, transparent 8%, #ffe66d 8%, #ffd43b 92%, transparent 92%);
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(255, 196, 0, 0.75), 0 0 3px #fff inset;
+    font-weight: 700;
+  }
+  .pdf-search-match,
+  .pdf-search-match #pdfCanvas {
+    box-shadow: 0 0 0 3px #ffd43b, 0 10px 35px rgba(15, 23, 42, 0.16), 0 0 18px rgba(255, 196, 0, 0.7);
+  }
+  .search-status {
+    max-width: 180px;
+  }
+  .viewer-icon-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #dbe5eb;
+    border-radius: 9px;
+    background: #fff;
+    color: #334155;
+  }
+  .viewer-icon-btn:hover {
+    background: #effafa;
+    color: #0d9488;
+  }
+  [data-bs-theme="dark"] body { background: #0b1220; }
+  [data-bs-theme="dark"] .document-toolbar,
+  [data-bs-theme="dark"] .viewer-icon-btn { background: #151f30; border-color: #2a374d; color: #e5edf5; }
+  [data-bs-theme="dark"] .document-workspace { background: #111827; border-color: #2a374d; }
+  [data-bs-theme="dark"] #sectionContainer.ppt-page,
+  [data-bs-theme="dark"] #sectionContainer.ppt-page .document-page {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-lg-4 py-3 document-viewer-shell">
+  <div class="document-toolbar">
+    <div class="document-title me-auto">
+      <strong class="text-truncate">{{ title }}</strong>
+      <span class="small text-muted text-truncate">{{ filename }}</span>
+    </div>
+    {% if viewer_type == "pdf" %}
+    <button type="button" class="viewer-icon-btn" id="prevPdf" title="Previous page"><i class="fas fa-chevron-left"></i></button>
+    <span class="small fw-semibold text-nowrap"><span id="pdfPage">1</span>/<span id="pdfPages">-</span></span>
+    <button type="button" class="viewer-icon-btn" id="nextPdf" title="Next page"><i class="fas fa-chevron-right"></i></button>
+    {% endif %}
+    {% if viewer_type in ("text", "office") %}
+    <button type="button" class="viewer-icon-btn" id="prevSection" title="Previous section"><i class="fas fa-chevron-left"></i></button>
+    <span class="small fw-semibold text-nowrap" id="sectionCounter">1 / {{ sections|length }}</span>
+    <button type="button" class="viewer-icon-btn" id="nextSection" title="Next section"><i class="fas fa-chevron-right"></i></button>
+    {% endif %}
+    <button type="button" class="viewer-icon-btn" id="zoomOut" title="Zoom out"><i class="fas fa-minus"></i></button>
+    <span class="small fw-semibold text-nowrap" id="zoomLabel">100%</span>
+    <button type="button" class="viewer-icon-btn" id="zoomIn" title="Zoom in"><i class="fas fa-plus"></i></button>
+    <button type="button" class="viewer-icon-btn d-none" id="fitPpt" title="Fit slide and reset alignment"><i class="fas fa-align-center"></i></button>
+    <input type="search" id="documentSearch" class="form-control form-control-sm document-search d-none d-md-block" placeholder="Search document">
+    <a href="{{ download_url }}" class="btn btn-sm btn-success rounded-pill px-3"><i class="fas fa-download me-1"></i>Download</a>
+    <button type="button" class="viewer-icon-btn" id="closeViewer" title="Close viewer"><i class="fas fa-xmark"></i></button>
+  </div>
+
+  <div class="document-workspace" id="documentWorkspace">
+    {% if viewer_type == "pdf" %}
+    <div class="document-page" id="pdfPageContainer"><canvas id="pdfCanvas"></canvas></div>
+    {% elif viewer_type == "image" %}
+    <div class="document-page d-flex align-items-center justify-content-center p-3">
+      <img id="viewerImage" src="{{ file_url }}" alt="{{ filename }}" class="img-fluid rounded">
+    </div>
+    {% elif viewer_type in ("text", "office") %}
+    <div class="document-page" id="sectionContainer">
+      <h5 id="sectionTitle"></h5>
+      <div class="text-document small mb-0" id="sectionText"></div>
+    </div>
+    {% else %}
+    <div class="document-page d-flex flex-column align-items-center justify-content-center text-center">
+      <i class="fas fa-file-circle-question fs-1 text-secondary mb-3"></i>
+      <h5>Preview unavailable</h5>
+      <p class="text-muted">{{ sections[0].text if sections else "This file type cannot be previewed." }}</p>
+      <a href="{{ download_url }}" class="btn btn-success rounded-pill"><i class="fas fa-download me-1"></i>Download file</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script id="viewerTypeData" type="application/json">{{ viewer_type|tojson }}</script>
+<script id="fileUrlData" type="application/json">{{ file_url|tojson }}</script>
+<script id="sectionsData" type="application/json">{{ sections|tojson }}</script>
+<script>
+  const viewerType = JSON.parse(document.getElementById("viewerTypeData").textContent);
+  const fileUrl = JSON.parse(document.getElementById("fileUrlData").textContent);
+  let zoom = 1;
+
+  function closeViewer() {
+    if (window.parent && window.parent !== window && window.parent.bootstrap) {
+      const modal = window.parent.document.getElementById("documentViewerModal");
+      if (modal) window.parent.bootstrap.Modal.getInstance(modal)?.hide();
+      return;
+    }
+    if (window.history.length > 1) window.history.back();
+    else window.close();
+  }
+  document.getElementById("closeViewer").addEventListener("click", closeViewer);
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeViewer();
+  });
+
+  function updateZoom() {
+    const pptSlide = document.querySelector(".ppt-slide");
+    const pptViewer = document.querySelector(".ppt-viewer");
+    if (pptSlide && pptViewer) {
+      const baseWidth = pptSlide.offsetWidth;
+      const baseHeight = pptSlide.offsetHeight;
+      pptSlide.style.transform = `scale(${zoom})`;
+      pptSlide.style.transformOrigin = "top center";
+      pptViewer.style.height = `${Math.round(baseHeight * zoom)}px`;
+      pptViewer.style.width = `${Math.round(baseWidth * zoom)}px`;
+      pptViewer.style.margin = "0 auto";
+    } else {
+      document.querySelectorAll(".document-page").forEach(page => page.style.zoom = String(zoom));
+    }
+    document.getElementById("zoomLabel").textContent = `${Math.round(zoom * 100)}%`;
+  }
+  document.getElementById("zoomIn").addEventListener("click", () => { zoom = Math.min(2, zoom + 0.1); updateZoom(); });
+  document.getElementById("zoomOut").addEventListener("click", () => { zoom = Math.max(0.5, zoom - 0.1); updateZoom(); });
+
+  if (viewerType === "pdf" && !window.pdfjsLib) {
+    document.getElementById("pdfPageContainer").innerHTML =
+      `<embed src="${fileUrl}" type="application/pdf" style="width:100%; height:75vh; border:0;">`;
+  }
+
+  if (viewerType === "pdf" && window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    let pdfDocument = null;
+    let pdfPageNumber = 1;
+    let pdfTextPages = [];
+
+    async function renderPdfPage(number) {
+      const page = await pdfDocument.getPage(number);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const workspaceWidth = document.getElementById("documentWorkspace").clientWidth - 64;
+      const scale = Math.min(1.35, workspaceWidth / baseViewport.width) * zoom;
+      const viewport = page.getViewport({ scale });
+      const canvas = document.getElementById("pdfCanvas");
+      const context = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: context, viewport }).promise;
+      document.getElementById("pdfPage").textContent = number;
+    }
+
+    pdfjsLib.getDocument(fileUrl).promise.then(async pdf => {
+      pdfDocument = pdf;
+      document.getElementById("pdfPages").textContent = pdf.numPages;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const text = await page.getTextContent();
+        pdfTextPages[i - 1] = text.items.map(item => item.str).join(" ").toLowerCase();
+      }
+      renderPdfPage(1);
+    }).catch(() => {
+      document.getElementById("pdfPageContainer").innerHTML =
+        '<div class="d-flex h-100 flex-column align-items-center justify-content-center text-center p-4">' +
+        '<i class="fas fa-file-circle-exclamation fs-1 text-danger mb-3"></i>' +
+        '<h5>Unable to load PDF</h5>' +
+        '<p class="text-muted mb-0">The file may be damaged or unavailable. Use Download to open it locally.</p></div>';
+    });
+
+    document.getElementById("prevPdf").addEventListener("click", () => {
+      pdfPageNumber = Math.max(1, pdfPageNumber - 1);
+      renderPdfPage(pdfPageNumber);
+    });
+    document.getElementById("nextPdf").addEventListener("click", () => {
+      if (pdfDocument) pdfPageNumber = Math.min(pdfDocument.numPages, pdfPageNumber + 1);
+      renderPdfPage(pdfPageNumber);
+    });
+
+    document.getElementById("documentSearch").addEventListener("input", event => {
+      const term = event.target.value.trim().toLowerCase();
+      if (!term) return;
+      const index = pdfTextPages.findIndex(text => text.includes(term));
+      if (index >= 0) {
+        pdfPageNumber = index + 1;
+        renderPdfPage(pdfPageNumber);
+        document.getElementById("pdfPageContainer").classList.add("pdf-search-match");
+        window.setTimeout(() => document.getElementById("pdfPageContainer").classList.remove("pdf-search-match"), 1600);
+      }
+    });
+
+    document.getElementById("zoomIn").onclick = () => { zoom = Math.min(2, zoom + 0.1); renderPdfPage(pdfPageNumber); };
+    document.getElementById("zoomOut").onclick = () => { zoom = Math.max(0.5, zoom - 0.1); renderPdfPage(pdfPageNumber); };
+  }
+
+  if (viewerType === "text" || viewerType === "office") {
+    const sectionsElement = document.getElementById("sectionsData");
+    let sections = [];
+    try {
+      sections = sectionsElement ? JSON.parse(sectionsElement.textContent) : [];
+    } catch (error) {
+      console.error("Unable to read viewer sections:", error);
+      sections = [];
+    }
+    let sectionIndex = 0;
+    let currentSearchTerm = "";
+    function escapeRegex(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    function highlightText(text, term) {
+      if (!term) return escapeHtml(text);
+      const escapedText = escapeHtml(text);
+      const escapedTerm = escapeRegex(escapeHtml(term));
+      return escapedText.replace(new RegExp(`(${escapedTerm})`, "gi"), '<mark class="search-highlight">$1</mark>');
+    }
+    function escapeHtml(value) {
+      const node = document.createElement("div");
+      node.textContent = value;
+      return node.innerHTML;
+    }
+    function highlightRenderedText(container, term) {
+      const escapedTerm = escapeRegex(term);
+      const expression = new RegExp(escapedTerm, "gi");
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+      textNodes.forEach(node => {
+        if (!expression.test(node.nodeValue)) {
+          expression.lastIndex = 0;
+          return;
+        }
+        expression.lastIndex = 0;
+        const fragment = document.createDocumentFragment();
+        let lastIndex = 0;
+        node.nodeValue.replace(expression, (match, offset) => {
+          fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex, offset)));
+          const mark = document.createElement("mark");
+          mark.className = "search-highlight";
+          mark.textContent = match;
+          fragment.appendChild(mark);
+          lastIndex = offset + match.length;
+          return match;
+        });
+        fragment.appendChild(document.createTextNode(node.nodeValue.slice(lastIndex)));
+        node.parentNode.replaceChild(fragment, node);
+      });
+    }
+    function resetPptAlignment() {
+      const slide = document.querySelector(".ppt-slide");
+      if (!slide) return;
+      slide.querySelectorAll(".ppt-text").forEach(box => {
+        box.style.zoom = "";
+        box.style.transform = "";
+      });
+      slide.querySelectorAll(".ppt-paragraph").forEach(paragraph => {
+        const sourceAlign = paragraph.dataset.align || paragraph.style.textAlign;
+        if (sourceAlign) paragraph.style.textAlign = sourceAlign;
+      });
+    }
+    window.addEventListener("resize", () => {
+      if (sections && sections[sectionIndex] && sections[sectionIndex].kind === "slide") {
+        requestAnimationFrame(resetPptAlignment);
+      }
+    });
+    function renderSection() {
+      if (!sections || sections.length === 0) {
+        document.getElementById("sectionTitle").textContent = "Document";
+        document.getElementById("sectionText").className = "text-document small mb-0";
+        document.getElementById("sectionText").textContent = "This document does not contain previewable text.";
+        document.getElementById("sectionCounter").textContent = "0 / 0";
+        return;
+      }
+      const section = sections[sectionIndex];
+      document.getElementById("sectionTitle").textContent = section.title;
+      const sectionText = document.getElementById("sectionText");
+      const sectionContainer = document.getElementById("sectionContainer");
+      if (section.html) {
+        if (section.kind === "slide") {
+          sectionText.className = "ppt-viewer mb-0";
+          sectionContainer.className = "document-page ppt-page";
+        } else if (section.kind === "sheet") {
+          sectionText.className = "excel-viewer mb-0";
+          sectionContainer.className = "document-page excel-page";
+        } else {
+          sectionText.className = "word-document mb-0";
+          sectionContainer.className = "document-page";
+        }
+        sectionText.innerHTML = section.html;
+        if (section.kind === "slide") {
+          const fitButton = document.getElementById("fitPpt");
+          if (fitButton) fitButton.classList.remove("d-none");
+          requestAnimationFrame(resetPptAlignment);
+        } else {
+          const fitButton = document.getElementById("fitPpt");
+          if (fitButton) fitButton.classList.add("d-none");
+        }
+      } else {
+        sectionText.className = "text-document small mb-0";
+        sectionText.innerHTML = highlightText(section.text, currentSearchTerm);
+      }
+      if (section.html && currentSearchTerm) {
+        highlightRenderedText(sectionText, currentSearchTerm);
+      }
+      document.getElementById("sectionCounter").textContent = `${sectionIndex + 1} / ${sections.length}`;
+    }
+    renderSection();
+    const fitButton = document.getElementById("fitPpt");
+    if (fitButton) {
+      fitButton.addEventListener("click", () => {
+        zoom = 1;
+        resetPptAlignment();
+        updateZoom();
+      });
+    }
+    document.getElementById("prevSection").addEventListener("click", () => { sectionIndex = Math.max(0, sectionIndex - 1); renderSection(); });
+    document.getElementById("nextSection").addEventListener("click", () => { sectionIndex = Math.min(sections.length - 1, sectionIndex + 1); renderSection(); });
+    document.getElementById("documentSearch").addEventListener("input", event => {
+      const term = event.target.value.trim().toLowerCase();
+      currentSearchTerm = term;
+      if (!term) {
+        renderSection();
+        return;
+      }
+      const index = sections.findIndex(section => `${section.title}\n${section.text}`.toLowerCase().includes(term));
+      if (index >= 0) {
+        sectionIndex = index;
+        renderSection();
+      } else {
+        renderSection();
+      }
+    });
+  }
+</script>
+{% endblock %}
