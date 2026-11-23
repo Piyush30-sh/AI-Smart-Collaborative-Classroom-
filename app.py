@@ -303,6 +303,46 @@ def _extract_pdf_text(uploaded_file) -> str:
     return "\n".join(pages).strip()
 
 
+def _extract_quiz_source_text(uploaded_file) -> str:
+    """Extract readable text from supported quiz source formats."""
+    filename = (uploaded_file.filename or "").lower()
+
+    if filename.endswith(".pdf"):
+        return _extract_pdf_text(uploaded_file)
+
+    if filename.endswith(".docx"):
+        uploaded_file.stream.seek(0)
+        document = Document(io.BytesIO(uploaded_file.read()))
+        sections = []
+        for paragraph in document.paragraphs:
+            if paragraph.text.strip():
+                sections.append(paragraph.text.strip())
+        for table in document.tables:
+            for row in table.rows:
+                row_text = " | ".join(
+                    cell.text.strip()
+                    for cell in row.cells
+                    if cell.text.strip()
+                )
+                if row_text:
+                    sections.append(row_text)
+        return "\n".join(sections).strip()
+
+    if filename.endswith(".txt"):
+        uploaded_file.stream.seek(0)
+        raw = uploaded_file.read()
+        for encoding in ("utf-8-sig", "utf-16", "cp1252", "latin-1"):
+            try:
+                text = raw.decode(encoding)
+                if text.strip():
+                    return text.strip()
+            except (UnicodeDecodeError, LookupError):
+                continue
+        return ""
+
+    raise ValueError("Unsupported file format. Use PDF, DOCX, or TXT.")
+
+
 def _normalize_quiz_text(text: str) -> str:
     normalized = re.sub(r"\r\n?", "\n", text or "")
     normalized = re.sub(r"\n{2,}", ". ", normalized)
@@ -722,12 +762,61 @@ def _build_quiz_questions_nlp_fallback(text: str, limit: int = 50):
     return questions
 
 
+def _sanitize_quiz_questions(questions):
+    sanitized = []
+    fallback_choices = ["Concept", "Method", "Process", "Principle", "Feature", "System"]
+
+    for item in questions or []:
+        if not isinstance(item, dict):
+            continue
+        question = re.sub(r"\s+", " ", str(item.get("question") or "")).strip()
+        answer = re.sub(r"\s+", " ", str(item.get("answer") or "")).strip()
+        if not question or not answer:
+            continue
+
+        options = []
+        for option in item.get("options") or []:
+            cleaned = re.sub(r"\s+", " ", str(option or "")).strip()
+            if cleaned and cleaned.lower() not in {value.lower() for value in options}:
+                options.append(cleaned)
+
+        if answer not in options:
+            if len(options) >= 4:
+                options[0] = answer
+            else:
+                options.append(answer)
+
+        for fallback in fallback_choices:
+            if len(options) >= 4:
+                break
+            if fallback.lower() not in {value.lower() for value in options}:
+                options.append(fallback)
+
+        if len(options) > 4:
+            options = [answer] + [
+                option for option in options
+                if option != answer
+            ][:3]
+        if len(options) != 4:
+            continue
+
+        if not re.search(r"[A-Za-z0-9]", question):
+            continue
+        sanitized.append({
+            "question": question,
+            "options": options,
+            "answer": answer,
+        })
+    return sanitized
+
+
 def _build_quiz_questions(text: str, limit: int = 50):
     """
     Intelligent Quiz Builder:
     Extracts MCQ tests with Answer Key resolution, OpenAI LLM generation, or NLP fallback.
     """
-    return build_smart_quiz(text, fallback_builder_fn=_build_quiz_questions_nlp_fallback, limit=limit)
+    questions = build_smart_quiz(text, fallback_builder_fn=_build_quiz_questions_nlp_fallback, limit=limit)
+    return _sanitize_quiz_questions(questions)
 
 
 def _fetch_quiz_attempts(user_id: int, limit: int = 10):
@@ -5867,17 +5956,21 @@ def quiz():
 
         if action == "generate":
             pdf_file = request.files.get("quiz_pdf")
+            try:
+                question_count = max(1, min(50, int(request.form.get("question_count", "10"))))
+            except (TypeError, ValueError):
+                question_count = 10
             if not pdf_file or not pdf_file.filename:
-                flash("Please choose a PDF file to generate a quiz.", "warning")
-            elif not pdf_file.filename.lower().endswith(".pdf"):
-                flash("Only PDF files are supported.", "danger")
+                flash("Please choose a PDF, Word, or TXT file to generate a quiz.", "warning")
+            elif not pdf_file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+                flash("Only PDF, DOCX, and TXT files are supported.", "danger")
             else:
                 try:
-                    extracted_text = _extract_pdf_text(pdf_file)
-                    quiz_questions = _build_quiz_questions(extracted_text)
+                    extracted_text = _extract_quiz_source_text(pdf_file)
+                    quiz_questions = _build_quiz_questions(extracted_text, limit=question_count)
                     source_name = secure_filename(pdf_file.filename)
                     if not quiz_questions:
-                        flash("No quiz questions could be generated from that PDF. Try a more text-heavy file.", "warning")
+                        flash("No quiz questions could be generated from that document. Try a clearer text-heavy file.", "warning")
                     else:
                         session["quiz_draft"] = {
                             "source_name": source_name,
@@ -6684,18 +6777,22 @@ def quiz_export_results(quiz_id):
 @login_required
 def quiz_generate_api():
     pdf_file = request.files.get("quiz_pdf")
+    try:
+        question_count = max(1, min(50, int(request.form.get("question_count", "10"))))
+    except (TypeError, ValueError):
+        question_count = 10
     if not pdf_file or not pdf_file.filename:
-        return jsonify({"status": "error", "message": "Please choose a PDF file to generate a quiz."}), 400
+        return jsonify({"status": "error", "message": "Please choose a PDF, Word, or TXT file to generate a quiz."}), 400
 
-    if not pdf_file.filename.lower().endswith(".pdf"):
-        return jsonify({"status": "error", "message": "Only PDF files are supported."}), 400
+    if not pdf_file.filename.lower().endswith((".pdf", ".docx", ".txt")):
+        return jsonify({"status": "error", "message": "Only PDF, DOCX, and TXT files are supported."}), 400
 
     try:
-        extracted_text = _extract_pdf_text(pdf_file)
+        extracted_text = _extract_quiz_source_text(pdf_file)
     except Exception as exc:
-        return jsonify({"status": "error", "message": f"Could not read the PDF: {exc}"}), 400
+        return jsonify({"status": "error", "message": f"Could not read the document: {exc}"}), 400
 
-    quiz_questions = _build_quiz_questions(extracted_text)
+    quiz_questions = _build_quiz_questions(extracted_text, limit=question_count)
     source_name = secure_filename(pdf_file.filename)
 
     if not quiz_questions:

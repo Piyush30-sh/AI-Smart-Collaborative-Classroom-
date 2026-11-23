@@ -3,6 +3,9 @@ import tempfile
 import importlib
 import json
 import unittest
+import io
+from werkzeug.datastructures import FileStorage
+from docx import Document
 
 
 def setup_app_module():
@@ -18,6 +21,38 @@ def setup_app_module():
 
 
 class LiveQuizzesTestCase(unittest.TestCase):
+    def test_quiz_source_extraction_supports_docx_and_txt(self):
+        module, db_path, upload_dir = setup_app_module()
+        text = "Photosynthesis is the process by which plants convert sunlight into chemical energy."
+
+        docx_stream = io.BytesIO()
+        doc = Document()
+        doc.add_heading("Photosynthesis", level=1)
+        doc.add_paragraph(text)
+        doc.save(docx_stream)
+        docx_stream.seek(0)
+        docx_file = FileStorage(stream=docx_stream, filename="notes.docx")
+
+        txt_file = FileStorage(
+            stream=io.BytesIO(text.encode("utf-8")),
+            filename="notes.txt",
+        )
+
+        docx_text = module._extract_quiz_source_text(docx_file)
+        txt_text = module._extract_quiz_source_text(txt_file)
+
+        self.assertIn("Photosynthesis", docx_text)
+        self.assertIn("process", docx_text)
+        self.assertIn("Photosynthesis", txt_text)
+        self.assertIn("chemical energy", txt_text)
+
+        questions = module._build_quiz_questions(text)
+        self.assertTrue(questions)
+        for question in questions:
+            self.assertIn("question", question)
+            self.assertEqual(len(question["options"]), 4)
+            self.assertIn(question["answer"], question["options"])
+
     def test_faculty_create_start_quiz_student_notification_concurrent_attempts_and_results(self):
         module, db_path, upload_dir = setup_app_module()
         client = module.app.test_client()

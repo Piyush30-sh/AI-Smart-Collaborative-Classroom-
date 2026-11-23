@@ -128,6 +128,104 @@
     color: #15aabf !important;
   }
 
+  .resource-file-dropzone {
+    position: relative;
+    min-height: 112px;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    width: 100%;
+    padding: 1rem;
+    border: 1.5px dashed rgba(8, 145, 178, 0.55);
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.14), transparent 32%),
+      linear-gradient(135deg, rgba(8, 145, 178, 0.055), rgba(56, 189, 248, 0.04));
+    cursor: pointer;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+  }
+
+  .resource-file-dropzone:hover,
+  .resource-file-dropzone.is-dragging {
+    transform: translateY(-2px);
+    border-color: #0891b2;
+    box-shadow: 0 12px 28px rgba(8, 145, 178, 0.14);
+  }
+
+  .resource-file-dropzone.is-dragging {
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.13), rgba(56, 189, 248, 0.11));
+  }
+
+  .resource-file-dropzone.has-file {
+    border-style: solid;
+    border-color: rgba(8, 145, 178, 0.38);
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.11), rgba(56, 189, 248, 0.06));
+  }
+
+  .resource-file-icon {
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    color: #ffffff;
+    font-size: 1.25rem;
+    background: linear-gradient(135deg, #0f8c9d, #38bdf8);
+    box-shadow: 0 8px 18px rgba(8, 145, 178, 0.28);
+  }
+
+  .resource-file-dropzone.has-file .resource-file-icon {
+    animation: resource-file-pop 0.35s ease;
+  }
+
+  .resource-file-copy {
+    min-width: 0;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .resource-file-copy strong {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--cls-text);
+    font-size: 0.88rem;
+  }
+
+  .resource-file-copy small {
+    margin-top: 0.25rem;
+    color: var(--cls-muted);
+  }
+
+  .resource-file-action {
+    flex: 0 0 auto;
+    padding: 0.48rem 0.78rem;
+    border-radius: 999px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0f8c9d, #15aabf);
+    font-size: 0.78rem;
+    font-weight: 700;
+    box-shadow: 0 6px 14px rgba(8, 145, 178, 0.22);
+  }
+
+  @keyframes resource-file-pop {
+    0% { transform: scale(0.82) rotate(-5deg); }
+    70% { transform: scale(1.06) rotate(2deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  [data-bs-theme="dark"] .resource-file-dropzone {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 140, 157, 0.10));
+    border-color: rgba(56, 189, 248, 0.48);
+  }
+
+  [data-bs-theme="dark"] .resource-file-dropzone.has-file {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(15, 140, 157, 0.12));
+  }
+
   .student-avatar,
   .student-avatar-lg {
     background: rgba(6, 182, 212, 0.15) !important;
@@ -794,11 +892,18 @@
                 <div class="mb-3" id="fileUploadContainer">
                   <label class="form-label small fw-semibold" style="color: var(--cls-muted)">Choose File <span
                       class="text-danger">*</span></label>
-                  <input type="file" class="form-control form-control-sm" style="
-                      border-radius: 10px;
-                      border: 1px solid var(--cls-border);
-                    " id="resourceFileField" name="resource_file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.md" />
+                  <label class="resource-file-dropzone" id="resourceFileDropzone" for="resourceFileField">
+                    <input type="file" class="d-none" id="resourceFileField" name="resource_file"
+                      accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip,.rar,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.md" />
+                    <span class="resource-file-icon"><i class="fas fa-cloud-arrow-up"></i></span>
+                    <span class="resource-file-copy">
+                      <strong id="resourceFileTitle">Choose a file or drag it here</strong>
+                      <small id="resourceFileMeta">PDF, Word, PowerPoint, Excel, text, ZIP or image</small>
+                    </span>
+                    <span class="resource-file-action">
+                      <i class="fas fa-folder-open me-1"></i>Browse
+                    </span>
+                  </label>
                   <div class="form-text small text-muted">
                     Supports PDF, Word, PowerPoint, Excel, text notes, archives &amp; images.
                   </div>
@@ -2809,8 +2914,58 @@
     }
   }
 
+  function initResourceFileDropzone() {
+    const field = document.getElementById("resourceFileField");
+    const dropzone = document.getElementById("resourceFileDropzone");
+    const title = document.getElementById("resourceFileTitle");
+    const meta = document.getElementById("resourceFileMeta");
+    if (!field || !dropzone) return;
+
+    function formatFileSize(bytes) {
+      if (!bytes) return "0 KB";
+      if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function showSelectedFile(file) {
+      if (!file) return;
+      dropzone.classList.add("has-file");
+      if (title) title.textContent = file.name;
+      if (meta) meta.textContent = `${file.type || "Document"} • ${formatFileSize(file.size)} • Ready to upload`;
+    }
+
+    field.addEventListener("change", () => showSelectedFile(field.files && field.files[0]));
+
+    ["dragenter", "dragover"].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.classList.add("is-dragging");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(eventName => {
+      dropzone.addEventListener(eventName, event => {
+        event.preventDefault();
+        dropzone.classList.remove("is-dragging");
+      });
+    });
+
+    dropzone.addEventListener("drop", event => {
+      event.preventDefault();
+      const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+      if (!file) return;
+      if (typeof DataTransfer !== "undefined") {
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        field.files = transfer.files;
+      }
+      showSelectedFile(file);
+    });
+  }
+
   /* ─── Auto-switch tab from URL parameter ───────── */
   document.addEventListener("DOMContentLoaded", function () {
+    initResourceFileDropzone();
     const urlParams = new URLSearchParams(window.location.search);
     const requestedTab = urlParams.get("tab");
     if (requestedTab) {

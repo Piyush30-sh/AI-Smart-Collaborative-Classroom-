@@ -4,15 +4,15 @@
 {% block extra_css %}
 <style>
   :root {
-    --quiz-primary: #4f46e5;
-    --quiz-primary-light: #eff6ff;
+    --quiz-primary: #0891b2;
+    --quiz-primary-light: rgba(8, 145, 178, 0.12);
     --quiz-success: #10b981;
     --quiz-warning: #f59e0b;
-    --quiz-purple: #8b5cf6;
+    --quiz-accent: #38bdf8;
   }
 
   .quiz-hero-banner {
-    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+    background: linear-gradient(135deg, #0f766e 0%, #0891b2 55%, #38bdf8 100%);
     border-radius: 20px;
     color: #ffffff;
     padding: 2.5rem 2rem;
@@ -29,7 +29,7 @@
     right: -10%;
     width: 380px;
     height: 380px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(139, 92, 246, 0) 70%);
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(56, 189, 248, 0) 70%);
     border-radius: 50%;
     pointer-events: none;
   }
@@ -64,7 +64,7 @@
 
   .quiz-card:hover {
     border-color: var(--quiz-primary);
-    box-shadow: 0 10px 24px -5px rgba(79, 70, 229, 0.12);
+    box-shadow: 0 10px 24px -5px rgba(8, 145, 178, 0.12);
   }
 
   .quiz-card.is-active-pulse {
@@ -88,7 +88,7 @@
   .nav-pills-quiz .nav-link.active {
     background-color: var(--quiz-primary);
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
   }
 
   .question-builder-item {
@@ -122,11 +122,185 @@
     100% {
       opacity: 1;
     }
-
-    50% {
+     50% {
       opacity: 0.65;
     }
   }
+
+    .ai-generator-control {
+      border: 1px solid rgba(8, 145, 178, 0.18);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.13), transparent 34%),
+        linear-gradient(135deg, rgba(8, 145, 178, 0.07), rgba(56, 189, 248, 0.03));
+    }
+
+    [data-bs-theme="dark"] .ai-generator-control {
+      background:
+        radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.14), transparent 34%),
+        linear-gradient(135deg, rgba(8, 145, 178, 0.10), rgba(30, 41, 59, 0.72));
+      border-color: rgba(56, 189, 248, 0.24);
+    }
+
+    .ai-question-select,
+    .ai-document-field {
+      min-height: 52px;
+    }
+
+    .ai-generator-button,
+    .ai-publish-button {
+      position: relative;
+      min-height: 52px;
+      border: 0;
+      overflow: hidden;
+      margin-bottom: 1.0rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      box-shadow: 0 10px 24px rgba(8, 145, 178, 0.24);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .ai-generator-button {
+      background: linear-gradient(135deg, #0f8c9d 0%, #38bdf8 100%);
+      margin-top: 0.9rem;
+    }
+
+    .ai-publish-button {
+      min-height: 48px;
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.24);
+    }
+
+    .ai-generator-button::after,
+    .ai-publish-button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      transform: translateX(-120%) skewX(-18deg);
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+      transition: transform 0.55s ease;
+    }
+
+    .ai-generator-button:hover,
+    .ai-publish-button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.04);
+    }
+
+    .ai-generator-button:hover::after,
+    .ai-publish-button:hover::after {
+      transform: translateX(120%) skewX(-18deg);
+    }
+
+    .ai-generator-button:disabled {
+      opacity: 0.78;
+      transform: none;
+    }
+
+    .ai-preview-panel {
+      border: 1px solid rgba(8, 145, 178, 0.16);
+      background:
+        radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.10), transparent 30%),
+        var(--bs-tertiary-bg);
+    }
+
+    [data-bs-theme="dark"] .ai-preview-panel {
+      border-color: rgba(56, 189, 248, 0.22);
+    }
+
+    .ai-preview-settings {
+      border: 1px solid rgba(8, 145, 178, 0.10);
+      border-radius: 16px;
+      background: var(--bs-body-bg);
+    }
+
+    .ai-question-card {
+      border: 1px solid rgba(8, 145, 178, 0.14);
+      border-radius: 16px;
+      background: var(--bs-body-bg);
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .ai-question-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(8, 145, 178, 0.34);
+      box-shadow: 0 12px 28px rgba(8, 145, 178, 0.08);
+    }
+
+    .ai-question-number {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      color: #ffffff;
+      background: linear-gradient(135deg, #0891b2, #38bdf8);
+      font-weight: 800;
+      box-shadow: 0 8px 16px rgba(8, 145, 178, 0.20);
+    }
+
+    .ai-option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .ai-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      min-height: 44px;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid rgba(100, 116, 139, 0.14);
+      border-radius: 11px;
+      color: var(--bs-body-color);
+      background: rgba(100, 116, 139, 0.035);
+    }
+
+    .ai-option-letter {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 24px;
+      display: grid;
+      place-items: center;
+      border-radius: 7px;
+      background: rgba(8, 145, 178, 0.10);
+      color: #0891b2;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .ai-answer-row {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 11px;
+      color: #047857;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.04));
+      border: 1px solid rgba(16, 185, 129, 0.18);
+    }
+
+    [data-bs-theme="dark"] .ai-answer-row {
+      color: #6ee7b7;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.13), rgba(16, 185, 129, 0.055));
+    }
+
+    @media (max-width: 767.98px) {
+      .ai-option-grid {
+        grid-template-columns: 1fr;
+      }
+      .ai-question-number {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+      }
+    }
+
+   
 </style>
 {% endblock %}
 
@@ -153,11 +327,11 @@
       </h1>
       <p class="mb-0 text-white-75">
         {% if is_faculty %}
-        Manually author MCQs, convert lecture PDFs with AI, launch live classroom tests, and track multi-student results
+        Manually author MCQs, convert PDF/Word/TXT documents with AI, launch live classroom tests, and track multi-student results
         in real time.
         {% else %}
         Participate in active classroom tests assigned by faculty and generate custom self-study quizzes from your
-        lecture PDFs.
+        lecture PDFs or Word/TXT documents.
         {% endif %}
       </p>
     </div>
@@ -169,7 +343,7 @@
         <i class="fas fa-plus-circle me-1"></i> Create Manual Quiz
       </button>
       <button type="button" class="btn btn-outline-light rounded-pill px-3.5 py-2" onclick="switchToAiTab()">
-        <i class="fas fa-robot me-1"></i> AI PDF Generator
+        <i class="fas fa-robot me-1"></i> AI Document Generator
       </button>
       {% else %}
       <a href="#activeQuizzesSection" class="btn btn-light text-primary fw-bold rounded-pill px-3.5 py-2 shadow-sm">
@@ -219,9 +393,9 @@
           <div>
             <div class="small text-muted fw-semibold text-uppercase">Student Submissions</div>
             {% set total_subs = faculty_quizzes|map(attribute='submissions_count')|sum %}
-            <div class="h2 fw-bold text-purple mb-0 mt-1">{{ total_subs }}</div>
+            <div class="h2 fw-bold text-primary mb-0 mt-1">{{ total_subs }}</div>
           </div>
-          <div class="p-3 bg-purple bg-opacity-10 text-purple rounded-3">
+          <div class="p-3 bg-primary-subtle text-primary rounded-3">
             <i class="fas fa-users-viewfinder fs-4"></i>
           </div>
         </div>
@@ -261,7 +435,7 @@
     <li class="nav-item" role="presentation">
       <button class="nav-link" id="tab-ai-gen-btn" data-bs-toggle="pill" data-bs-target="#tab-ai-gen" type="button"
         role="tab">
-        <i class="fas fa-wand-magic-sparkles me-2"></i>AI PDF to Quiz Generator
+        <i class="fas fa-wand-magic-sparkles me-2"></i>AI Document to Quiz Generator
       </button>
     </li>
   </ul>
@@ -345,7 +519,7 @@
                     }}</strong>{% if q.duration_minutes %} min{% endif %}
                 </div>
                 <div class="col-4">
-                  <i class="fas fa-users text-purple me-1"></i><strong>{{ q.submissions_count }}</strong> Submissions
+                  <i class="fas fa-users text-primary me-1"></i><strong>{{ q.submissions_count }}</strong> Submissions
                 </div>
               </div>
             </div>
@@ -389,14 +563,14 @@
       <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
         <i class="fas fa-circle-question text-muted fs-1 mb-3"></i>
         <h3 class="fw-bold">No Quizzes Created Yet</h3>
-        <p class="text-muted">Create your first manual quiz or generate one with AI from a subject PDF.</p>
+        <p class="text-muted">Create your first manual quiz or generate one with AI from a PDF, Word, or TXT document.</p>
         <div class="d-flex gap-2 justify-content-center mt-2">
           <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal"
             data-bs-target="#createQuizModal">
             <i class="fas fa-plus-circle me-1"></i> Create Manual Quiz
           </button>
-          <button type="button" class="btn btn-outline-purple rounded-pill px-4" onclick="switchToAiTab()">
-            <i class="fas fa-robot me-1"></i> Generate via PDF
+          <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="switchToAiTab()">
+            <i class="fas fa-robot me-1"></i> Generate via Document
           </button>
         </div>
       </div>
@@ -542,24 +716,35 @@
     </div>
     {% endif %}
 
-    <!-- ── TAB 3: AI PDF TO QUIZ GENERATOR ──────────────────────────── -->
+    <!-- ── TAB 3: AI DOCUMENT TO QUIZ GENERATOR ───────────────────────── -->
     <div class="tab-pane fade" id="tab-ai-gen" role="tabpanel">
-      <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
-        <h4 class="fw-bold mb-1"><i class="fas fa-wand-magic-sparkles text-purple me-2"></i>AI PDF-to-Quiz Generator
+      <div class="card ai-generator-control border-0 shadow-sm p-4 mb-4">
+        <h4 class="fw-bold mb-1"><i class="fas fa-wand-magic-sparkles text-primary me-2"></i>AI Document-to-Quiz Generator
         </h4>
-        <p class="text-muted small mb-4">Upload course lecture slides or textbook chapters. AI will extract key concepts
+        <p class="text-muted small mb-4">Upload PDF, Word (.docx), or TXT study material. AI will extract key concepts
           and automatically build a ready-to-host quiz.</p>
 
         <form id="aiQuizUploadForm" enctype="multipart/form-data">
           <div class="row g-3 align-items-center">
-            <div class="col-md-8">
-              <label class="form-label fw-semibold">Select Syllabus or Lecture PDF</label>
-              <input type="file" class="form-control form-control-lg rounded-3" id="aiPdfInput" name="quiz_pdf"
-                accept=".pdf" required />
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Select PDF, Word, or TXT Document</label>
+              <input type="file" class="form-control form-control-lg rounded-3 ai-document-field" id="aiPdfInput" name="quiz_pdf"
+                accept=".pdf,.docx,.txt" required />
             </div>
-            <div class="col-md-4 d-grid">
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Number of Questions</label>
+              <select class="form-select form-select-lg rounded-3 ai-question-select" id="aiQuestionCount">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+                <option value="25">25 Questions</option>
+                <option value="30">30 Questions</option>
+              </select>
+            </div>
+            <div class="col-md-3 d-grid">
               <label class="form-label d-none d-md-block">&nbsp;</label>
-              <button type="button" class="btn btn-purple btn-lg rounded-3" id="aiGenBtn"
+              <button type="button" class="btn btn-primary btn-lg rounded-3 ai-generator-button" id="aiGenBtn"
                 onclick="generateAiQuizAction()">
                 <i class="fas fa-bolt me-1"></i> Extract & Generate
               </button>
@@ -570,19 +755,19 @@
         <div id="aiQuizGenStatus" class="mt-3"></div>
 
         <!-- Generated Questions Preview & Publish Panel -->
-        <div id="aiPublishPanel" class="d-none mt-4 p-4 bg-body-tertiary rounded-4 border">
+        <div id="aiPublishPanel" class="d-none mt-4 p-4 rounded-4 ai-preview-panel">
           <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
               <h5 class="fw-bold mb-1" id="aiGenTitle">Generated Quiz Questions</h5>
               <p class="text-muted small mb-0" id="aiGenSubtitle">Review questions below before launching live to
                 students.</p>
             </div>
-            <button type="button" class="btn btn-success rounded-pill px-4" onclick="publishAiQuizToClassroom()">
+            <button type="button" class="btn btn-success rounded-pill px-4 ai-publish-button" id="aiPublishBtn" onclick="publishAiQuizToClassroom()">
               <i class="fas fa-play-circle me-1"></i> Publish as Live Quiz
             </button>
           </div>
 
-          <div class="row g-3 mb-3">
+          <div class="row g-3 mb-3 p-3 ai-preview-settings">
             <div class="col-md-6">
               <label class="form-label fw-semibold">Quiz Title</label>
               <input type="text" class="form-control" id="aiTitleInput" value="AI Generated Assessment" />
@@ -592,7 +777,7 @@
               <select class="form-select" id="aiClassSelect">
                 <option value="">All Students (Global)</option>
                 {% for c in faculty_classrooms %}
-                <option value="{{ c.id }}">{{ c.class_name }} ({{ c.class_code }})</option>
+                <option value="{{ c.id }}">{{ c.class_name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -973,13 +1158,13 @@
   </div>
   {% endif %}
 
-  <!-- Self Practice PDF to Quiz Engine -->
+  <!-- Self Practice Document to Quiz Engine -->
   <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-          <h5 class="fw-bold mb-1"><i class="fas fa-robot text-purple me-2"></i>Personal AI Practice Quiz Generator</h5>
-          <p class="text-muted small mb-0">Convert your own study notes or textbook PDF into an instant self-test.</p>
+          <h5 class="fw-bold mb-1"><i class="fas fa-robot text-primary me-2"></i>Personal AI Practice Quiz Generator</h5>
+          <p class="text-muted small mb-0">Convert PDF, Word (.docx), or TXT study notes into an instant self-test.</p>
         </div>
         <span
           class="badge bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle rounded-pill px-3 py-1 text-uppercase fw-bold"
@@ -990,11 +1175,21 @@
 
       <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
         <input type="hidden" name="action" value="generate" />
-        <div class="col-lg-8">
-          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf" accept=".pdf" required />
+        <div class="col-lg-6">
+          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf" accept=".pdf,.docx,.txt" required />
         </div>
-        <div class="col-lg-4 d-grid">
-          <button type="submit" class="btn btn-purple btn-lg rounded-3">
+        <div class="col-lg-3">
+          <select class="form-select form-select-lg rounded-3" name="question_count" aria-label="Number of questions">
+            <option value="5">5 Questions</option>
+            <option value="10" selected>10 Questions</option>
+            <option value="15">15 Questions</option>
+            <option value="20">20 Questions</option>
+            <option value="25">25 Questions</option>
+            <option value="30">30 Questions</option>
+          </select>
+        </div>
+        <div class="col-lg-3 d-grid">
+          <button type="submit" class="btn btn-primary btn-lg rounded-3 ai-generator-button">
             <i class="fas fa-file-circle-question me-2"></i>Generate Practice Quiz
           </button>
         </div>
@@ -1096,23 +1291,40 @@
 
   let aiExtractedQuestions = [];
 
+  function escapeQuizHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = value == null ? '' : String(value);
+    return element.innerHTML;
+  }
+
   async function generateAiQuizAction() {
     const fileInput = document.getElementById('aiPdfInput');
     const statusDiv = document.getElementById('aiQuizGenStatus');
     const genBtn = document.getElementById('aiGenBtn');
+    const questionCountInput = document.getElementById('aiQuestionCount');
 
     if (!fileInput || !fileInput.files[0]) {
-      alert("Please select a PDF file first.");
+      alert("Please select a PDF, Word, or TXT file first.");
+      return;
+    }
+    const fileName = fileInput.files[0].name.toLowerCase();
+    if (!fileName.endsWith('.pdf') && !fileName.endsWith('.docx') && !fileName.endsWith('.txt')) {
+      alert("Only PDF, DOCX, and TXT files are supported.");
       return;
     }
 
     genBtn.disabled = true;
-    genBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Extracting & Generating...';
-    if (statusDiv) statusDiv.innerHTML = '<div class="alert alert-info py-2">Analyzing PDF content and synthesizing MCQs...</div>';
+    genBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Questions...';
+    if (statusDiv) statusDiv.innerHTML = `
+      <div class="alert alert-info py-3 border-0 rounded-3 d-flex align-items-center gap-2">
+        <span class="spinner-border spinner-border-sm"></span>
+        <span>Analyzing the document and building accurate MCQs...</span>
+      </div>`;
 
     try {
       const formData = new FormData();
       formData.append('quiz_pdf', fileInput.files[0]);
+      formData.append('question_count', questionCountInput?.value || '10');
 
       const res = await fetch('{{ url_for("quiz_generate_api") }}', {
         method: 'POST',
@@ -1122,7 +1334,11 @@
 
       if (data.status === 'ok' && data.quiz_questions) {
         aiExtractedQuestions = data.quiz_questions;
-        if (statusDiv) statusDiv.innerHTML = `<div class="alert alert-success py-2">Successfully generated ${aiExtractedQuestions.length} questions from ${data.source_name}!</div>`;
+        if (statusDiv) statusDiv.innerHTML = `
+          <div class="alert alert-success py-3 border-0 rounded-3 d-flex align-items-center justify-content-between gap-2">
+            <span><i class="fas fa-circle-check me-2"></i><strong>${aiExtractedQuestions.length} questions</strong> generated from ${escapeQuizHtml(data.source_name)}</span>
+            <span class="badge bg-success rounded-pill">Ready to review</span>
+          </div>`;
 
         // Populate preview panel
         const publishPanel = document.getElementById('aiPublishPanel');
@@ -1130,16 +1346,34 @@
         const titleInput = document.getElementById('aiTitleInput');
 
         if (titleInput) {
-          titleInput.value = data.source_name.replace(/\.pdf$/i, '') + ' Quiz';
+          titleInput.value = data.source_name.replace(/\.(pdf|docx|txt)$/i, '') + ' Quiz';
         }
 
         if (qList) {
           qList.innerHTML = aiExtractedQuestions.map((q, idx) => `
-            <div class="p-3 bg-body rounded-3 border">
-              <div class="fw-bold mb-1">Q${idx + 1}. ${q.question}</div>
-              <div class="small text-muted mb-1">Options: ${q.options ? q.options.join(' • ') : ''}</div>
-              <div class="small text-success fw-semibold"><i class="fas fa-check me-1"></i>Answer: ${q.answer}</div>
-            </div>
+            <article class="ai-question-card p-3 p-md-4">
+              <div class="d-flex align-items-start gap-3">
+                <div class="ai-question-number">${String(idx + 1).padStart(2, '0')}</div>
+                <div class="flex-grow-1">
+                  <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
+                    ${escapeQuizHtml(q.question)}
+                  </div>
+                  <div class="ai-option-grid">
+                    ${(q.options || []).map((option, optionIndex) => `
+                      <div class="ai-option">
+                        <span class="ai-option-letter">${String.fromCharCode(65 + optionIndex)}</span>
+                        <span>${escapeQuizHtml(option)}</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="ai-answer-row">
+                    <i class="fas fa-circle-check"></i>
+                    <span class="small fw-bold text-uppercase" style="letter-spacing:.05em;">Correct Answer</span>
+                    <span class="fw-bold">${escapeQuizHtml(q.answer)}</span>
+                  </div>
+                </div>
+              </div>
+            </article>
           `).join('');
         }
 
@@ -1159,6 +1393,12 @@
     if (!aiExtractedQuestions || aiExtractedQuestions.length === 0) {
       alert("No questions to publish.");
       return;
+    }
+
+    const publishBtn = document.getElementById('aiPublishBtn');
+    if (publishBtn) {
+      publishBtn.disabled = true;
+      publishBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publishing Quiz...';
     }
 
     const title = document.getElementById('aiTitleInput')?.value || "AI Generated Quiz";
@@ -1189,6 +1429,11 @@
       }
     } catch (err) {
       alert("Network error while publishing quiz.");
+    } finally {
+      if (publishBtn) {
+        publishBtn.disabled = false;
+        publishBtn.innerHTML = '<i class="fas fa-play-circle me-2"></i>Publish as Live Quiz';
+      }
     }
   }
 </script>

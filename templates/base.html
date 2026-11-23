@@ -34,6 +34,94 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <style>
+    .modern-file-dropzone {
+      position: relative;
+      min-height: 108px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.9rem 1rem;
+      border: 1.5px dashed rgba(8, 145, 178, 0.52);
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 92% 12%, rgba(56, 189, 248, 0.13), transparent 32%),
+        linear-gradient(135deg, rgba(8, 145, 178, 0.055), rgba(56, 189, 248, 0.035));
+      cursor: pointer;
+      transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+      overflow: hidden;
+    }
+    .modern-file-dropzone:hover,
+    .modern-file-dropzone.is-dragging {
+      transform: translateY(-2px);
+      border-color: #0891b2;
+      box-shadow: 0 12px 28px rgba(8, 145, 178, 0.14);
+    }
+    .modern-file-dropzone.is-dragging {
+      background: linear-gradient(135deg, rgba(8, 145, 178, 0.13), rgba(56, 189, 248, 0.11));
+    }
+    .modern-file-dropzone.has-file {
+      border-style: solid;
+      border-color: rgba(8, 145, 178, 0.42);
+      background: linear-gradient(135deg, rgba(8, 145, 178, 0.10), rgba(56, 189, 248, 0.055));
+    }
+    .modern-file-icon {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 52px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, #0f8c9d, #38bdf8);
+      box-shadow: 0 8px 18px rgba(8, 145, 178, 0.25);
+    }
+    .modern-file-copy {
+      min-width: 0;
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+    }
+    .modern-file-copy strong {
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--bs-body-color);
+      font-size: 0.88rem;
+    }
+    .modern-file-copy small {
+      margin-top: 0.22rem;
+      color: var(--bs-secondary-color);
+    }
+    .modern-file-action {
+      flex: 0 0 auto;
+      padding: 0.48rem 0.78rem;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(135deg, #0f8c9d, #15aabf);
+      font-size: 0.78rem;
+      font-weight: 700;
+      box-shadow: 0 6px 14px rgba(8, 145, 178, 0.20);
+    }
+    .modern-file-dropzone.has-file .modern-file-icon {
+      animation: modern-file-pop .35s ease;
+    }
+    @keyframes modern-file-pop {
+      0% { transform: scale(.82) rotate(-5deg); }
+      70% { transform: scale(1.06) rotate(2deg); }
+      100% { transform: scale(1) rotate(0); }
+    }
+    [data-bs-theme="dark"] .modern-file-dropzone {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 140, 157, 0.10));
+      border-color: rgba(56, 189, 248, 0.48);
+    }
+    [data-bs-theme="dark"] .modern-file-dropzone.has-file {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.13), rgba(15, 140, 157, 0.12));
+    }
+  </style>
   {% block extra_css %}{% endblock %}
 </head>
 
@@ -581,6 +669,96 @@
           }
         });
       }
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const fields = document.querySelectorAll('input[type="file"]:not(.d-none):not(.modern-file-enhanced)');
+
+      fields.forEach((field) => {
+        if (field.closest('.resource-file-dropzone') ||
+            field.closest('.modern-file-dropzone') ||
+            field.id === 'chatAttachmentInput') {
+          return;
+        }
+
+        field.classList.add('modern-file-enhanced');
+
+        const wrapper = document.createElement('label');
+        wrapper.className = 'modern-file-dropzone';
+        wrapper.htmlFor = field.id || '';
+
+        const icon = document.createElement('span');
+        icon.className = 'modern-file-icon';
+        icon.innerHTML = '<i class="fas fa-cloud-arrow-up"></i>';
+
+        const copy = document.createElement('span');
+        copy.className = 'modern-file-copy';
+        const title = document.createElement('strong');
+        title.textContent = 'Choose a file or drag it here';
+        const meta = document.createElement('small');
+        const acceptedFormats = (field.accept || '')
+          .split(',')
+          .map(format => format.trim())
+          .filter(Boolean)
+          .join(', ')
+          .replace(/,/g, ' • ')
+          .replace(/\./g, '')
+          .replace(/\b(pdf|docx|txt)\b/gi, match => match.toUpperCase());
+        meta.textContent = acceptedFormats
+          ? `Supported formats: ${acceptedFormats}`
+          : 'Choose a supported file';
+        copy.append(title, meta);
+
+        const action = document.createElement('span');
+        action.className = 'modern-file-action';
+        action.innerHTML = '<i class="fas fa-folder-open me-1"></i>Browse';
+
+        field.before(wrapper);
+        wrapper.append(icon, copy, action, field);
+        field.classList.add('d-none');
+
+        function formatSize(bytes) {
+          if (!bytes) return '0 KB';
+          if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+          return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        function showFile(file) {
+          if (!file) return;
+          wrapper.classList.add('has-file');
+          title.textContent = file.name;
+          meta.textContent = `${file.type || 'Document'} • ${formatSize(file.size)} • Ready to upload`;
+        }
+
+        field.addEventListener('change', () => showFile(field.files && field.files[0]));
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+          wrapper.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            wrapper.classList.add('is-dragging');
+          });
+        });
+
+        ['dragleave', 'drop'].forEach((eventName) => {
+          wrapper.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            wrapper.classList.remove('is-dragging');
+          });
+        });
+
+        wrapper.addEventListener('drop', (event) => {
+          event.preventDefault();
+          const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+          if (!file) return;
+          if (typeof DataTransfer !== 'undefined') {
+            const transfer = new DataTransfer();
+            transfer.items.add(file);
+            field.files = transfer.files;
+          }
+          showFile(file);
+        });
+      });
     });
   </script>
   {% block extra_js %}{% endblock %}
