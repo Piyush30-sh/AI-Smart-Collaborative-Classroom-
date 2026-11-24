@@ -249,14 +249,46 @@
 
     .ai-option {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 0.55rem;
-      min-height: 44px;
+      min-height: 60px;
       padding: 0.65rem 0.75rem;
       border: 1px solid rgba(100, 116, 139, 0.14);
       border-radius: 11px;
       color: var(--bs-body-color);
       background: rgba(100, 116, 139, 0.035);
+    }
+
+    .ai-practice-option {
+      position: relative;
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+    }
+
+    .ai-practice-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(8, 145, 178, 0.4);
+    }
+
+    .ai-practice-option:focus-within {
+      outline: 3px solid rgba(8, 145, 178, 0.25);
+      outline-offset: 2px;
+    }
+
+    .ai-practice-option.is-selected {
+      border-color: rgba(8, 145, 178, 0.65);
+      background: rgba(8, 145, 178, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.18);
+    }
+
+    .ai-practice-result-option.is-correct-answer {
+      border-color: rgba(16, 185, 129, 0.38);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .ai-practice-result-option.is-wrong-selection {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.08);
     }
 
     .ai-option-letter {
@@ -282,6 +314,25 @@
       color: #047857;
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.04));
       border: 1px solid rgba(16, 185, 129, 0.18);
+    }
+
+    .practice-generation-status {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-top: 1rem;
+      padding: 1rem 1.15rem;
+      border: 1px solid rgba(34, 211, 238, 0.12);
+      border-radius: 12px;
+      color: #67e8f9;
+      background: #062b31;
+    }
+
+    .practice-generation-status .spinner-border {
+      flex: 0 0 auto;
+      width: 1.05rem;
+      height: 1.05rem;
+      border-width: 0.16em;
     }
 
     [data-bs-theme="dark"] .ai-answer-row {
@@ -1173,10 +1224,12 @@
         </span>
       </div>
 
-      <form method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
+      <form id="studentPracticeQuizForm" method="POST" enctype="multipart/form-data"
+        class="row g-3 align-items-center">
         <input type="hidden" name="action" value="generate" />
         <div class="col-lg-6">
-          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf" accept=".pdf,.docx,.txt" required />
+          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf"
+            accept=".pdf,.docx,.txt" required />
         </div>
         <div class="col-lg-3">
           <select class="form-select form-select-lg rounded-3" name="question_count" aria-label="Number of questions">
@@ -1189,11 +1242,108 @@
           </select>
         </div>
         <div class="col-lg-3 d-grid">
-          <button type="submit" class="btn btn-primary btn-lg rounded-3 ai-generator-button">
+          <button id="studentPracticeGenerateButton" type="submit"
+            class="btn btn-primary btn-lg rounded-3 ai-generator-button">
             <i class="fas fa-file-circle-question me-2"></i>Generate Practice Quiz
           </button>
         </div>
       </form>
+
+      <div id="studentPracticeQuizStatus" class="practice-generation-status d-none" role="status"
+        aria-live="polite"></div>
+      <div id="studentPracticeQuizOutput">
+      {% if quiz_questions %}
+      <div class="mt-4">
+        {% set option_letters = ['A', 'B', 'C', 'D', 'E', 'F'] %}
+        {% if quiz_results %}
+        <div class="ai-preview-panel rounded-4 p-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div>
+              <h4 class="fw-bold mb-1">Practice results</h4>
+              <p class="text-muted mb-0">{{ source_name }}</p>
+            </div>
+            <span class="badge rounded-pill bg-success fs-6 px-3 py-2">{{ score }}%</span>
+          </div>
+          {% for result in quiz_results %}
+          <article class="ai-question-card p-3 p-md-4 mb-3">
+            <div class="d-flex align-items-start gap-3">
+              <div class="ai-question-number">{{ '%02d'|format(loop.index) }}</div>
+              <div class="flex-grow-1" style="min-width:0;">
+                <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
+                  {{ result.question }}
+                </div>
+                <div class="ai-option-grid">
+                  {% for option in result.options %}
+                  {% set is_selected = (result.selected|string|lower == option|string|lower) %}
+                  {% set is_correct_option = (result.correct|string|lower == option|string|lower) %}
+                  <div class="ai-option ai-practice-result-option {% if is_selected and not is_correct_option %}is-wrong-selection{% elif is_correct_option %}is-correct-answer{% endif %}">
+                    <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 < option_letters|length else loop.index }}</span>
+                    <span class="flex-grow-1">{{ option }}</span>
+                    {% if is_selected %}
+                    <span class="small fw-semibold {% if is_correct_option %}text-success{% else %}text-danger{% endif %}">
+                      Your choice
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="ai-answer-row">
+                  <i class="fas fa-circle-check"></i>
+                  <span class="small fw-bold text-uppercase" style="letter-spacing:.05em;">Correct Answer</span>
+                  <span class="fw-bold">{{ result.correct }}</span>
+                </div>
+                {% if not result.is_correct %}
+                <div class="small text-danger mt-2">
+                  Your answer: <strong>{{ result.selected or 'No answer' }}</strong>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="ai-preview-panel rounded-4 p-4">
+          <div class="mb-3">
+            <h4 class="fw-bold mb-1">{{ quiz_questions|length }} practice questions ready</h4>
+            <p class="text-muted mb-0">From {{ source_name }}. Select one answer for each question.</p>
+          </div>
+          <form method="POST">
+            <input type="hidden" name="action" value="grade" />
+            <input type="hidden" name="source_name" value="{{ source_name|e }}" />
+            <input type="hidden" name="quiz_data" value="{{ quiz_questions|tojson|forceescape }}" />
+            {% for question in quiz_questions %}
+            {% set question_index = loop.index0 %}
+            <article class="ai-question-card p-3 p-md-4 mb-3">
+              <div class="d-flex align-items-start gap-3">
+                <div class="ai-question-number">{{ '%02d'|format(loop.index) }}</div>
+                <div class="flex-grow-1" style="min-width:0;">
+                  <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
+                    {{ question.question }}
+                  </div>
+                  <div class="ai-option-grid">
+                    {% for option in question.options %}
+                    <label class="ai-option ai-practice-option">
+                      <input class="visually-hidden ai-practice-input" type="radio"
+                        name="answer_{{ question_index }}" value="{{ option }}" required />
+                      <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 < option_letters|length else loop.index }}</span>
+                      <span>{{ option }}</span>
+                    </label>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+            </article>
+            {% endfor %}
+            <button type="submit" class="btn btn-success btn-lg rounded-pill px-4">
+              <i class="fas fa-check me-2"></i>Check my answers
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      </div>
     </div>
   </div>
 
@@ -1205,6 +1355,18 @@
 {% block extra_js %}
 <script>
   let manualQIndex = 1;
+
+  document.addEventListener('change', function (event) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.matches('.ai-practice-input')) return;
+
+    const optionGrid = input.closest('.ai-option-grid');
+    if (!optionGrid) return;
+    optionGrid.querySelectorAll('.ai-practice-option').forEach((option) => {
+      const optionInput = option.querySelector('.ai-practice-input');
+      option.classList.toggle('is-selected', optionInput === input && input.checked);
+    });
+  });
 
   function addManualQuestionItem() {
     const container = document.getElementById('manualQuestionsContainer');
@@ -1294,7 +1456,124 @@
   function escapeQuizHtml(value) {
     const element = document.createElement('div');
     element.textContent = value == null ? '' : String(value);
-    return element.innerHTML;
+    return element.innerHTML
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/`/g, '&#96;')
+      .replace(/\$\{/g, '&#36;{');
+  }
+
+  function renderStudentPracticeQuestions(sourceName, questions) {
+    const output = document.getElementById('studentPracticeQuizOutput');
+    if (!output) return;
+
+    const optionLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const cards = questions.map((question, questionIndex) => `
+      <article class="ai-question-card p-3 p-md-4 mb-3">
+        <div class="d-flex align-items-start gap-3">
+          <div class="ai-question-number">${String(questionIndex + 1).padStart(2, '0')}</div>
+          <div class="flex-grow-1" style="min-width:0;">
+            <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
+              ${escapeQuizHtml(question.question)}
+            </div>
+            <div class="ai-option-grid">
+              ${(question.options || []).map((option, optionIndex) => `
+                <label class="ai-option ai-practice-option">
+                  <input class="visually-hidden ai-practice-input" type="radio"
+                    name="answer_${questionIndex}" value="${escapeQuizHtml(option)}" required />
+                  <span class="ai-option-letter">${optionLetters[optionIndex] || optionIndex + 1}</span>
+                  <span>${escapeQuizHtml(option)}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </article>
+    `).join('');
+
+    output.innerHTML = `
+      <div class="mt-4 ai-preview-panel rounded-4 p-4">
+        <div class="mb-3">
+          <h4 class="fw-bold mb-1">${questions.length} practice questions ready</h4>
+          <p class="text-muted mb-0">From ${escapeQuizHtml(sourceName)}. Select one answer for each question.</p>
+        </div>
+        <form method="POST" action="{{ url_for('quiz') }}">
+          <input type="hidden" name="action" value="grade" />
+          <input type="hidden" name="source_name" value="${escapeQuizHtml(sourceName)}" />
+          ${cards}
+          <button type="submit" class="btn btn-success btn-lg rounded-pill px-4">
+            <i class="fas fa-check me-2"></i>Check my answers
+          </button>
+        </form>
+      </div>
+    `;
+
+    const gradingForm = output.querySelector('form');
+    if (gradingForm) {
+      const quizDataInput = document.createElement('input');
+      quizDataInput.type = 'hidden';
+      quizDataInput.name = 'quiz_data';
+      quizDataInput.value = JSON.stringify(questions);
+      gradingForm.appendChild(quizDataInput);
+    }
+  }
+
+  async function generateStudentPracticeQuiz(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const fileInput = form.querySelector('input[name="quiz_pdf"]');
+    const generateButton = document.getElementById('studentPracticeGenerateButton');
+    const status = document.getElementById('studentPracticeQuizStatus');
+    const output = document.getElementById('studentPracticeQuizOutput');
+
+    if (!fileInput || !fileInput.files || !fileInput.files.length) {
+      if (fileInput) fileInput.reportValidity();
+      return;
+    }
+
+    const formData = new FormData(form);
+    if (generateButton) {
+      generateButton.disabled = true;
+      generateButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Questions...';
+    }
+    if (output) output.replaceChildren();
+    if (status) {
+      status.className = 'practice-generation-status';
+      status.classList.remove('d-none');
+      status.innerHTML = '<span class="spinner-border" aria-hidden="true"></span><span>Analyzing the document and building accurate MCQs...</span>';
+    }
+
+    try {
+      const response = await fetch('{{ url_for("quiz_generate_api") }}', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || data.status !== 'ok' || !Array.isArray(data.quiz_questions)) {
+        throw new Error(data.message || 'Could not generate questions from this file.');
+      }
+
+      renderStudentPracticeQuestions(data.source_name, data.quiz_questions);
+      if (status) status.classList.add('d-none');
+    } catch (error) {
+      if (status) {
+        status.classList.remove('practice-generation-status');
+        status.classList.add('alert', 'alert-danger', 'mt-3');
+        status.textContent = error.message || 'An error occurred while generating the practice quiz.';
+      }
+    } finally {
+      if (generateButton) {
+        generateButton.disabled = false;
+        generateButton.innerHTML = '<i class="fas fa-file-circle-question me-2"></i>Generate Practice Quiz';
+      }
+    }
+  }
+
+  const studentPracticeQuizForm = document.getElementById('studentPracticeQuizForm');
+  if (studentPracticeQuizForm) {
+    studentPracticeQuizForm.addEventListener('submit', generateStudentPracticeQuiz);
   }
 
   async function generateAiQuizAction() {

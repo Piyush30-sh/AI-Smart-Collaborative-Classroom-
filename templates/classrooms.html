@@ -65,6 +65,43 @@
     color: rgba(255, 255, 255, 0.9) !important;
   }
 
+  .cls-faculty-announcement-bar > input[type="text"] {
+    min-width: 160px;
+
+  }
+
+  .cls-faculty-announcement-bar > .modern-file-dropzone {
+    flex: 0 1 340px;
+    width: 340px;
+    min-width: 320px;
+    min-height: 52px;
+    padding: 0.65rem 0.8rem;
+    border-radius: 20px;
+    
+  }
+
+  @media (max-width: 720px) {
+    .cls-faculty-announcement-bar {
+      flex-wrap: wrap;
+    }
+
+    .cls-faculty-announcement-bar > input[type="text"] {
+      flex: 1 1 calc(100% - 2rem);
+      min-width: 0;
+    }
+
+    .cls-faculty-announcement-bar > .modern-file-dropzone {
+      flex: 0 1 340px;
+      width: 340px;
+      min-width: min(100%, 280px);
+    }
+
+    .cls-faculty-announcement-bar > button {
+      margin-left: auto;
+     
+    }
+  }
+
   /* Tabs (Active border & text) */
   .cls-tab-btn.active {
     color: #0891b2 !important;
@@ -1094,7 +1131,7 @@
             class="mb-4">
             <input type="hidden" name="classroom_id" value="{{ selected_classroom.id }}" />
             <input type="hidden" name="recipient_student_id" value="all" />
-            <div class="cls-broadcast-bar">
+            <div class="cls-broadcast-bar cls-faculty-announcement-bar">
               <i class="fas fa-volume-up" style="color: #ca8a04; font-size: 0.9rem"></i>
               <input type="text" name="message" placeholder="Post an announcement to all students in this classroom..."
                 required />

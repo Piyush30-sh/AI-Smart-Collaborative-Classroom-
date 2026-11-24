@@ -4,6 +4,7 @@ import importlib
 import json
 import unittest
 import io
+from unittest.mock import patch
 from werkzeug.datastructures import FileStorage
 from docx import Document
 
@@ -21,6 +22,99 @@ def setup_app_module():
 
 
 class LiveQuizzesTestCase(unittest.TestCase):
+    def test_student_practice_quiz_generation_api_returns_questions(self):
+        module, db_path, upload_dir = setup_app_module()
+        client = module.app.test_client()
+        email = "student.async@math.edu"
+
+        client.post(
+            "/signup",
+            data={
+                "name": "Async Practice Student",
+                "email": email,
+                "password": "password123",
+                "user_type": "student",
+            },
+            follow_redirects=True,
+        )
+        client.post("/login", data={"email": email, "password": "password123"}, follow_redirects=True)
+
+        questions = [{
+            "question": "What do plants use to make chemical energy?",
+            "options": ["Sunlight", "Moonlight", "Sound", "Wind"],
+            "answer": "Sunlight",
+        }]
+        with patch.object(module, "_build_quiz_questions", return_value=questions):
+            response = client.post(
+                "/quiz/generate",
+                data={
+                    "question_count": "5",
+                    "quiz_pdf": (io.BytesIO(b"Photosynthesis converts sunlight into energy."), "notes.txt"),
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.is_json)
+        self.assertEqual(response.get_json()["quiz_questions"], questions)
+
+    def test_student_practice_quiz_upload_renders_and_grades_questions(self):
+        module, db_path, upload_dir = setup_app_module()
+        client = module.app.test_client()
+        email = "student.practice@math.edu"
+
+        client.post(
+            "/signup",
+            data={
+                "name": "Practice Student",
+                "email": email,
+                "password": "password123",
+                "user_type": "student",
+            },
+            follow_redirects=True,
+        )
+        client.post("/login", data={"email": email, "password": "password123"}, follow_redirects=True)
+
+        questions = [{
+            "question": "What do plants use to make chemical energy?",
+            "options": ["Sunlight", "Moonlight", "Sound", "Wind"],
+            "answer": "Sunlight",
+        }]
+        with patch.object(module, "_build_quiz_questions", return_value=questions) as build_questions:
+            response = client.post(
+                "/quiz",
+                data={
+                    "action": "generate",
+                    "question_count": "5",
+                    "quiz_pdf": (io.BytesIO(
+                        b"Photosynthesis is the process by which plants convert sunlight into chemical energy."
+                    ), "notes.txt"),
+                },
+                content_type="multipart/form-data",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        build_questions.assert_called_once()
+        self.assertIn(b"What do plants use to make chemical energy?", response.data)
+        self.assertIn(b'name="answer_0"', response.data)
+        self.assertIn(b'ai-question-number', response.data)
+        self.assertIn(b'ai-option-letter', response.data)
+
+        grade_response = client.post(
+            "/quiz",
+            data={
+                "action": "grade",
+                "source_name": "notes.txt",
+                "quiz_data": json.dumps(questions),
+                "answer_0": "Sunlight",
+            },
+        )
+        self.assertEqual(grade_response.status_code, 200)
+        self.assertIn(b"Practice results", grade_response.data)
+        self.assertIn(b"100%", grade_response.data)
+        self.assertIn(b"Correct Answer", grade_response.data)
+        self.assertIn(b'ai-answer-row', grade_response.data)
+
     def test_quiz_source_extraction_supports_docx_and_txt(self):
         module, db_path, upload_dir = setup_app_module()
         text = "Photosynthesis is the process by which plants convert sunlight into chemical energy."

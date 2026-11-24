@@ -52,6 +52,19 @@
       transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
       overflow: hidden;
     }
+    .modern-file-dropzone .modern-file-control {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .modern-file-dropzone:focus-within {
+      outline: 3px solid rgba(8, 145, 178, 0.28);
+      outline-offset: 3px;
+    }
     .modern-file-dropzone:hover,
     .modern-file-dropzone.is-dragging {
       transform: translateY(-2px);
@@ -684,9 +697,12 @@
 
         field.classList.add('modern-file-enhanced');
 
-        const wrapper = document.createElement('label');
+        const wrapper = document.createElement('div');
         wrapper.className = 'modern-file-dropzone';
-        wrapper.htmlFor = field.id || '';
+        field.classList.add('modern-file-control');
+        if (!field.hasAttribute('aria-label') && !field.labels?.length) {
+          field.setAttribute('aria-label', 'Choose a file to upload');
+        }
 
         const icon = document.createElement('span');
         icon.className = 'modern-file-icon';
@@ -716,7 +732,6 @@
 
         field.before(wrapper);
         wrapper.append(icon, copy, action, field);
-        field.classList.add('d-none');
 
         function formatSize(bytes) {
           if (!bytes) return '0 KB';

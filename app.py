@@ -5978,7 +5978,7 @@ def quiz():
                         }
                         flash(f"Generated {len(quiz_questions)} quiz question(s) from {source_name}.", "success")
                 except Exception as exc:
-                    flash(f"Could not read the PDF: {exc}", "danger")
+                    flash(f"Could not read or generate a quiz from the selected file: {exc}", "danger")
 
         elif action == "grade":
             quiz_data_raw = request.form.get("quiz_data", "[]")
@@ -6008,6 +6008,7 @@ def quiz():
                         "selected": selected,
                         "correct": correct_answer,
                         "is_correct": is_correct,
+                        "options": question.get("options", []),
                     })
 
                 score = round((correct_count / total) * 100) if total else 0
