@@ -122,236 +122,236 @@
     100% {
       opacity: 1;
     }
-     50% {
+
+    50% {
       opacity: 0.65;
     }
   }
 
-    .ai-generator-control {
-      border: 1px solid rgba(8, 145, 178, 0.18);
-      border-radius: 18px;
-      background:
-        radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.13), transparent 34%),
-        linear-gradient(135deg, rgba(8, 145, 178, 0.07), rgba(56, 189, 248, 0.03));
-    }
+  .ai-generator-control {
+    border: 1px solid rgba(8, 145, 178, 0.18);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.13), transparent 34%),
+      linear-gradient(135deg, rgba(8, 145, 178, 0.07), rgba(56, 189, 248, 0.03));
+  }
 
-    [data-bs-theme="dark"] .ai-generator-control {
-      background:
-        radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.14), transparent 34%),
-        linear-gradient(135deg, rgba(8, 145, 178, 0.10), rgba(30, 41, 59, 0.72));
-      border-color: rgba(56, 189, 248, 0.24);
-    }
+  [data-bs-theme="dark"] .ai-generator-control {
+    background:
+      radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.14), transparent 34%),
+      linear-gradient(135deg, rgba(8, 145, 178, 0.10), rgba(30, 41, 59, 0.72));
+    border-color: rgba(56, 189, 248, 0.24);
+  }
 
-    .ai-question-select,
-    .ai-document-field {
-      min-height: 52px;
-    }
+  .ai-question-select,
+  .ai-document-field {
+    min-height: 52px;
+  }
 
-    .ai-generator-button,
-    .ai-publish-button {
-      position: relative;
-      min-height: 52px;
-      border: 0;
-      overflow: hidden;
-      margin-bottom: 1.0rem;
-      font-weight: 800;
-      letter-spacing: 0.01em;
-      box-shadow: 0 10px 24px rgba(8, 145, 178, 0.24);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-    }
+  .ai-generator-button,
+  .ai-publish-button {
+    position: relative;
+    min-height: 52px;
+    border: 0;
+    overflow: hidden;
+    margin-bottom: 1.0rem;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+    box-shadow: 0 10px 24px rgba(8, 145, 178, 0.24);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
 
-    .ai-generator-button {
-      background: linear-gradient(135deg, #0f8c9d 0%, #38bdf8 100%);
-      margin-top: 0.9rem;
-    }
+  .ai-generator-button {
+    background: linear-gradient(135deg, #0f8c9d 0%, #38bdf8 100%);
+    margin-top: 0.9rem;
+  }
 
-    .ai-publish-button {
-      min-height: 48px;
-      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-      box-shadow: 0 10px 24px rgba(16, 185, 129, 0.24);
-    }
+  .ai-publish-button {
+    min-height: 48px;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    box-shadow: 0 10px 24px rgba(16, 185, 129, 0.24);
+  }
 
-    .ai-generator-button::after,
-    .ai-publish-button::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      transform: translateX(-120%) skewX(-18deg);
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
-      transition: transform 0.55s ease;
-    }
+  .ai-generator-button::after,
+  .ai-publish-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%) skewX(-18deg);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    transition: transform 0.55s ease;
+  }
 
-    .ai-generator-button:hover,
-    .ai-publish-button:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.04);
-    }
+  .ai-generator-button:hover,
+  .ai-publish-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+  }
 
-    .ai-generator-button:hover::after,
-    .ai-publish-button:hover::after {
-      transform: translateX(120%) skewX(-18deg);
-    }
+  .ai-generator-button:hover::after,
+  .ai-publish-button:hover::after {
+    transform: translateX(120%) skewX(-18deg);
+  }
 
-    .ai-generator-button:disabled {
-      opacity: 0.78;
-      transform: none;
-    }
+  .ai-generator-button:disabled {
+    opacity: 0.78;
+    transform: none;
+  }
 
-    .ai-preview-panel {
-      border: 1px solid rgba(8, 145, 178, 0.16);
-      background:
-        radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.10), transparent 30%),
-        var(--bs-tertiary-bg);
-    }
+  .ai-preview-panel {
+    border: 1px solid rgba(8, 145, 178, 0.16);
+    background:
+      radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.10), transparent 30%),
+      var(--bs-tertiary-bg);
+  }
 
-    [data-bs-theme="dark"] .ai-preview-panel {
-      border-color: rgba(56, 189, 248, 0.22);
-    }
+  [data-bs-theme="dark"] .ai-preview-panel {
+    border-color: rgba(56, 189, 248, 0.22);
+  }
 
-    .ai-preview-settings {
-      border: 1px solid rgba(8, 145, 178, 0.10);
-      border-radius: 16px;
-      background: var(--bs-body-bg);
-    }
+  .ai-preview-settings {
+    border: 1px solid rgba(8, 145, 178, 0.10);
+    border-radius: 16px;
+    background: var(--bs-body-bg);
+  }
 
-    .ai-question-card {
-      border: 1px solid rgba(8, 145, 178, 0.14);
-      border-radius: 16px;
-      background: var(--bs-body-bg);
-      overflow: hidden;
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-    }
+  .ai-question-card {
+    border: 1px solid rgba(8, 145, 178, 0.14);
+    border-radius: 16px;
+    background: var(--bs-body-bg);
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
 
-    .ai-question-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(8, 145, 178, 0.34);
-      box-shadow: 0 12px 28px rgba(8, 145, 178, 0.08);
+  .ai-question-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(8, 145, 178, 0.34);
+    box-shadow: 0 12px 28px rgba(8, 145, 178, 0.08);
+  }
+
+  .ai-question-number {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #0891b2, #38bdf8);
+    font-weight: 800;
+    box-shadow: 0 8px 16px rgba(8, 145, 178, 0.20);
+  }
+
+  .ai-option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .ai-option {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 60px;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid rgba(100, 116, 139, 0.14);
+    border-radius: 11px;
+    color: var(--bs-body-color);
+    background: rgba(100, 116, 139, 0.035);
+  }
+
+  .ai-practice-option {
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  }
+
+  .ai-practice-option:hover {
+    transform: translateY(-1px);
+    border-color: rgba(8, 145, 178, 0.4);
+  }
+
+  .ai-practice-option:focus-within {
+    outline: 3px solid rgba(8, 145, 178, 0.25);
+    outline-offset: 2px;
+  }
+
+  .ai-practice-option.is-selected {
+    border-color: rgba(8, 145, 178, 0.65);
+    background: rgba(8, 145, 178, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.18);
+  }
+
+  .ai-practice-result-option.is-correct-answer {
+    border-color: rgba(16, 185, 129, 0.38);
+    background: rgba(16, 185, 129, 0.08);
+  }
+
+  .ai-practice-result-option.is-wrong-selection {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.08);
+  }
+
+  .ai-option-letter {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: rgba(8, 145, 178, 0.10);
+    color: #0891b2;
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+
+  .ai-answer-row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 11px;
+    color: #047857;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.04));
+    border: 1px solid rgba(16, 185, 129, 0.18);
+  }
+
+  .practice-generation-status {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 1rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid rgba(34, 211, 238, 0.12);
+    border-radius: 12px;
+    color: #67e8f9;
+    background: #062b31;
+  }
+
+  .practice-generation-status .spinner-border {
+    flex: 0 0 auto;
+    width: 1.05rem;
+    height: 1.05rem;
+    border-width: 0.16em;
+  }
+
+  [data-bs-theme="dark"] .ai-answer-row {
+    color: #6ee7b7;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.13), rgba(16, 185, 129, 0.055));
+  }
+
+  @media (max-width: 767.98px) {
+    .ai-option-grid {
+      grid-template-columns: 1fr;
     }
 
     .ai-question-number {
-      width: 42px;
-      height: 42px;
-      flex: 0 0 42px;
-      display: grid;
-      place-items: center;
-      border-radius: 12px;
-      color: #ffffff;
-      background: linear-gradient(135deg, #0891b2, #38bdf8);
-      font-weight: 800;
-      box-shadow: 0 8px 16px rgba(8, 145, 178, 0.20);
+      width: 38px;
+      height: 38px;
+      flex-basis: 38px;
     }
-
-    .ai-option-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.55rem;
-    }
-
-    .ai-option {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      min-height: 60px;
-      padding: 0.65rem 0.75rem;
-      border: 1px solid rgba(100, 116, 139, 0.14);
-      border-radius: 11px;
-      color: var(--bs-body-color);
-      background: rgba(100, 116, 139, 0.035);
-    }
-
-    .ai-practice-option {
-      position: relative;
-      cursor: pointer;
-      transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
-    }
-
-    .ai-practice-option:hover {
-      transform: translateY(-1px);
-      border-color: rgba(8, 145, 178, 0.4);
-    }
-
-    .ai-practice-option:focus-within {
-      outline: 3px solid rgba(8, 145, 178, 0.25);
-      outline-offset: 2px;
-    }
-
-    .ai-practice-option.is-selected {
-      border-color: rgba(8, 145, 178, 0.65);
-      background: rgba(8, 145, 178, 0.12);
-      box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.18);
-    }
-
-    .ai-practice-result-option.is-correct-answer {
-      border-color: rgba(16, 185, 129, 0.38);
-      background: rgba(16, 185, 129, 0.08);
-    }
-
-    .ai-practice-result-option.is-wrong-selection {
-      border-color: rgba(239, 68, 68, 0.4);
-      background: rgba(239, 68, 68, 0.08);
-    }
-
-    .ai-option-letter {
-      width: 24px;
-      height: 24px;
-      flex: 0 0 24px;
-      display: grid;
-      place-items: center;
-      border-radius: 7px;
-      background: rgba(8, 145, 178, 0.10);
-      color: #0891b2;
-      font-size: 0.72rem;
-      font-weight: 800;
-    }
-
-    .ai-answer-row {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      margin-top: 0.75rem;
-      padding: 0.65rem 0.75rem;
-      border-radius: 11px;
-      color: #047857;
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.10), rgba(16, 185, 129, 0.04));
-      border: 1px solid rgba(16, 185, 129, 0.18);
-    }
-
-    .practice-generation-status {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      margin-top: 1rem;
-      padding: 1rem 1.15rem;
-      border: 1px solid rgba(34, 211, 238, 0.12);
-      border-radius: 12px;
-      color: #67e8f9;
-      background: #062b31;
-    }
-
-    .practice-generation-status .spinner-border {
-      flex: 0 0 auto;
-      width: 1.05rem;
-      height: 1.05rem;
-      border-width: 0.16em;
-    }
-
-    [data-bs-theme="dark"] .ai-answer-row {
-      color: #6ee7b7;
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.13), rgba(16, 185, 129, 0.055));
-    }
-
-    @media (max-width: 767.98px) {
-      .ai-option-grid {
-        grid-template-columns: 1fr;
-      }
-      .ai-question-number {
-        width: 38px;
-        height: 38px;
-        flex-basis: 38px;
-      }
-    }
-
-   
+  }
 </style>
 {% endblock %}
 
@@ -378,7 +378,8 @@
       </h1>
       <p class="mb-0 text-white-75">
         {% if is_faculty %}
-        Manually author MCQs, convert PDF/Word/TXT documents with AI, launch live classroom tests, and track multi-student results
+        Manually author MCQs, convert PDF/Word/TXT documents with AI, launch live classroom tests, and track
+        multi-student results
         in real time.
         {% else %}
         Participate in active classroom tests assigned by faculty and generate custom self-study quizzes from your
@@ -394,7 +395,7 @@
         <i class="fas fa-plus-circle me-1"></i> Create Manual Quiz
       </button>
       <button type="button" class="btn btn-outline-light rounded-pill px-3.5 py-2" onclick="switchToAiTab()">
-        <i class="fas fa-robot me-1"></i> AI Document Generator
+        <i class="fas fa-robot me-1"></i> Quize Generator via Pdf
       </button>
       {% else %}
       <a href="#activeQuizzesSection" class="btn btn-light text-primary fw-bold rounded-pill px-3.5 py-2 shadow-sm">
@@ -614,14 +615,15 @@
       <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
         <i class="fas fa-circle-question text-muted fs-1 mb-3"></i>
         <h3 class="fw-bold">No Quizzes Created Yet</h3>
-        <p class="text-muted">Create your first manual quiz or generate one with AI from a PDF, Word, or TXT document.</p>
+        <p class="text-muted">Create your first manual quiz or generate one with AI from a PDF, Word, or TXT document.
+        </p>
         <div class="d-flex gap-2 justify-content-center mt-2">
           <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal"
             data-bs-target="#createQuizModal">
             <i class="fas fa-plus-circle me-1"></i> Create Manual Quiz
           </button>
           <button type="button" class="btn btn-outline-primary rounded-pill px-4" onclick="switchToAiTab()">
-            <i class="fas fa-robot me-1"></i> Generate via Document
+            <i class="fas fa-robot me-1"></i> Create Quize from Pdf
           </button>
         </div>
       </div>
@@ -770,7 +772,7 @@
     <!-- ── TAB 3: AI DOCUMENT TO QUIZ GENERATOR ───────────────────────── -->
     <div class="tab-pane fade" id="tab-ai-gen" role="tabpanel">
       <div class="card ai-generator-control border-0 shadow-sm p-4 mb-4">
-        <h4 class="fw-bold mb-1"><i class="fas fa-wand-magic-sparkles text-primary me-2"></i>AI Document-to-Quiz Generator
+        <h4 class="fw-bold mb-1"><i class="fas fa-wand-magic-sparkles text-primary me-2"></i> Document-to-Quiz Generator
         </h4>
         <p class="text-muted small mb-4">Upload PDF, Word (.docx), or TXT study material. AI will extract key concepts
           and automatically build a ready-to-host quiz.</p>
@@ -779,8 +781,8 @@
           <div class="row g-3 align-items-center">
             <div class="col-md-6">
               <label class="form-label fw-semibold">Select PDF, Word, or TXT Document</label>
-              <input type="file" class="form-control form-control-lg rounded-3 ai-document-field" id="aiPdfInput" name="quiz_pdf"
-                accept=".pdf,.docx,.txt" required />
+              <input type="file" class="form-control form-control-lg rounded-3 ai-document-field" id="aiPdfInput"
+                name="quiz_pdf" accept=".pdf,.docx,.txt" required />
             </div>
             <div class="col-md-3">
               <label class="form-label fw-semibold">Number of Questions</label>
@@ -813,7 +815,8 @@
               <p class="text-muted small mb-0" id="aiGenSubtitle">Review questions below before launching live to
                 students.</p>
             </div>
-            <button type="button" class="btn btn-success rounded-pill px-4 ai-publish-button" id="aiPublishBtn" onclick="publishAiQuizToClassroom()">
+            <button type="button" class="btn btn-success rounded-pill px-4 ai-publish-button" id="aiPublishBtn"
+              onclick="publishAiQuizToClassroom()">
               <i class="fas fa-play-circle me-1"></i> Publish as Live Quiz
             </button>
           </div>
@@ -1214,7 +1217,7 @@
     <div class="card-body p-4">
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-          <h5 class="fw-bold mb-1"><i class="fas fa-robot text-primary me-2"></i>Personal AI Practice Quiz Generator</h5>
+          <h5 class="fw-bold mb-1"><i class="fas fa-robot text-primary me-2"></i> Practice Quiz Generator</h5>
           <p class="text-muted small mb-0">Convert PDF, Word (.docx), or TXT study notes into an instant self-test.</p>
         </div>
         <span
@@ -1224,12 +1227,11 @@
         </span>
       </div>
 
-      <form id="studentPracticeQuizForm" method="POST" enctype="multipart/form-data"
-        class="row g-3 align-items-center">
+      <form id="studentPracticeQuizForm" method="POST" enctype="multipart/form-data" class="row g-3 align-items-center">
         <input type="hidden" name="action" value="generate" />
         <div class="col-lg-6">
-          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf"
-            accept=".pdf,.docx,.txt" required />
+          <input type="file" class="form-control form-control-lg rounded-3" name="quiz_pdf" accept=".pdf,.docx,.txt"
+            required />
         </div>
         <div class="col-lg-3">
           <select class="form-select form-select-lg rounded-3" name="question_count" aria-label="Number of questions">
@@ -1249,100 +1251,104 @@
         </div>
       </form>
 
-      <div id="studentPracticeQuizStatus" class="practice-generation-status d-none" role="status"
-        aria-live="polite"></div>
+      <div id="studentPracticeQuizStatus" class="practice-generation-status d-none" role="status" aria-live="polite">
+      </div>
       <div id="studentPracticeQuizOutput">
-      {% if quiz_questions %}
-      <div class="mt-4">
-        {% set option_letters = ['A', 'B', 'C', 'D', 'E', 'F'] %}
-        {% if quiz_results %}
-        <div class="ai-preview-panel rounded-4 p-4">
-          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-            <div>
-              <h4 class="fw-bold mb-1">Practice results</h4>
-              <p class="text-muted mb-0">{{ source_name }}</p>
-            </div>
-            <span class="badge rounded-pill bg-success fs-6 px-3 py-2">{{ score }}%</span>
-          </div>
-          {% for result in quiz_results %}
-          <article class="ai-question-card p-3 p-md-4 mb-3">
-            <div class="d-flex align-items-start gap-3">
-              <div class="ai-question-number">{{ '%02d'|format(loop.index) }}</div>
-              <div class="flex-grow-1" style="min-width:0;">
-                <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
-                  {{ result.question }}
-                </div>
-                <div class="ai-option-grid">
-                  {% for option in result.options %}
-                  {% set is_selected = (result.selected|string|lower == option|string|lower) %}
-                  {% set is_correct_option = (result.correct|string|lower == option|string|lower) %}
-                  <div class="ai-option ai-practice-result-option {% if is_selected and not is_correct_option %}is-wrong-selection{% elif is_correct_option %}is-correct-answer{% endif %}">
-                    <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 < option_letters|length else loop.index }}</span>
-                    <span class="flex-grow-1">{{ option }}</span>
-                    {% if is_selected %}
-                    <span class="small fw-semibold {% if is_correct_option %}text-success{% else %}text-danger{% endif %}">
-                      Your choice
-                    </span>
-                    {% endif %}
-                  </div>
-                  {% endfor %}
-                </div>
-                <div class="ai-answer-row">
-                  <i class="fas fa-circle-check"></i>
-                  <span class="small fw-bold text-uppercase" style="letter-spacing:.05em;">Correct Answer</span>
-                  <span class="fw-bold">{{ result.correct }}</span>
-                </div>
-                {% if not result.is_correct %}
-                <div class="small text-danger mt-2">
-                  Your answer: <strong>{{ result.selected or 'No answer' }}</strong>
-                </div>
-                {% endif %}
+        {% if quiz_questions %}
+        <div class="mt-4">
+          {% set option_letters = ['A', 'B', 'C', 'D', 'E', 'F'] %}
+          {% if quiz_results %}
+          <div class="ai-preview-panel rounded-4 p-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+              <div>
+                <h4 class="fw-bold mb-1">Practice results</h4>
+                <p class="text-muted mb-0">{{ source_name }}</p>
               </div>
+              <span class="badge rounded-pill bg-success fs-6 px-3 py-2">{{ score }}%</span>
             </div>
-          </article>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="ai-preview-panel rounded-4 p-4">
-          <div class="mb-3">
-            <h4 class="fw-bold mb-1">{{ quiz_questions|length }} practice questions ready</h4>
-            <p class="text-muted mb-0">From {{ source_name }}. Select one answer for each question.</p>
-          </div>
-          <form method="POST">
-            <input type="hidden" name="action" value="grade" />
-            <input type="hidden" name="source_name" value="{{ source_name|e }}" />
-            <input type="hidden" name="quiz_data" value="{{ quiz_questions|tojson|forceescape }}" />
-            {% for question in quiz_questions %}
-            {% set question_index = loop.index0 %}
+            {% for result in quiz_results %}
             <article class="ai-question-card p-3 p-md-4 mb-3">
               <div class="d-flex align-items-start gap-3">
                 <div class="ai-question-number">{{ '%02d'|format(loop.index) }}</div>
                 <div class="flex-grow-1" style="min-width:0;">
                   <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
-                    {{ question.question }}
+                    {{ result.question }}
                   </div>
                   <div class="ai-option-grid">
-                    {% for option in question.options %}
-                    <label class="ai-option ai-practice-option">
-                      <input class="visually-hidden ai-practice-input" type="radio"
-                        name="answer_{{ question_index }}" value="{{ option }}" required />
-                      <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 < option_letters|length else loop.index }}</span>
-                      <span>{{ option }}</span>
-                    </label>
+                    {% for option in result.options %}
+                    {% set is_selected = (result.selected|string|lower == option|string|lower) %}
+                    {% set is_correct_option = (result.correct|string|lower == option|string|lower) %}
+                    <div
+                      class="ai-option ai-practice-result-option {% if is_selected and not is_correct_option %}is-wrong-selection{% elif is_correct_option %}is-correct-answer{% endif %}">
+                      <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 <
+                          option_letters|length else loop.index }}</span>
+                          <span class="flex-grow-1">{{ option }}</span>
+                          {% if is_selected %}
+                          <span
+                            class="small fw-semibold {% if is_correct_option %}text-success{% else %}text-danger{% endif %}">
+                            Your choice
+                          </span>
+                          {% endif %}
+                    </div>
                     {% endfor %}
                   </div>
+                  <div class="ai-answer-row">
+                    <i class="fas fa-circle-check"></i>
+                    <span class="small fw-bold text-uppercase" style="letter-spacing:.05em;">Correct Answer</span>
+                    <span class="fw-bold">{{ result.correct }}</span>
+                  </div>
+                  {% if not result.is_correct %}
+                  <div class="small text-danger mt-2">
+                    Your answer: <strong>{{ result.selected or 'No answer' }}</strong>
+                  </div>
+                  {% endif %}
                 </div>
               </div>
             </article>
             {% endfor %}
-            <button type="submit" class="btn btn-success btn-lg rounded-pill px-4">
-              <i class="fas fa-check me-2"></i>Check my answers
-            </button>
-          </form>
+          </div>
+          {% else %}
+          <div class="ai-preview-panel rounded-4 p-4">
+            <div class="mb-3">
+              <h4 class="fw-bold mb-1">{{ quiz_questions|length }} practice questions ready</h4>
+              <p class="text-muted mb-0">From {{ source_name }}. Select one answer for each question.</p>
+            </div>
+            <form method="POST">
+              <input type="hidden" name="action" value="grade" />
+              <input type="hidden" name="source_name" value="{{ source_name|e }}" />
+              <input type="hidden" name="quiz_data" value="{{ quiz_questions|tojson|forceescape }}" />
+              {% for question in quiz_questions %}
+              {% set question_index = loop.index0 %}
+              <article class="ai-question-card p-3 p-md-4 mb-3">
+                <div class="d-flex align-items-start gap-3">
+                  <div class="ai-question-number">{{ '%02d'|format(loop.index) }}</div>
+                  <div class="flex-grow-1" style="min-width:0;">
+                    <div class="fw-bold mb-3" style="font-size:0.98rem;line-height:1.48;">
+                      {{ question.question }}
+                    </div>
+                    <div class="ai-option-grid">
+                      {% for option in question.options %}
+                      <label class="ai-option ai-practice-option">
+                        <input class="visually-hidden ai-practice-input" type="radio" name="answer_{{ question_index }}"
+                          value="{{ option }}" required />
+                        <span class="ai-option-letter">{{ option_letters[loop.index0] if loop.index0 <
+                            option_letters|length else loop.index }}</span>
+                            <span>{{ option }}</span>
+                      </label>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              </article>
+              {% endfor %}
+              <button type="submit" class="btn btn-success btn-lg rounded-pill px-4">
+                <i class="fas fa-check me-2"></i>Check my answers
+              </button>
+            </form>
+          </div>
+          {% endif %}
         </div>
         {% endif %}
-      </div>
-      {% endif %}
       </div>
     </div>
   </div>
